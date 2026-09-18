@@ -1,28 +1,29 @@
 package com.example.whynotkotlin.ui.navigation
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.whynotkotlin.ui.components.WhyNotBottomBar
 import com.example.whynotkotlin.ui.screens.auth.LoginScreen
 import com.example.whynotkotlin.ui.screens.auth.RegisterScreen
 import com.example.whynotkotlin.ui.screens.home.HomeScreen
+import com.example.whynotkotlin.ui.screens.products.AddProductScreen
+import com.example.whynotkotlin.ui.screens.products.NewProductScreen
+import com.example.whynotkotlin.ui.screens.products.ProductDetailScreen
 import com.example.whynotkotlin.ui.screens.profile.ChangePasswordScreen
 import com.example.whynotkotlin.ui.screens.profile.EditProfileScreen
 import com.example.whynotkotlin.ui.screens.profile.ProfileScreen
 import com.example.whynotkotlin.ui.screens.purchases.PurchasesScreen
-import com.example.whynotkotlin.ui.theme.WhyNotGray
+import com.example.whynotkotlin.ui.screens.wishlists.NewWishlistScreen
+import com.example.whynotkotlin.ui.screens.wishlists.ProductUi
+import com.example.whynotkotlin.ui.screens.wishlists.WishlistDetailScreen
+import com.example.whynotkotlin.ui.screens.wishlists.WishlistUi
+import com.example.whynotkotlin.ui.screens.wishlists.WishlistsScreen
 
 object WhyNotRoutes {
     const val LOGIN = "login"
@@ -36,11 +37,24 @@ object WhyNotRoutes {
 
     const val EDIT_PROFILE = "edit_profile"
     const val CHANGE_PASSWORD = "change_password"
+
+    const val NEW_WISHLIST = "new_wishlist"
+    const val WISHLIST_DETAIL = "wishlist_detail"
+    const val NEW_PRODUCT = "new_product"
+    const val PRODUCT_DETAIL = "product_detail"
 }
 
 @Composable
 fun WhyNotNavigation() {
     val navController = rememberNavController()
+
+    var selectedWishlist by remember {
+        mutableStateOf(WishlistUi("Wishlist Category", 0))
+    }
+
+    var selectedProduct by remember {
+        mutableStateOf(ProductUi("Product name", "\$100"))
+    }
 
     NavHost(
         navController = navController,
@@ -113,26 +127,226 @@ fun WhyNotNavigation() {
             )
         }
 
-        /*
-         * PERSON 2 HAS NOT PUSHED YET.
-         *
-         * These two temporary destinations keep
-         * the bottom navigation functional.
-         *
-         * Replace them with Person 2's screens later.
-         */
-
         composable(WhyNotRoutes.WISHLISTS) {
-            PendingPersonTwoScreen(
-                title = "Wishlists",
-                navController = navController
+            WishlistsScreen(
+                onWishlistClick = { wishlist ->
+                    selectedWishlist = wishlist
+                    navController.navigate(
+                        WhyNotRoutes.WISHLIST_DETAIL
+                    )
+                },
+                onNewWishlistClick = {
+                    navController.navigate(
+                        WhyNotRoutes.NEW_WISHLIST
+                    )
+                },
+
+                onHomeClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.HOME
+                    )
+                },
+                onWishlistsClick = {},
+                onAddClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.ADD
+                    )
+                },
+                onPurchasesClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.PURCHASES
+                    )
+                },
+                onProfileClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.PROFILE
+                    )
+                }
+            )
+        }
+
+        composable(WhyNotRoutes.NEW_WISHLIST) {
+            NewWishlistScreen(
+                onCancelClick = {
+                    navController.popBackStack()
+                },
+                onSaveClick = {
+                    navController.popBackStack()
+                },
+
+                onHomeClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.HOME
+                    )
+                },
+                onWishlistsClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.WISHLISTS
+                    )
+                },
+                onAddClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.ADD
+                    )
+                },
+                onPurchasesClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.PURCHASES
+                    )
+                },
+                onProfileClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.PROFILE
+                    )
+                }
+            )
+        }
+
+        composable(WhyNotRoutes.WISHLIST_DETAIL) {
+            WishlistDetailScreen(
+                wishlistName = selectedWishlist.name,
+                onProductClick = { product ->
+                    selectedProduct = product
+                    navController.navigate(
+                        WhyNotRoutes.PRODUCT_DETAIL
+                    )
+                },
+                onAddItemClick = {
+                    navController.navigate(
+                        WhyNotRoutes.NEW_PRODUCT
+                    )
+                },
+
+                onHomeClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.HOME
+                    )
+                },
+                onWishlistsClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.WISHLISTS
+                    )
+                },
+                onAddClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.ADD
+                    )
+                },
+                onPurchasesClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.PURCHASES
+                    )
+                },
+                onProfileClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.PROFILE
+                    )
+                }
+            )
+        }
+
+        composable(WhyNotRoutes.PRODUCT_DETAIL) {
+            ProductDetailScreen(
+                productName = selectedProduct.name,
+                price = selectedProduct.price,
+                originalPrice = selectedProduct.originalPrice,
+
+                onHomeClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.HOME
+                    )
+                },
+                onWishlistsClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.WISHLISTS
+                    )
+                },
+                onAddClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.ADD
+                    )
+                },
+                onPurchasesClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.PURCHASES
+                    )
+                },
+                onProfileClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.PROFILE
+                    )
+                }
             )
         }
 
         composable(WhyNotRoutes.ADD) {
-            PendingPersonTwoScreen(
-                title = "Add",
-                navController = navController
+            AddProductScreen(
+                onAddManuallyClick = {
+                    navController.navigate(
+                        WhyNotRoutes.NEW_PRODUCT
+                    )
+                },
+                onSaveItemClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.WISHLISTS
+                    )
+                },
+
+                onHomeClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.HOME
+                    )
+                },
+                onWishlistsClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.WISHLISTS
+                    )
+                },
+                onAddClick = {},
+                onPurchasesClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.PURCHASES
+                    )
+                },
+                onProfileClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.PROFILE
+                    )
+                }
+            )
+        }
+
+        composable(WhyNotRoutes.NEW_PRODUCT) {
+            NewProductScreen(
+                onSaveItemClick = {
+                    navController.popBackStack()
+                },
+
+                onHomeClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.HOME
+                    )
+                },
+                onWishlistsClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.WISHLISTS
+                    )
+                },
+                onAddClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.ADD
+                    )
+                },
+                onPurchasesClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.PURCHASES
+                    )
+                },
+                onProfileClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.PROFILE
+                    )
+                }
             )
         }
 
@@ -309,71 +523,5 @@ private fun NavHostController.navigateMain(
         popUpTo(WhyNotRoutes.HOME) {
             saveState = true
         }
-    }
-}
-
-@Composable
-private fun PendingPersonTwoScreen(
-    title: String,
-    navController: NavHostController
-) {
-    Column(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxSize()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.headlineMedium
-            )
-
-            Text(
-                text = "Pending Person 2 implementation",
-                style = MaterialTheme.typography.bodySmall,
-                color = WhyNotGray
-            )
-        }
-
-        WhyNotBottomBar(
-            onHomeClick = {
-                navController.navigateMain(
-                    WhyNotRoutes.HOME
-                )
-            },
-
-            onWishlistsClick = {
-                if (title != "Wishlists") {
-                    navController.navigateMain(
-                        WhyNotRoutes.WISHLISTS
-                    )
-                }
-            },
-
-            onAddClick = {
-                if (title != "Add") {
-                    navController.navigateMain(
-                        WhyNotRoutes.ADD
-                    )
-                }
-            },
-
-            onPurchasesClick = {
-                navController.navigateMain(
-                    WhyNotRoutes.PURCHASES
-                )
-            },
-
-            onProfileClick = {
-                navController.navigateMain(
-                    WhyNotRoutes.PROFILE
-                )
-            }
-        )
     }
 }
