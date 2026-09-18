@@ -13,9 +13,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,7 +30,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.whynotkotlin.ui.components.ProductPictureField
 import com.example.whynotkotlin.ui.components.WhyNotBottomBar
 import com.example.whynotkotlin.ui.theme.WhyNotBlack
@@ -47,8 +50,11 @@ private val wishlistCategories = listOf(
 fun NewWishlistScreen(
     onCancelClick: () -> Unit,
     onSaveClick: () -> Unit,
-    onProfileClick: () -> Unit = {},
-    onWishlistsClick: () -> Unit = {}
+    onHomeClick: () -> Unit = {},
+    onWishlistsClick: () -> Unit = {},
+    onAddClick: () -> Unit = {},
+    onPurchasesClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {}
 ) {
     var category by remember { mutableStateOf("") }
     var picture by remember { mutableStateOf("") }
@@ -59,9 +65,9 @@ fun NewWishlistScreen(
         Column(
             modifier = Modifier
                 .weight(1f)
-                .padding(horizontal = 24.dp)
+                .padding(horizontal = 22.dp)
         ) {
-            Spacer(modifier = Modifier.height(50.dp))
+            Spacer(modifier = Modifier.height(34.dp))
 
             Text(
                 text = "New Wishlist",
@@ -115,8 +121,11 @@ fun NewWishlistScreen(
         }
 
         WhyNotBottomBar(
-            onProfileClick = onProfileClick,
-            onWishlistsClick = onWishlistsClick
+            onHomeClick = onHomeClick,
+            onWishlistsClick = onWishlistsClick,
+            onAddClick = onAddClick,
+            onPurchasesClick = onPurchasesClick,
+            onProfileClick = onProfileClick
         )
     }
 }
@@ -158,10 +167,11 @@ private fun CategoryDropdownField(
                     color = WhyNotBlack
                 )
 
-                Text(
-                    text = "⌄",
-                    fontSize = 18.sp,
-                    color = WhyNotGray
+                Icon(
+                    imageVector = Icons.Outlined.KeyboardArrowDown,
+                    contentDescription = "Select category",
+                    tint = WhyNotGray,
+                    modifier = Modifier.size(20.dp)
                 )
             }
 

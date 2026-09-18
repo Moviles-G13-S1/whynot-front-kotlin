@@ -13,6 +13,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Percent
+import androidx.compose.material.icons.outlined.SwapVert
+import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -23,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.example.whynotkotlin.ui.components.CategoryChip
 import com.example.whynotkotlin.ui.components.ProductCard
@@ -42,10 +47,10 @@ private val sampleProducts = listOf(
     ProductUi("Item name", "\$50", "\$100")
 )
 
-private val wishlistFilters = listOf(
-    "⇅" to "Filter",
-    "%" to "Filter",
-    "☷" to "Filter"
+private val wishlistFilters: List<Pair<String, ImageVector>> = listOf(
+    "Filter" to Icons.Outlined.SwapVert,
+    "Filter" to Icons.Outlined.Percent,
+    "Filter" to Icons.Outlined.Tune
 )
 
 @Composable
@@ -53,9 +58,11 @@ fun WishlistDetailScreen(
     wishlistName: String,
     onProductClick: (ProductUi) -> Unit,
     onAddItemClick: () -> Unit,
-    onProfileClick: () -> Unit = {},
+    onHomeClick: () -> Unit = {},
+    onWishlistsClick: () -> Unit = {},
     onAddClick: () -> Unit = {},
-    onWishlistsClick: () -> Unit = {}
+    onPurchasesClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {}
 ) {
     var selectedFilter by remember { mutableStateOf(-1) }
 
@@ -65,12 +72,12 @@ fun WishlistDetailScreen(
         Column(
             modifier = Modifier.weight(1f)
         ) {
-            Spacer(modifier = Modifier.height(50.dp))
+            Spacer(modifier = Modifier.height(34.dp))
 
             Text(
                 text = wishlistName,
                 style = MaterialTheme.typography.displaySmall,
-                modifier = Modifier.padding(horizontal = 24.dp)
+                modifier = Modifier.padding(horizontal = 22.dp)
             )
 
             Spacer(modifier = Modifier.height(6.dp))
@@ -78,7 +85,7 @@ fun WishlistDetailScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
+                    .padding(horizontal = 22.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -108,8 +115,8 @@ fun WishlistDetailScreen(
             ) {
                 wishlistFilters.forEachIndexed { index, filter ->
                     CategoryChip(
-                        text = filter.second,
-                        icon = filter.first,
+                        text = filter.first,
+                        icon = filter.second,
                         selected = selectedFilter == index,
                         onClick = {
                             selectedFilter = if (selectedFilter == index) -1 else index
@@ -124,7 +131,7 @@ fun WishlistDetailScreen(
                 columns = GridCells.Fixed(2),
                 modifier = Modifier.weight(1f),
                 contentPadding = PaddingValues(
-                    horizontal = 24.dp,
+                    horizontal = 22.dp,
                     vertical = 24.dp
                 ),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -142,9 +149,11 @@ fun WishlistDetailScreen(
         }
 
         WhyNotBottomBar(
-            onProfileClick = onProfileClick,
+            onHomeClick = onHomeClick,
+            onWishlistsClick = onWishlistsClick,
             onAddClick = onAddClick,
-            onWishlistsClick = onWishlistsClick
+            onPurchasesClick = onPurchasesClick,
+            onProfileClick = onProfileClick
         )
     }
 }

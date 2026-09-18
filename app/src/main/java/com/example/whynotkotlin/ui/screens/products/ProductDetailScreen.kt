@@ -9,6 +9,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,9 +36,11 @@ fun ProductDetailScreen(
     originalPrice: String = "",
     storeName: String = "Product Store",
     onEditItemClick: () -> Unit = {},
-    onProfileClick: () -> Unit = {},
+    onHomeClick: () -> Unit = {},
+    onWishlistsClick: () -> Unit = {},
     onAddClick: () -> Unit = {},
-    onWishlistsClick: () -> Unit = {}
+    onPurchasesClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {}
 ) {
     var purchased by remember { mutableStateOf(false) }
 
@@ -44,9 +50,9 @@ fun ProductDetailScreen(
         Column(
             modifier = Modifier
                 .weight(1f)
-                .padding(horizontal = 24.dp)
+                .padding(horizontal = 22.dp)
         ) {
-            Spacer(modifier = Modifier.height(50.dp))
+            Spacer(modifier = Modifier.height(34.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -105,19 +111,33 @@ fun ProductDetailScreen(
                     )
                 }
 
-                Text(
-                    text = "✎ Edit item",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = WhyNotGray,
-                    modifier = Modifier.clickable { onEditItemClick() }
-                )
+                Row(
+                    modifier = Modifier.clickable { onEditItemClick() },
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Edit,
+                        contentDescription = null,
+                        tint = WhyNotGray,
+                        modifier = Modifier.size(17.dp)
+                    )
+
+                    Text(
+                        text = "Edit item",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = WhyNotGray
+                    )
+                }
             }
         }
 
         WhyNotBottomBar(
-            onProfileClick = onProfileClick,
+            onHomeClick = onHomeClick,
+            onWishlistsClick = onWishlistsClick,
             onAddClick = onAddClick,
-            onWishlistsClick = onWishlistsClick
+            onPurchasesClick = onPurchasesClick,
+            onProfileClick = onProfileClick
         )
     }
 }

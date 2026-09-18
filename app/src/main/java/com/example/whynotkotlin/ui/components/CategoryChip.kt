@@ -7,12 +7,15 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.example.whynotkotlin.ui.theme.WhyNotBlack
 import com.example.whynotkotlin.ui.theme.WhyNotBorder
@@ -25,9 +28,10 @@ fun CategoryChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     selected: Boolean = false,
-    icon: String = ""
+    icon: ImageVector? = null
 ) {
     val shape = RoundedCornerShape(50)
+    val contentColor = if (selected) WhyNotWhite else WhyNotGray
 
     Row(
         modifier = modifier
@@ -40,22 +44,23 @@ fun CategoryChip(
                 shape
             )
             .clickable { onClick() }
-            .padding(horizontal = 20.dp, vertical = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+            .padding(horizontal = 18.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(7.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if (icon.isNotBlank()) {
-            Text(
-                text = icon,
-                style = MaterialTheme.typography.bodyLarge,
-                color = if (selected) WhyNotWhite else WhyNotGray
+        if (icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = contentColor,
+                modifier = Modifier.size(17.dp)
             )
         }
 
         Text(
             text = text,
             style = MaterialTheme.typography.bodyLarge,
-            color = if (selected) WhyNotWhite else WhyNotGray
+            color = contentColor
         )
     }
 }

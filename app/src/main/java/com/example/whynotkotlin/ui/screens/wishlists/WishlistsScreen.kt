@@ -35,9 +35,11 @@ private val sampleWishlists = listOf(
 fun WishlistsScreen(
     onWishlistClick: (WishlistUi) -> Unit,
     onNewWishlistClick: () -> Unit,
-    onProfileClick: () -> Unit = {},
+    onHomeClick: () -> Unit = {},
+    onWishlistsClick: () -> Unit = {},
     onAddClick: () -> Unit = {},
-    onWishlistsClick: () -> Unit = {}
+    onPurchasesClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier.fillMaxSize()
@@ -45,9 +47,9 @@ fun WishlistsScreen(
         Column(
             modifier = Modifier
                 .weight(1f)
-                .padding(horizontal = 24.dp)
+                .padding(horizontal = 22.dp)
         ) {
-            Spacer(modifier = Modifier.height(50.dp))
+            Spacer(modifier = Modifier.height(34.dp))
 
             Text(
                 text = "My Wishlists",
@@ -91,9 +93,11 @@ fun WishlistsScreen(
         }
 
         WhyNotBottomBar(
-            onProfileClick = onProfileClick,
+            onHomeClick = onHomeClick,
+            onWishlistsClick = onWishlistsClick,
             onAddClick = onAddClick,
-            onWishlistsClick = onWishlistsClick
+            onPurchasesClick = onPurchasesClick,
+            onProfileClick = onProfileClick
         )
     }
 }

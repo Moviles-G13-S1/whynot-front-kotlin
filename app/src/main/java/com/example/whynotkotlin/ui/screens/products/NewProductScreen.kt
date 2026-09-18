@@ -27,7 +27,7 @@ import com.example.whynotkotlin.ui.components.WhyNotTextField
 import com.example.whynotkotlin.ui.theme.WhyNotCream
 import com.example.whynotkotlin.ui.theme.WhyNotGray
 
-private val productWishlists = listOf(
+private val productWishlistOptions = listOf(
     "Beauty",
     "Clothes",
     "Tech"
@@ -36,8 +36,11 @@ private val productWishlists = listOf(
 @Composable
 fun NewProductScreen(
     onSaveItemClick: () -> Unit,
-    onProfileClick: () -> Unit = {},
-    onWishlistsClick: () -> Unit = {}
+    onHomeClick: () -> Unit = {},
+    onWishlistsClick: () -> Unit = {},
+    onAddClick: () -> Unit = {},
+    onPurchasesClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {}
 ) {
     var name by remember { mutableStateOf("") }
     var picture by remember { mutableStateOf("") }
@@ -49,9 +52,9 @@ fun NewProductScreen(
         Column(
             modifier = Modifier
                 .weight(1f)
-                .padding(horizontal = 24.dp)
+                .padding(horizontal = 22.dp)
         ) {
-            Spacer(modifier = Modifier.height(50.dp))
+            Spacer(modifier = Modifier.height(34.dp))
 
             Text(
                 text = "New Product",
@@ -97,7 +100,7 @@ fun NewProductScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                productWishlists.forEach { wishlist ->
+                productWishlistOptions.forEach { wishlist ->
                     CategoryChip(
                         text = wishlist,
                         selected = selectedWishlist == wishlist,
@@ -119,8 +122,11 @@ fun NewProductScreen(
         }
 
         WhyNotBottomBar(
-            onProfileClick = onProfileClick,
-            onWishlistsClick = onWishlistsClick
+            onHomeClick = onHomeClick,
+            onWishlistsClick = onWishlistsClick,
+            onAddClick = onAddClick,
+            onPurchasesClick = onPurchasesClick,
+            onProfileClick = onProfileClick
         )
     }
 }
