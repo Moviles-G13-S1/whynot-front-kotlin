@@ -26,7 +26,9 @@ import com.example.whynotkotlin.ui.theme.WhyNotGray
 fun ProfileScreen(
     onEditProfileClick: () -> Unit,
     onChangePasswordClick: () -> Unit,
-    onLogoutClick: () -> Unit
+    onLogoutClick: () -> Unit,
+    onWishlistsClick: () -> Unit = {},
+    onAddClick: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier.fillMaxSize()
@@ -81,7 +83,10 @@ fun ProfileScreen(
             )
         }
 
-        WhyNotBottomBar()
+        WhyNotBottomBar(
+            onWishlistsClick = onWishlistsClick,
+            onAddClick = onAddClick
+        )
     }
 }
 

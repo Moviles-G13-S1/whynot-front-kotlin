@@ -25,7 +25,11 @@ import com.example.whynotkotlin.ui.theme.WhyNotWhite
 
 @Composable
 fun WhyNotBottomBar(
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    onHomeClick: () -> Unit = {},
+    onWishlistsClick: () -> Unit = {},
+    onAddClick: () -> Unit = {},
+    onPurchasesClick: () -> Unit = {}
 ) {
     Row(
         modifier = Modifier
@@ -37,10 +41,11 @@ fun WhyNotBottomBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        BottomItem("⌂", "Home")
-        BottomItem("♡", "Wishlists")
+        BottomItem("⌂", "Home", onHomeClick)
+        BottomItem("♡", "Wishlists", onWishlistsClick)
 
         Column(
+            modifier = Modifier.clickable { onAddClick() },
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box(
@@ -63,7 +68,7 @@ fun WhyNotBottomBar(
             )
         }
 
-        BottomItem("▣", "Purchases")
+        BottomItem("▣", "Purchases", onPurchasesClick)
 
         BottomItem(
             icon = "♙",
