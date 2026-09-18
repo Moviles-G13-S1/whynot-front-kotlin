@@ -27,8 +27,11 @@ fun ProfileScreen(
     onEditProfileClick: () -> Unit,
     onChangePasswordClick: () -> Unit,
     onLogoutClick: () -> Unit,
+    onHomeClick: () -> Unit = {},
     onWishlistsClick: () -> Unit = {},
-    onAddClick: () -> Unit = {}
+    onAddClick: () -> Unit = {},
+    onPurchasesClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier.fillMaxSize()
@@ -84,8 +87,11 @@ fun ProfileScreen(
         }
 
         WhyNotBottomBar(
+            onHomeClick = onHomeClick,
             onWishlistsClick = onWishlistsClick,
-            onAddClick = onAddClick
+            onAddClick = onAddClick,
+            onPurchasesClick = onPurchasesClick,
+            onProfileClick = onProfileClick
         )
     }
 }

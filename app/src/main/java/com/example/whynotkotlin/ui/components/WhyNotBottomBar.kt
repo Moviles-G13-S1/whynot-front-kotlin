@@ -2,97 +2,166 @@ package com.example.whynotkotlin.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.ShoppingBag
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.whynotkotlin.ui.theme.WhyNotBlack
+import com.example.whynotkotlin.ui.theme.WhyNotBorder
 import com.example.whynotkotlin.ui.theme.WhyNotGray
 import com.example.whynotkotlin.ui.theme.WhyNotWhite
 
 @Composable
 fun WhyNotBottomBar(
-    onProfileClick: () -> Unit = {},
     onHomeClick: () -> Unit = {},
     onWishlistsClick: () -> Unit = {},
     onAddClick: () -> Unit = {},
-    onPurchasesClick: () -> Unit = {}
+    onPurchasesClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {}
 ) {
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(5.dp)
             .background(WhyNotWhite)
-            .navigationBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
     ) {
-        BottomItem("⌂", "Home", onHomeClick)
-        BottomItem("♡", "Wishlists", onWishlistsClick)
+        HorizontalDivider(
+            color = WhyNotBorder,
+            thickness = 1.dp
+        )
 
-        Column(
-            modifier = Modifier.clickable { onAddClick() },
-            horizontalAlignment = Alignment.CenterHorizontally
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 18.dp, vertical = 7.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
+            BottomItem(
+                icon = {
+                    Icon(
+                        Icons.Outlined.Home,
+                        contentDescription = "Home"
+                    )
+                },
+                label = "Home",
+                onClick = onHomeClick,
+                modifier = Modifier.weight(1f)
+            )
+
+            BottomItem(
+                icon = {
+                    Icon(
+                        Icons.Outlined.FavoriteBorder,
+                        contentDescription = "Wishlists"
+                    )
+                },
+                label = "Wishlists",
+                onClick = onWishlistsClick,
+                modifier = Modifier.weight(1f)
+            )
+
+            Column(
                 modifier = Modifier
-                    .size(52.dp)
-                    .background(WhyNotBlack, CircleShape),
-                contentAlignment = Alignment.Center
+                    .weight(1f)
+                    .clickable { onAddClick() },
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(WhyNotBlack),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Add,
+                        contentDescription = "Add",
+                        tint = WhyNotWhite,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(2.dp))
+
                 Text(
-                    text = "+",
-                    color = WhyNotWhite,
-                    fontSize = 36.sp
+                    text = "Add",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = WhyNotGray
                 )
             }
 
-            Text(
-                text = "Add",
-                style = MaterialTheme.typography.labelSmall,
-                color = WhyNotGray
+            BottomItem(
+                icon = {
+                    Icon(
+                        Icons.Outlined.ShoppingBag,
+                        contentDescription = "Purchases"
+                    )
+                },
+                label = "Purchases",
+                onClick = onPurchasesClick,
+                modifier = Modifier.weight(1f)
+            )
+
+            BottomItem(
+                icon = {
+                    Icon(
+                        Icons.Outlined.Person,
+                        contentDescription = "Profile"
+                    )
+                },
+                label = "Profile",
+                onClick = onProfileClick,
+                modifier = Modifier.weight(1f)
             )
         }
-
-        BottomItem("▣", "Purchases", onPurchasesClick)
-
-        BottomItem(
-            icon = "♙",
-            label = "Profile",
-            onClick = onProfileClick
-        )
     }
 }
 
 @Composable
 private fun BottomItem(
-    icon: String,
+    icon: @Composable () -> Unit,
     label: String,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = Modifier.clickable { onClick() },
+        modifier = modifier.clickable { onClick() },
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = icon,
-            fontSize = 30.sp,
-            color = WhyNotGray
-        )
+        Box(
+            modifier = Modifier.size(26.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            CompositionLocalProvider(
+                LocalContentColor provides WhyNotGray,
+                content = icon
+            )
+        }
+
+        Spacer(modifier = Modifier.height(2.dp))
 
         Text(
             text = label,

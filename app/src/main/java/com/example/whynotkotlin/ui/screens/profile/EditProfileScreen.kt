@@ -32,7 +32,12 @@ import com.example.whynotkotlin.ui.theme.WhyNotGray
 fun EditProfileScreen(
     onBackClick: () -> Unit,
     onSaveChangesClick: () -> Unit,
-    onChangePasswordClick: () -> Unit = {}
+    onChangePasswordClick: () -> Unit = {},
+    onHomeClick: () -> Unit = {},
+    onWishlistsClick: () -> Unit = {},
+    onAddClick: () -> Unit = {},
+    onPurchasesClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {}
 ) {
     var name by remember { mutableStateOf("Juliana Durán") }
     var email by remember { mutableStateOf("j.duranl@uniandes.edu.co") }
@@ -162,6 +167,12 @@ fun EditProfileScreen(
             )
         }
 
-        WhyNotBottomBar()
+        WhyNotBottomBar(
+            onHomeClick = onHomeClick,
+            onWishlistsClick = onWishlistsClick,
+            onAddClick = onAddClick,
+            onPurchasesClick = onPurchasesClick,
+            onProfileClick = onProfileClick
+        )
     }
 }
