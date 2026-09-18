@@ -29,7 +29,12 @@ import com.example.whynotkotlin.ui.theme.WhyNotGray
 @Composable
 fun ChangePasswordScreen(
     onBackClick: () -> Unit,
-    onUpdatePasswordClick: () -> Unit
+    onUpdatePasswordClick: () -> Unit,
+    onHomeClick: () -> Unit = {},
+    onWishlistsClick: () -> Unit = {},
+    onAddClick: () -> Unit = {},
+    onPurchasesClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {}
 ) {
     var currentPassword by remember { mutableStateOf("") }
     var newPassword by remember { mutableStateOf("") }
@@ -141,6 +146,12 @@ fun ChangePasswordScreen(
             }
         }
 
-        WhyNotBottomBar()
+        WhyNotBottomBar(
+            onHomeClick = onHomeClick,
+            onWishlistsClick = onWishlistsClick,
+            onAddClick = onAddClick,
+            onPurchasesClick = onPurchasesClick,
+            onProfileClick = onProfileClick
+        )
     }
 }
