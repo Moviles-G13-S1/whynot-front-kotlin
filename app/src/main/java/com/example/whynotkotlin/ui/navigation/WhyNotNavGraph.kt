@@ -104,21 +104,36 @@ fun WhyNotNavigation() {
         composable(WhyNotRoutes.HOME) {
             HomeScreen(
                 onHomeClick = {},
+
                 onWishlistsClick = {
                     navController.navigateMain(
                         WhyNotRoutes.WISHLISTS
                     )
                 },
+
+                onWishlistClick = { wishlistName ->
+                    selectedWishlist = WishlistUi(
+                        name = wishlistName,
+                        itemCount = 6
+                    )
+
+                    navController.navigate(
+                        WhyNotRoutes.WISHLIST_DETAIL
+                    )
+                },
+
                 onAddClick = {
                     navController.navigateMain(
                         WhyNotRoutes.ADD
                     )
                 },
+
                 onPurchasesClick = {
                     navController.navigateMain(
                         WhyNotRoutes.PURCHASES
                     )
                 },
+
                 onProfileClick = {
                     navController.navigateMain(
                         WhyNotRoutes.PROFILE
@@ -517,11 +532,10 @@ private fun NavHostController.navigateMain(
     route: String
 ) {
     navigate(route) {
-        launchSingleTop = true
-        restoreState = true
-
         popUpTo(WhyNotRoutes.HOME) {
-            saveState = true
+            inclusive = false
         }
+
+        launchSingleTop = true
     }
 }
