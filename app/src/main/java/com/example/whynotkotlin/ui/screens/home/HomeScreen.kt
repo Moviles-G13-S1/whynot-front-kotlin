@@ -35,6 +35,7 @@ import com.example.whynotkotlin.ui.theme.WhyNotGray
 fun HomeScreen(
     onHomeClick: () -> Unit = {},
     onWishlistsClick: () -> Unit,
+    onWishlistClick: (String) -> Unit,
     onAddClick: () -> Unit,
     onPurchasesClick: () -> Unit,
     onProfileClick: () -> Unit
@@ -109,16 +110,25 @@ fun HomeScreen(
                 ) {
                     WishlistPreview(
                         label = "Beauty",
+                        onClick = {
+                            onWishlistClick("Beauty")
+                        },
                         modifier = Modifier.weight(1f)
                     )
 
                     WishlistPreview(
                         label = "Clothes",
+                        onClick = {
+                            onWishlistClick("Clothes")
+                        },
                         modifier = Modifier.weight(1f)
                     )
 
                     WishlistPreview(
                         label = "Tech",
+                        onClick = {
+                            onWishlistClick("Tech")
+                        },
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -220,10 +230,12 @@ private fun SearchBar() {
 @Composable
 private fun WishlistPreview(
     label: String,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier,
+        modifier = modifier
+            .clickable { onClick() },
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         PlaceholderImage(
