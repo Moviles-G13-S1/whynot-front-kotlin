@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -65,9 +66,10 @@ fun NewWishlistScreen(
         Column(
             modifier = Modifier
                 .weight(1f)
+                .statusBarsPadding()
                 .padding(horizontal = 22.dp)
         ) {
-            Spacer(modifier = Modifier.height(34.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             Text(
                 text = "New Wishlist",
@@ -177,7 +179,10 @@ private fun CategoryDropdownField(
 
             DropdownMenu(
                 expanded = expanded,
-                onDismissRequest = { expanded = false }
+                onDismissRequest = { expanded = false },
+                containerColor = WhyNotWhite,
+                shape = RoundedCornerShape(10.dp),
+                border = BorderStroke(1.dp, WhyNotBorder)
             ) {
                 wishlistCategories.forEach { option ->
                     DropdownMenuItem(
