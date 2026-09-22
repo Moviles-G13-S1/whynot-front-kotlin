@@ -16,9 +16,11 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
 
+        val dependencies = (application as WhyNotApplication).dependencies
+
         setContent {
             WhynotkotlinTheme {
-                WhyNotNavigation()
+                WhyNotNavigation(dependencies = dependencies)
             }
         }
     }

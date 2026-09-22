@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "755619451989",
+    "project_id": "whynot-f4ae6",
+    "storage_bucket": "whynot-f4ae6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:755619451989:android:a68cc7c1c81f2f5f4830dc",
+        "android_client_info": {
+          "package_name": "com.example.whynotkotlin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBwxoRi4HRKPKQXEqfsLhnzmPpDw7DS-KA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -24,14 +24,32 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.whynotkotlin.features.profile.domain.Genders
+import com.example.whynotkotlin.features.wishlists.domain.CanonicalCategories
 import com.example.whynotkotlin.ui.components.WhyNotButton
+import com.example.whynotkotlin.ui.components.WhyNotDropdownField
+import com.example.whynotkotlin.ui.components.WhyNotErrorBanner
 import com.example.whynotkotlin.ui.components.WhyNotTextField
 import com.example.whynotkotlin.ui.theme.WhyNotBeige
 import com.example.whynotkotlin.ui.theme.WhyNotGray
 
+/**
+ * Gender and preferred category are selects, not free text: the Security Rules
+ * accept only the three gender values and a `preferredCategoryId` that
+ * references a seeded category, so typed input would fail on submit.
+ */
 @Composable
 fun RegisterScreen(
-    onCreateAccountClick: () -> Unit,
+    submitting: Boolean,
+    errorMessage: String?,
+    onSubmit: (
+        name: String,
+        email: String,
+        password: String,
+        gender: String,
+        age: String,
+        preferredCategoryId: String
+    ) -> Unit,
     onBackToLoginClick: () -> Unit
 ) {
     var name by remember { mutableStateOf("") }
@@ -39,7 +57,7 @@ fun RegisterScreen(
     var gender by remember { mutableStateOf("") }
     var age by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var category by remember { mutableStateOf("") }
+    var categoryId by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -78,8 +96,16 @@ fun RegisterScreen(
         ) {
             WhyNotTextField(name, { name = it }, "Name")
             WhyNotTextField(email, { email = it }, "Email")
-            WhyNotTextField(gender, { gender = it }, "Gender")
-            WhyNotTextField(age, { age = it }, "Age")
+
+            WhyNotDropdownField(
+                label = "Gender",
+                selectedValue = gender,
+                options = Genders.all.map { it to it },
+                onValueChange = { gender = it },
+                placeholder = "Select"
+            )
+
+            WhyNotTextField(age, { age = it }, "Age", placeholder = "18")
 
             WhyNotTextField(
                 value = password,
@@ -88,18 +114,25 @@ fun RegisterScreen(
                 visualTransformation = PasswordVisualTransformation()
             )
 
-            WhyNotTextField(
-                value = category,
-                onValueChange = { category = it },
-                label = "Preferred Category"
+            WhyNotDropdownField(
+                label = "Preferred Category",
+                selectedValue = categoryId,
+                options = CanonicalCategories.all.map { it.id to it.name },
+                onValueChange = { categoryId = it },
+                placeholder = "Select"
             )
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(16.dp))
+
+        WhyNotErrorBanner(message = errorMessage)
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         WhyNotButton(
-            text = "Create an account",
-            onClick = onCreateAccountClick
+            text = if (submitting) "Creating..." else "Create an account",
+            onClick = { onSubmit(name, email, password, gender, age, categoryId) },
+            enabled = !submitting
         )
 
         TextButton(onClick = onBackToLoginClick) {
