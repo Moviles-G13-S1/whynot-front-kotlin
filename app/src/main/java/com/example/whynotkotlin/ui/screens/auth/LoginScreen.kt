@@ -8,7 +8,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -24,6 +26,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.whynotkotlin.ui.components.WhyNotButton
+import com.example.whynotkotlin.ui.components.WhyNotErrorBanner
 import com.example.whynotkotlin.ui.components.WhyNotTextField
 import com.example.whynotkotlin.ui.theme.WhyNotBeige
 import com.example.whynotkotlin.ui.theme.WhyNotBorder
@@ -31,7 +34,9 @@ import com.example.whynotkotlin.ui.theme.WhyNotGray
 
 @Composable
 fun LoginScreen(
-    onLoginClick: () -> Unit,
+    submitting: Boolean,
+    errorMessage: String?,
+    onSubmit: (email: String, password: String) -> Unit,
     onCreateAccountClick: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
@@ -40,10 +45,11 @@ fun LoginScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 30.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(modifier = Modifier.height(190.dp))
+        Spacer(modifier = Modifier.height(150.dp))
 
         Text(
             text = "W H Y N O T",
@@ -87,12 +93,17 @@ fun LoginScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(22.dp))
+        Spacer(modifier = Modifier.height(16.dp))
+
+        WhyNotErrorBanner(message = errorMessage)
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         WhyNotButton(
-            text = "Log in",
-            onClick = onLoginClick,
-            filled = false
+            text = if (submitting) "Signing in..." else "Log in",
+            onClick = { onSubmit(email, password) },
+            filled = false,
+            enabled = !submitting
         )
 
         Spacer(modifier = Modifier.height(36.dp))

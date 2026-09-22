@@ -1,14 +1,21 @@
 package com.example.whynotkotlin.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.whynotkotlin.core.di.AppDependencies
+import com.example.whynotkotlin.core.di.WhyNotViewModelFactory
+import com.example.whynotkotlin.features.authentication.application.AuthViewModel
+import com.example.whynotkotlin.features.products.application.ProductViewModel
+import com.example.whynotkotlin.features.profile.domain.UserProfileDraft
+import com.example.whynotkotlin.features.wishlists.application.WishlistViewModel
+import com.example.whynotkotlin.ui.components.WhyNotLoading
 import com.example.whynotkotlin.ui.screens.auth.LoginScreen
 import com.example.whynotkotlin.ui.screens.auth.RegisterScreen
 import com.example.whynotkotlin.ui.screens.home.HomeScreen
@@ -20,9 +27,7 @@ import com.example.whynotkotlin.ui.screens.profile.EditProfileScreen
 import com.example.whynotkotlin.ui.screens.profile.ProfileScreen
 import com.example.whynotkotlin.ui.screens.purchases.PurchasesScreen
 import com.example.whynotkotlin.ui.screens.wishlists.NewWishlistScreen
-import com.example.whynotkotlin.ui.screens.wishlists.ProductUi
 import com.example.whynotkotlin.ui.screens.wishlists.WishlistDetailScreen
-import com.example.whynotkotlin.ui.screens.wishlists.WishlistUi
 import com.example.whynotkotlin.ui.screens.wishlists.WishlistsScreen
 
 object WhyNotRoutes {
@@ -45,487 +50,296 @@ object WhyNotRoutes {
 }
 
 @Composable
-fun WhyNotNavigation() {
+fun WhyNotNavigation(dependencies: AppDependencies) {
     val navController = rememberNavController()
+    val factory = WhyNotViewModelFactory(dependencies)
 
-    var selectedWishlist by remember {
-        mutableStateOf(WishlistUi("Wishlist Category", 0))
+    // Created here so every destination shares one instance of each, which also
+    // means one Firestore listener per collection rather than one per screen.
+    val authViewModel: AuthViewModel = viewModel(factory = factory)
+    val wishlistViewModel: WishlistViewModel = viewModel(factory = factory)
+    val productViewModel: ProductViewModel = viewModel(factory = factory)
+
+    val authState by authViewModel.state.collectAsStateWithLifecycle()
+    val wishlistState by wishlistViewModel.state.collectAsStateWithLifecycle()
+    val productState by productViewModel.state.collectAsStateWithLifecycle()
+
+    if (authState.checkingSession) {
+        // Firebase restores a persisted session asynchronously. Rendering the
+        // login screen first would flash it for a user who is already signed in.
+        WhyNotLoading()
+        return
     }
 
-    var selectedProduct by remember {
-        mutableStateOf(ProductUi("Product name", "\$100"))
+    val startDestination = if (authState.session == null) {
+        WhyNotRoutes.LOGIN
+    } else {
+        WhyNotRoutes.HOME
     }
 
     NavHost(
         navController = navController,
-        startDestination = WhyNotRoutes.LOGIN
+        startDestination = startDestination
     ) {
 
         composable(WhyNotRoutes.LOGIN) {
+            ClearErrorOnEnter(authViewModel::clearError)
+
             LoginScreen(
-                onLoginClick = {
-                    navController.navigate(
-                        WhyNotRoutes.HOME
-                    ) {
-                        popUpTo(
-                            WhyNotRoutes.LOGIN
-                        ) {
-                            inclusive = true
+                submitting = authState.submitting,
+                errorMessage = authState.errorMessage,
+                onSubmit = { email, password ->
+                    authViewModel.signIn(email, password) {
+                        navController.navigate(WhyNotRoutes.HOME) {
+                            popUpTo(WhyNotRoutes.LOGIN) { inclusive = true }
                         }
                     }
                 },
                 onCreateAccountClick = {
-                    navController.navigate(
-                        WhyNotRoutes.REGISTER
-                    )
+                    navController.navigate(WhyNotRoutes.REGISTER)
                 }
             )
         }
 
         composable(WhyNotRoutes.REGISTER) {
+            ClearErrorOnEnter(authViewModel::clearError)
+
             RegisterScreen(
-                onCreateAccountClick = {
-                    navController.navigate(
-                        WhyNotRoutes.HOME
+                submitting = authState.submitting,
+                errorMessage = authState.errorMessage,
+                onSubmit = { name, email, password, gender, age, categoryId ->
+                    authViewModel.signUp(
+                        email = email,
+                        password = password,
+                        draft = UserProfileDraft(
+                            name = name,
+                            gender = gender,
+                            age = age.trim().toIntOrNull() ?: 0,
+                            preferredCategoryId = categoryId
+                        )
                     ) {
-                        popUpTo(
-                            WhyNotRoutes.LOGIN
-                        ) {
-                            inclusive = true
+                        navController.navigate(WhyNotRoutes.HOME) {
+                            popUpTo(WhyNotRoutes.LOGIN) { inclusive = true }
                         }
                     }
                 },
-                onBackToLoginClick = {
-                    navController.popBackStack()
-                }
+                onBackToLoginClick = { navController.popBackStack() }
             )
         }
 
         composable(WhyNotRoutes.HOME) {
+            // Still on sample data. Wiring this to WishlistViewModel /
+            // ProductViewModel / ProfileViewModel belongs to the Home owner.
             HomeScreen(
                 onHomeClick = {},
-
-                onWishlistsClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.WISHLISTS
-                    )
-                },
-
-                onWishlistClick = { wishlistName ->
-                    selectedWishlist = WishlistUi(
-                        name = wishlistName,
-                        itemCount = 6
-                    )
-
-                    navController.navigate(
-                        WhyNotRoutes.WISHLIST_DETAIL
-                    )
-                },
-
-                onAddClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.ADD
-                    )
-                },
-
-                onPurchasesClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.PURCHASES
-                    )
-                },
-
-                onProfileClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.PROFILE
-                    )
-                }
+                onWishlistsClick = { navController.navigateMain(WhyNotRoutes.WISHLISTS) },
+                onWishlistClick = { navController.navigateMain(WhyNotRoutes.WISHLISTS) },
+                onAddClick = { navController.navigateMain(WhyNotRoutes.ADD) },
+                onPurchasesClick = { navController.navigateMain(WhyNotRoutes.PURCHASES) },
+                onProfileClick = { navController.navigateMain(WhyNotRoutes.PROFILE) }
             )
         }
 
         composable(WhyNotRoutes.WISHLISTS) {
             WishlistsScreen(
-                onWishlistClick = { wishlist ->
-                    selectedWishlist = wishlist
-                    navController.navigate(
-                        WhyNotRoutes.WISHLIST_DETAIL
-                    )
+                state = wishlistState,
+                onWishlistClick = { wishlistId ->
+                    wishlistViewModel.selectWishlist(wishlistId)
+                    navController.navigate(WhyNotRoutes.WISHLIST_DETAIL)
                 },
                 onNewWishlistClick = {
-                    navController.navigate(
-                        WhyNotRoutes.NEW_WISHLIST
-                    )
+                    wishlistViewModel.clearError()
+                    navController.navigate(WhyNotRoutes.NEW_WISHLIST)
                 },
-
-                onHomeClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.HOME
-                    )
-                },
+                onHomeClick = { navController.navigateMain(WhyNotRoutes.HOME) },
                 onWishlistsClick = {},
-                onAddClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.ADD
-                    )
-                },
-                onPurchasesClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.PURCHASES
-                    )
-                },
-                onProfileClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.PROFILE
-                    )
-                }
+                onAddClick = { navController.navigateMain(WhyNotRoutes.ADD) },
+                onPurchasesClick = { navController.navigateMain(WhyNotRoutes.PURCHASES) },
+                onProfileClick = { navController.navigateMain(WhyNotRoutes.PROFILE) }
             )
         }
 
         composable(WhyNotRoutes.NEW_WISHLIST) {
             NewWishlistScreen(
-                onCancelClick = {
-                    navController.popBackStack()
+                state = wishlistState,
+                onSave = { categoryId, imageUrl ->
+                    wishlistViewModel.createWishlist(categoryId, imageUrl) {
+                        navController.popBackStack()
+                    }
                 },
-                onSaveClick = {
-                    navController.popBackStack()
-                },
-
-                onHomeClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.HOME
-                    )
-                },
-                onWishlistsClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.WISHLISTS
-                    )
-                },
-                onAddClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.ADD
-                    )
-                },
-                onPurchasesClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.PURCHASES
-                    )
-                },
-                onProfileClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.PROFILE
-                    )
-                }
+                onCancelClick = { navController.popBackStack() },
+                onHomeClick = { navController.navigateMain(WhyNotRoutes.HOME) },
+                onWishlistsClick = { navController.navigateMain(WhyNotRoutes.WISHLISTS) },
+                onAddClick = { navController.navigateMain(WhyNotRoutes.ADD) },
+                onPurchasesClick = { navController.navigateMain(WhyNotRoutes.PURCHASES) },
+                onProfileClick = { navController.navigateMain(WhyNotRoutes.PROFILE) }
             )
         }
 
         composable(WhyNotRoutes.WISHLIST_DETAIL) {
             WishlistDetailScreen(
-                wishlistName = selectedWishlist.name,
-                onProductClick = { product ->
-                    selectedProduct = product
-                    navController.navigate(
-                        WhyNotRoutes.PRODUCT_DETAIL
-                    )
+                wishlistName = wishlistState.selected?.categoryName ?: "Wishlist",
+                products = wishlistState.selectedWishlistId
+                    ?.let { productState.forWishlist(it) }
+                    .orEmpty(),
+                errorMessage = productState.errorMessage,
+                onProductClick = { productId ->
+                    productViewModel.selectProduct(productId)
+                    navController.navigate(WhyNotRoutes.PRODUCT_DETAIL)
                 },
                 onAddItemClick = {
-                    navController.navigate(
-                        WhyNotRoutes.NEW_PRODUCT
-                    )
+                    productViewModel.clearError()
+                    navController.navigate(WhyNotRoutes.NEW_PRODUCT)
                 },
-
-                onHomeClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.HOME
-                    )
-                },
-                onWishlistsClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.WISHLISTS
-                    )
-                },
-                onAddClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.ADD
-                    )
-                },
-                onPurchasesClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.PURCHASES
-                    )
-                },
-                onProfileClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.PROFILE
-                    )
-                }
+                onHomeClick = { navController.navigateMain(WhyNotRoutes.HOME) },
+                onWishlistsClick = { navController.navigateMain(WhyNotRoutes.WISHLISTS) },
+                onAddClick = { navController.navigateMain(WhyNotRoutes.ADD) },
+                onPurchasesClick = { navController.navigateMain(WhyNotRoutes.PURCHASES) },
+                onProfileClick = { navController.navigateMain(WhyNotRoutes.PROFILE) }
             )
         }
 
         composable(WhyNotRoutes.PRODUCT_DETAIL) {
             ProductDetailScreen(
-                productName = selectedProduct.name,
-                price = selectedProduct.price,
-                originalPrice = selectedProduct.originalPrice,
-
-                onHomeClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.HOME
-                    )
+                product = productState.selected,
+                errorMessage = productState.errorMessage,
+                onTogglePurchased = {
+                    productState.selected?.let(productViewModel::togglePurchased)
                 },
-                onWishlistsClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.WISHLISTS
-                    )
+                onDeleteClick = {
+                    productState.selected?.let { product ->
+                        productViewModel.deleteProduct(product.id) {
+                            navController.popBackStack()
+                        }
+                    }
                 },
-                onAddClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.ADD
-                    )
-                },
-                onPurchasesClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.PURCHASES
-                    )
-                },
-                onProfileClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.PROFILE
-                    )
-                }
+                onHomeClick = { navController.navigateMain(WhyNotRoutes.HOME) },
+                onWishlistsClick = { navController.navigateMain(WhyNotRoutes.WISHLISTS) },
+                onAddClick = { navController.navigateMain(WhyNotRoutes.ADD) },
+                onPurchasesClick = { navController.navigateMain(WhyNotRoutes.PURCHASES) },
+                onProfileClick = { navController.navigateMain(WhyNotRoutes.PROFILE) }
             )
         }
 
         composable(WhyNotRoutes.ADD) {
             AddProductScreen(
+                onContinueWithLink = { link ->
+                    productViewModel.setPendingProductUrl(link)
+                    navController.navigate(WhyNotRoutes.NEW_PRODUCT)
+                },
                 onAddManuallyClick = {
-                    navController.navigate(
-                        WhyNotRoutes.NEW_PRODUCT
-                    )
+                    productViewModel.setPendingProductUrl("")
+                    navController.navigate(WhyNotRoutes.NEW_PRODUCT)
                 },
-                onSaveItemClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.WISHLISTS
-                    )
-                },
-
-                onHomeClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.HOME
-                    )
-                },
-                onWishlistsClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.WISHLISTS
-                    )
-                },
+                onHomeClick = { navController.navigateMain(WhyNotRoutes.HOME) },
+                onWishlistsClick = { navController.navigateMain(WhyNotRoutes.WISHLISTS) },
                 onAddClick = {},
-                onPurchasesClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.PURCHASES
-                    )
-                },
-                onProfileClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.PROFILE
-                    )
-                }
+                onPurchasesClick = { navController.navigateMain(WhyNotRoutes.PURCHASES) },
+                onProfileClick = { navController.navigateMain(WhyNotRoutes.PROFILE) }
             )
         }
 
         composable(WhyNotRoutes.NEW_PRODUCT) {
             NewProductScreen(
-                onSaveItemClick = {
-                    navController.popBackStack()
+                wishlists = wishlistState.summaries,
+                prefilledProductUrl = productState.pendingProductUrl,
+                saving = productState.saving,
+                errorMessage = productState.errorMessage,
+                onSave = { wishlistId, name, brand, price, imageUrl, productUrl ->
+                    productViewModel.createProduct(
+                        wishlistId = wishlistId,
+                        name = name,
+                        brand = brand,
+                        price = price,
+                        imageUrl = imageUrl,
+                        productUrl = productUrl
+                    ) {
+                        navController.popBackStack()
+                    }
                 },
-
-                onHomeClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.HOME
-                    )
-                },
-                onWishlistsClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.WISHLISTS
-                    )
-                },
-                onAddClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.ADD
-                    )
-                },
-                onPurchasesClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.PURCHASES
-                    )
-                },
-                onProfileClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.PROFILE
-                    )
-                }
+                onHomeClick = { navController.navigateMain(WhyNotRoutes.HOME) },
+                onWishlistsClick = { navController.navigateMain(WhyNotRoutes.WISHLISTS) },
+                onAddClick = { navController.navigateMain(WhyNotRoutes.ADD) },
+                onPurchasesClick = { navController.navigateMain(WhyNotRoutes.PURCHASES) },
+                onProfileClick = { navController.navigateMain(WhyNotRoutes.PROFILE) }
             )
         }
 
         composable(WhyNotRoutes.PURCHASES) {
+            // Still on sample data. The purchased products are already available
+            // through ProductViewModel.state.purchased.
             PurchasesScreen(
-                onHomeClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.HOME
-                    )
-                },
-                onWishlistsClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.WISHLISTS
-                    )
-                },
-                onAddClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.ADD
-                    )
-                },
+                onHomeClick = { navController.navigateMain(WhyNotRoutes.HOME) },
+                onWishlistsClick = { navController.navigateMain(WhyNotRoutes.WISHLISTS) },
+                onAddClick = { navController.navigateMain(WhyNotRoutes.ADD) },
                 onPurchasesClick = {},
-                onProfileClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.PROFILE
-                    )
-                }
+                onProfileClick = { navController.navigateMain(WhyNotRoutes.PROFILE) }
             )
         }
 
         composable(WhyNotRoutes.PROFILE) {
+            // Still on sample data. ProfileViewModel already exposes the real
+            // users/{uid} document; only sign-out is wired here because it
+            // belongs to the session.
             ProfileScreen(
                 onEditProfileClick = {
-                    navController.navigate(
-                        WhyNotRoutes.EDIT_PROFILE
-                    )
+                    navController.navigate(WhyNotRoutes.EDIT_PROFILE)
                 },
                 onChangePasswordClick = {
-                    navController.navigate(
-                        WhyNotRoutes.CHANGE_PASSWORD
-                    )
+                    navController.navigate(WhyNotRoutes.CHANGE_PASSWORD)
                 },
                 onLogoutClick = {
-                    navController.navigate(
-                        WhyNotRoutes.LOGIN
-                    ) {
-                        popUpTo(
-                            WhyNotRoutes.HOME
-                        ) {
-                            inclusive = true
+                    authViewModel.signOut {
+                        navController.navigate(WhyNotRoutes.LOGIN) {
+                            popUpTo(WhyNotRoutes.HOME) { inclusive = true }
                         }
                     }
                 },
-
-                onHomeClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.HOME
-                    )
-                },
-                onWishlistsClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.WISHLISTS
-                    )
-                },
-                onAddClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.ADD
-                    )
-                },
-                onPurchasesClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.PURCHASES
-                    )
-                },
+                onHomeClick = { navController.navigateMain(WhyNotRoutes.HOME) },
+                onWishlistsClick = { navController.navigateMain(WhyNotRoutes.WISHLISTS) },
+                onAddClick = { navController.navigateMain(WhyNotRoutes.ADD) },
+                onPurchasesClick = { navController.navigateMain(WhyNotRoutes.PURCHASES) },
                 onProfileClick = {}
             )
         }
 
-        composable(
-            WhyNotRoutes.EDIT_PROFILE
-        ) {
+        composable(WhyNotRoutes.EDIT_PROFILE) {
+            // Still on sample data. ProfileViewModel.updateProfile() already
+            // performs the real write.
             EditProfileScreen(
-                onBackClick = {
-                    navController.popBackStack()
-                },
-                onSaveChangesClick = {
-                    navController.popBackStack()
-                },
+                onBackClick = { navController.popBackStack() },
+                onSaveChangesClick = { navController.popBackStack() },
                 onChangePasswordClick = {
-                    navController.navigate(
-                        WhyNotRoutes.CHANGE_PASSWORD
-                    )
+                    navController.navigate(WhyNotRoutes.CHANGE_PASSWORD)
                 },
-
-                onHomeClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.HOME
-                    )
-                },
-                onWishlistsClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.WISHLISTS
-                    )
-                },
-                onAddClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.ADD
-                    )
-                },
-                onPurchasesClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.PURCHASES
-                    )
-                },
-                onProfileClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.PROFILE
-                    )
-                }
+                onHomeClick = { navController.navigateMain(WhyNotRoutes.HOME) },
+                onWishlistsClick = { navController.navigateMain(WhyNotRoutes.WISHLISTS) },
+                onAddClick = { navController.navigateMain(WhyNotRoutes.ADD) },
+                onPurchasesClick = { navController.navigateMain(WhyNotRoutes.PURCHASES) },
+                onProfileClick = { navController.navigateMain(WhyNotRoutes.PROFILE) }
             )
         }
 
-        composable(
-            WhyNotRoutes.CHANGE_PASSWORD
-        ) {
+        composable(WhyNotRoutes.CHANGE_PASSWORD) {
+            // Still on sample data. AuthViewModel.changePassword() already
+            // reauthenticates and updates the real credential.
             ChangePasswordScreen(
-                onBackClick = {
-                    navController.popBackStack()
-                },
-
-                onUpdatePasswordClick = {
-                    navController.popBackStack(
-                        WhyNotRoutes.PROFILE,
-                        inclusive = false
-                    )
-                },
-
-                onHomeClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.HOME
-                    )
-                },
-                onWishlistsClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.WISHLISTS
-                    )
-                },
-                onAddClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.ADD
-                    )
-                },
-                onPurchasesClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.PURCHASES
-                    )
-                },
-                onProfileClick = {
-                    navController.navigateMain(
-                        WhyNotRoutes.PROFILE
-                    )
-                }
+                onBackClick = { navController.popBackStack() },
+                onUpdatePasswordClick = { navController.popBackStack() },
+                onHomeClick = { navController.navigateMain(WhyNotRoutes.HOME) },
+                onWishlistsClick = { navController.navigateMain(WhyNotRoutes.WISHLISTS) },
+                onAddClick = { navController.navigateMain(WhyNotRoutes.ADD) },
+                onPurchasesClick = { navController.navigateMain(WhyNotRoutes.PURCHASES) },
+                onProfileClick = { navController.navigateMain(WhyNotRoutes.PROFILE) }
             )
         }
     }
+}
+
+/** Drops a stale message so a screen never opens showing the previous failure. */
+@Composable
+private fun ClearErrorOnEnter(clear: () -> Unit) {
+    LaunchedEffect(Unit) { clear() }
 }
 
 private fun NavHostController.navigateMain(

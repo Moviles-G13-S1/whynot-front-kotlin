@@ -12,8 +12,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
@@ -30,7 +30,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
-import com.example.whynotkotlin.ui.components.CategoryChip
 import com.example.whynotkotlin.ui.components.WhyNotBottomBar
 import com.example.whynotkotlin.ui.components.WhyNotButton
 import com.example.whynotkotlin.ui.theme.WhyNotBlack
@@ -38,16 +37,17 @@ import com.example.whynotkotlin.ui.theme.WhyNotBorder
 import com.example.whynotkotlin.ui.theme.WhyNotGray
 import com.example.whynotkotlin.ui.theme.WhyNotWhite
 
-private val productWishlists = listOf(
-    "Beauty",
-    "Clothes",
-    "Tech"
-)
-
+/**
+ * The Add tab.
+ *
+ * Saving from a link alone is not possible yet: the contract requires a name,
+ * brand and price, and no backend scrapes product pages. Continuing therefore
+ * carries the link into the manual form instead of writing a product here.
+ */
 @Composable
 fun AddProductScreen(
+    onContinueWithLink: (String) -> Unit,
     onAddManuallyClick: () -> Unit,
-    onSaveItemClick: () -> Unit,
     onHomeClick: () -> Unit = {},
     onWishlistsClick: () -> Unit = {},
     onAddClick: () -> Unit = {},
@@ -55,7 +55,6 @@ fun AddProductScreen(
     onProfileClick: () -> Unit = {}
 ) {
     var link by remember { mutableStateOf("") }
-    var selectedWishlist by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -88,6 +87,15 @@ fun AddProductScreen(
                 onValueChange = { link = it }
             )
 
+            Spacer(modifier = Modifier.height(14.dp))
+
+            WhyNotButton(
+                text = "Continue",
+                onClick = { onContinueWithLink(link) },
+                filled = true,
+                enabled = link.isNotBlank()
+            )
+
             Spacer(modifier = Modifier.height(20.dp))
 
             Text(
@@ -101,40 +109,6 @@ fun AddProductScreen(
             WhyNotButton(
                 text = "Add manually",
                 onClick = onAddManuallyClick
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            Text(
-                text = "Save to:",
-                style = MaterialTheme.typography.bodyLarge,
-                color = WhyNotGray
-            )
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                productWishlists.forEach { wishlist ->
-                    CategoryChip(
-                        text = wishlist,
-                        selected = selectedWishlist == wishlist,
-                        onClick = {
-                            selectedWishlist = if (selectedWishlist == wishlist) "" else wishlist
-                        }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            WhyNotButton(
-                text = "Save Item",
-                onClick = onSaveItemClick,
-                filled = true,
-                enabled = link.isNotBlank() && selectedWishlist.isNotBlank()
             )
         }
 
