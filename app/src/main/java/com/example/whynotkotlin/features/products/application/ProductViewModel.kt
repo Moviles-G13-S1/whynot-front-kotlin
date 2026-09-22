@@ -142,12 +142,18 @@ class ProductViewModel(
         }
     }
 
-    fun togglePurchased(product: Product) {
+    /**
+     * Purchasing is one-way on the backend, so an already purchased product is
+     * ignored here instead of sending a write the rules would reject.
+     */
+    fun markPurchased(product: Product) {
+        if (product.purchased) return
+
         _state.value = _state.value.copy(errorMessage = null)
 
         viewModelScope.launch {
             runCatching {
-                productRepository.setPurchased(product.id, !product.purchased)
+                productRepository.markPurchased(product.id)
             }.onFailure { error ->
                 _state.value = _state.value.copy(errorMessage = error.readableMessage())
             }

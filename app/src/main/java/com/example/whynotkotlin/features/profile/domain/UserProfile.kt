@@ -7,6 +7,10 @@ import java.util.Date
  *
  * `email` is immutable and must equal the authenticated email, so it is not
  * part of [UserProfileUpdate].
+ *
+ * [cityId] is empty for profiles created before the backend added the city
+ * catalog. The rules require it on create but not on update, so older profiles
+ * stay readable and can add it later.
  */
 data class UserProfile(
     val uid: String,
@@ -15,6 +19,7 @@ data class UserProfile(
     val gender: String,
     val age: Int,
     val preferredCategoryId: String,
+    val cityId: String,
     val createdAt: Date?,
     val updatedAt: Date?
 )
@@ -24,7 +29,8 @@ data class UserProfileDraft(
     val name: String,
     val gender: String,
     val age: Int,
-    val preferredCategoryId: String
+    val preferredCategoryId: String,
+    val cityId: String
 )
 
 /** The only fields the rules allow a client to change. */
@@ -32,7 +38,8 @@ data class UserProfileUpdate(
     val name: String? = null,
     val gender: String? = null,
     val age: Int? = null,
-    val preferredCategoryId: String? = null
+    val preferredCategoryId: String? = null,
+    val cityId: String? = null
 )
 
 /**

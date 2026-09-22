@@ -142,6 +142,7 @@ class AuthViewModel(
         draft.gender.isBlank() -> "Select a gender"
         draft.age <= 0 -> "Enter a valid age"
         draft.preferredCategoryId.isBlank() -> "Select a preferred category"
+        draft.cityId.isBlank() -> "Select a city"
         else -> null
     }
 

@@ -20,7 +20,14 @@ interface ProductRepository {
 
     suspend fun updateProduct(productId: String, update: ProductUpdate)
 
-    suspend fun setPurchased(productId: String, purchased: Boolean)
+    /**
+     * Marks a saved product as purchased, stamping `purchasedAt` with the
+     * server time.
+     *
+     * Purchasing is one-way: the rules reject going back to saved, so there is
+     * no counterpart. Deleting the product is the only way to undo it.
+     */
+    suspend fun markPurchased(productId: String)
 
     suspend fun deleteProduct(productId: String)
 }

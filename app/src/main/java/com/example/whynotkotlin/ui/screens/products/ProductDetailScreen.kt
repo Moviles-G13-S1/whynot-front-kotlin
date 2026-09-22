@@ -33,7 +33,7 @@ import com.example.whynotkotlin.ui.theme.WhyNotGray
 fun ProductDetailScreen(
     product: Product?,
     errorMessage: String?,
-    onTogglePurchased: () -> Unit,
+    onMarkPurchased: () -> Unit,
     onDeleteClick: () -> Unit,
     onHomeClick: () -> Unit = {},
     onWishlistsClick: () -> Unit = {},
@@ -70,10 +70,13 @@ fun ProductDetailScreen(
                         modifier = Modifier.weight(1f)
                     )
 
+                    // Purchasing is one-way on the backend, so the chip turns
+                    // into a static badge once it is set.
                     CategoryChip(
-                        text = "Purchased",
+                        text = if (product.purchased) "Purchased" else "Mark purchased",
                         selected = product.purchased,
-                        onClick = onTogglePurchased
+                        enabled = !product.purchased,
+                        onClick = onMarkPurchased
                     )
                 }
 
