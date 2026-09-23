@@ -36,6 +36,7 @@ import com.example.whynotkotlin.ui.screens.wishlists.WishlistDetailScreen
 import com.example.whynotkotlin.ui.screens.wishlists.WishlistsScreen
 
 object WhyNotRoutes {
+
     const val LOGIN = "login"
     const val REGISTER = "register"
 
@@ -45,21 +46,29 @@ object WhyNotRoutes {
     const val PURCHASES = "purchases"
     const val PROFILE = "profile"
 
-    const val EDIT_PROFILE = "edit_profile"
-    const val CHANGE_PASSWORD = "change_password"
+    const val EDIT_PROFILE =
+        "edit_profile"
 
-    const val NEW_WISHLIST = "new_wishlist"
-    const val WISHLIST_DETAIL = "wishlist_detail"
-    const val NEW_PRODUCT = "new_product"
-    const val PRODUCT_DETAIL = "product_detail"
+    const val CHANGE_PASSWORD =
+        "change_password"
+
+    const val NEW_WISHLIST =
+        "new_wishlist"
+
+    const val WISHLIST_DETAIL =
+        "wishlist_detail"
+
+    const val NEW_PRODUCT =
+        "new_product"
+
+    const val PRODUCT_DETAIL =
+        "product_detail"
 
     /*
-     * Admin navigation graph.
-     *
-     * Martin will later add the route guard that verifies
-     * the Firebase admin claim before entering this graph.
+     * Admin module.
      */
-    const val ADMIN_ROOT = "admin"
+    const val ADMIN_ROOT =
+        "admin"
 
     const val ADMIN_SAVED_PRODUCTS =
         "admin_saved_products"
@@ -72,33 +81,51 @@ object WhyNotRoutes {
 fun WhyNotNavigation(
     dependencies: AppDependencies
 ) {
-    val navController = rememberNavController()
+    val navController =
+        rememberNavController()
+
     val factory =
-        WhyNotViewModelFactory(dependencies)
+        WhyNotViewModelFactory(
+            dependencies
+        )
 
-    // Created here so every normal destination shares one instance
-    // of each ViewModel and therefore one Firestore listener.
-    val authViewModel: AuthViewModel =
-        viewModel(factory = factory)
+    val authViewModel:
+            AuthViewModel =
+        viewModel(
+            factory = factory
+        )
 
-    val wishlistViewModel: WishlistViewModel =
-        viewModel(factory = factory)
+    val wishlistViewModel:
+            WishlistViewModel =
+        viewModel(
+            factory = factory
+        )
 
-    val productViewModel: ProductViewModel =
-        viewModel(factory = factory)
+    val productViewModel:
+            ProductViewModel =
+        viewModel(
+            factory = factory
+        )
 
     val authState by
-    authViewModel.state
+    authViewModel
+        .state
         .collectAsStateWithLifecycle()
 
     val wishlistState by
-    wishlistViewModel.state
+    wishlistViewModel
+        .state
         .collectAsStateWithLifecycle()
 
     val productState by
-    productViewModel.state
+    productViewModel
+        .state
         .collectAsStateWithLifecycle()
 
+    /*
+     * Wait until Firebase Authentication has resolved the
+     * current session and its custom claims.
+     */
     if (authState.checkingSession) {
         WhyNotLoading()
         return
@@ -113,12 +140,20 @@ fun WhyNotNavigation(
 
     NavHost(
         navController = navController,
-        startDestination = startDestination
+        startDestination =
+            startDestination
     ) {
+
+        /*
+         * ---------------------------------------------------------
+         * AUTH
+         * ---------------------------------------------------------
+         */
 
         composable(
             WhyNotRoutes.LOGIN
         ) {
+
             ClearErrorOnEnter(
                 authViewModel::clearError
             )
@@ -130,15 +165,19 @@ fun WhyNotNavigation(
                 errorMessage =
                     authState.errorMessage,
 
-                onSubmit = { email, password ->
+                onSubmit = {
+                        email,
+                        password ->
 
                     authViewModel.signIn(
                         email,
                         password
                     ) {
+
                         navController.navigate(
                             WhyNotRoutes.HOME
                         ) {
+
                             popUpTo(
                                 WhyNotRoutes.LOGIN
                             ) {
@@ -149,6 +188,7 @@ fun WhyNotNavigation(
                 },
 
                 onCreateAccountClick = {
+
                     navController.navigate(
                         WhyNotRoutes.REGISTER
                     )
@@ -159,6 +199,7 @@ fun WhyNotNavigation(
         composable(
             WhyNotRoutes.REGISTER
         ) {
+
             ClearErrorOnEnter(
                 authViewModel::clearError
             )
@@ -182,21 +223,30 @@ fun WhyNotNavigation(
                     authViewModel.signUp(
                         email = email,
                         password = password,
-                        draft = UserProfileDraft(
-                            name = name,
-                            gender = gender,
-                            age =
-                                age.trim()
-                                    .toIntOrNull()
-                                    ?: 0,
-                            preferredCategoryId =
-                                categoryId,
-                            cityId = cityId
-                        )
+
+                        draft =
+                            UserProfileDraft(
+                                name = name,
+                                gender = gender,
+
+                                age =
+                                    age
+                                        .trim()
+                                        .toIntOrNull()
+                                        ?: 0,
+
+                                preferredCategoryId =
+                                    categoryId,
+
+                                cityId =
+                                    cityId
+                            )
                     ) {
+
                         navController.navigate(
                             WhyNotRoutes.HOME
                         ) {
+
                             popUpTo(
                                 WhyNotRoutes.LOGIN
                             ) {
@@ -207,44 +257,56 @@ fun WhyNotNavigation(
                 },
 
                 onBackToLoginClick = {
-                    navController.popBackStack()
+
+                    navController
+                        .popBackStack()
                 }
             )
         }
 
+        /*
+         * ---------------------------------------------------------
+         * HOME
+         * ---------------------------------------------------------
+         */
+
         composable(
             WhyNotRoutes.HOME
         ) {
-            // Nearby and Recommendations are integrated into Home
-            // once Miguel and Martin provide their remaining pieces.
+
             HomeScreen(
                 onHomeClick = {},
 
                 onWishlistsClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.WISHLISTS
                     )
                 },
 
                 onWishlistClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.WISHLISTS
                     )
                 },
 
                 onAddClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.ADD
                     )
                 },
 
                 onPurchasesClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.PURCHASES
                     )
                 },
 
                 onProfileClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.PROFILE
                     )
@@ -252,13 +314,22 @@ fun WhyNotNavigation(
             )
         }
 
+        /*
+         * ---------------------------------------------------------
+         * WISHLISTS
+         * ---------------------------------------------------------
+         */
+
         composable(
             WhyNotRoutes.WISHLISTS
         ) {
-            WishlistsScreen(
-                state = wishlistState,
 
-                onWishlistClick = { wishlistId ->
+            WishlistsScreen(
+                state =
+                    wishlistState,
+
+                onWishlistClick = {
+                        wishlistId ->
 
                     wishlistViewModel
                         .selectWishlist(
@@ -266,19 +337,24 @@ fun WhyNotNavigation(
                         )
 
                     navController.navigate(
-                        WhyNotRoutes.WISHLIST_DETAIL
+                        WhyNotRoutes
+                            .WISHLIST_DETAIL
                     )
                 },
 
                 onNewWishlistClick = {
-                    wishlistViewModel.clearError()
+
+                    wishlistViewModel
+                        .clearError()
 
                     navController.navigate(
-                        WhyNotRoutes.NEW_WISHLIST
+                        WhyNotRoutes
+                            .NEW_WISHLIST
                     )
                 },
 
                 onHomeClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.HOME
                     )
@@ -287,18 +363,21 @@ fun WhyNotNavigation(
                 onWishlistsClick = {},
 
                 onAddClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.ADD
                     )
                 },
 
                 onPurchasesClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.PURCHASES
                     )
                 },
 
                 onProfileClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.PROFILE
                     )
@@ -309,50 +388,62 @@ fun WhyNotNavigation(
         composable(
             WhyNotRoutes.NEW_WISHLIST
         ) {
+
             NewWishlistScreen(
-                state = wishlistState,
+                state =
+                    wishlistState,
 
                 onSave = {
                         categoryId,
                         imageUrl ->
 
-                    wishlistViewModel.createWishlist(
-                        categoryId,
-                        imageUrl
-                    ) {
-                        navController.popBackStack()
-                    }
+                    wishlistViewModel
+                        .createWishlist(
+                            categoryId,
+                            imageUrl
+                        ) {
+
+                            navController
+                                .popBackStack()
+                        }
                 },
 
                 onCancelClick = {
-                    navController.popBackStack()
+
+                    navController
+                        .popBackStack()
                 },
 
                 onHomeClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.HOME
                     )
                 },
 
                 onWishlistsClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.WISHLISTS
                     )
                 },
 
                 onAddClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.ADD
                     )
                 },
 
                 onPurchasesClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.PURCHASES
                     )
                 },
 
                 onProfileClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.PROFILE
                     )
@@ -363,9 +454,11 @@ fun WhyNotNavigation(
         composable(
             WhyNotRoutes.WISHLIST_DETAIL
         ) {
+
             WishlistDetailScreen(
                 wishlistName =
-                    wishlistState.selected
+                    wishlistState
+                        .selected
                         ?.categoryName
                         ?: "Wishlist",
 
@@ -379,9 +472,11 @@ fun WhyNotNavigation(
                         .orEmpty(),
 
                 errorMessage =
-                    productState.errorMessage,
+                    productState
+                        .errorMessage,
 
-                onProductClick = { productId ->
+                onProductClick = {
+                        productId ->
 
                     productViewModel
                         .selectProduct(
@@ -389,43 +484,52 @@ fun WhyNotNavigation(
                         )
 
                     navController.navigate(
-                        WhyNotRoutes.PRODUCT_DETAIL
+                        WhyNotRoutes
+                            .PRODUCT_DETAIL
                     )
                 },
 
                 onAddItemClick = {
-                    productViewModel.clearError()
+
+                    productViewModel
+                        .clearError()
 
                     navController.navigate(
-                        WhyNotRoutes.NEW_PRODUCT
+                        WhyNotRoutes
+                            .NEW_PRODUCT
                     )
                 },
 
                 onHomeClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.HOME
                     )
                 },
 
                 onWishlistsClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.WISHLISTS
                     )
                 },
 
                 onAddClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.ADD
                     )
                 },
 
                 onPurchasesClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.PURCHASES
                     )
                 },
 
                 onProfileClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.PROFILE
                     )
@@ -433,18 +537,28 @@ fun WhyNotNavigation(
             )
         }
 
+        /*
+         * ---------------------------------------------------------
+         * PRODUCTS
+         * ---------------------------------------------------------
+         */
+
         composable(
             WhyNotRoutes.PRODUCT_DETAIL
         ) {
+
             ProductDetailScreen(
                 product =
                     productState.selected,
 
                 errorMessage =
-                    productState.errorMessage,
+                    productState
+                        .errorMessage,
 
                 onMarkPurchased = {
-                    productState.selected
+
+                    productState
+                        .selected
                         ?.let(
                             productViewModel::
                             markPurchased
@@ -453,13 +567,16 @@ fun WhyNotNavigation(
 
                 onDeleteClick = {
 
-                    productState.selected
-                        ?.let { product ->
+                    productState
+                        .selected
+                        ?.let {
+                                product ->
 
                             productViewModel
                                 .deleteProduct(
                                     product.id
                                 ) {
+
                                     navController
                                         .popBackStack()
                                 }
@@ -467,30 +584,35 @@ fun WhyNotNavigation(
                 },
 
                 onHomeClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.HOME
                     )
                 },
 
                 onWishlistsClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.WISHLISTS
                     )
                 },
 
                 onAddClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.ADD
                     )
                 },
 
                 onPurchasesClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.PURCHASES
                     )
                 },
 
                 onProfileClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.PROFILE
                     )
@@ -501,8 +623,10 @@ fun WhyNotNavigation(
         composable(
             WhyNotRoutes.ADD
         ) {
+
             AddProductScreen(
-                onContinueWithLink = { link ->
+                onContinueWithLink = {
+                        link ->
 
                     productViewModel
                         .setPendingProductUrl(
@@ -510,7 +634,8 @@ fun WhyNotNavigation(
                         )
 
                     navController.navigate(
-                        WhyNotRoutes.NEW_PRODUCT
+                        WhyNotRoutes
+                            .NEW_PRODUCT
                     )
                 },
 
@@ -522,17 +647,20 @@ fun WhyNotNavigation(
                         )
 
                     navController.navigate(
-                        WhyNotRoutes.NEW_PRODUCT
+                        WhyNotRoutes
+                            .NEW_PRODUCT
                     )
                 },
 
                 onHomeClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.HOME
                     )
                 },
 
                 onWishlistsClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.WISHLISTS
                     )
@@ -541,12 +669,14 @@ fun WhyNotNavigation(
                 onAddClick = {},
 
                 onPurchasesClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.PURCHASES
                     )
                 },
 
                 onProfileClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.PROFILE
                     )
@@ -557,19 +687,23 @@ fun WhyNotNavigation(
         composable(
             WhyNotRoutes.NEW_PRODUCT
         ) {
+
             NewProductScreen(
                 wishlists =
-                    wishlistState.summaries,
+                    wishlistState
+                        .summaries,
 
                 prefilledProductUrl =
                     productState
                         .pendingProductUrl,
 
                 saving =
-                    productState.saving,
+                    productState
+                        .saving,
 
                 errorMessage =
-                    productState.errorMessage,
+                    productState
+                        .errorMessage,
 
                 onSave = {
                         wishlistId,
@@ -583,43 +717,58 @@ fun WhyNotNavigation(
                         .createProduct(
                             wishlistId =
                                 wishlistId,
-                            name = name,
-                            brand = brand,
-                            price = price,
-                            imageUrl = imageUrl,
+
+                            name =
+                                name,
+
+                            brand =
+                                brand,
+
+                            price =
+                                price,
+
+                            imageUrl =
+                                imageUrl,
+
                             productUrl =
                                 productUrl
                         ) {
+
                             navController
                                 .popBackStack()
                         }
                 },
 
                 onHomeClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.HOME
                     )
                 },
 
                 onWishlistsClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.WISHLISTS
                     )
                 },
 
                 onAddClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.ADD
                     )
                 },
 
                 onPurchasesClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.PURCHASES
                     )
                 },
 
                 onProfileClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.PROFILE
                     )
@@ -627,23 +776,33 @@ fun WhyNotNavigation(
             )
         }
 
+        /*
+         * ---------------------------------------------------------
+         * PURCHASES
+         * ---------------------------------------------------------
+         */
+
         composable(
             WhyNotRoutes.PURCHASES
         ) {
+
             PurchasesScreen(
                 onHomeClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.HOME
                     )
                 },
 
                 onWishlistsClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.WISHLISTS
                     )
                 },
 
                 onAddClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.ADD
                     )
@@ -652,6 +811,7 @@ fun WhyNotNavigation(
                 onPurchasesClick = {},
 
                 onProfileClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.PROFILE
                     )
@@ -659,17 +819,46 @@ fun WhyNotNavigation(
             )
         }
 
+        /*
+         * ---------------------------------------------------------
+         * PROFILE
+         * ---------------------------------------------------------
+         */
+
         composable(
             WhyNotRoutes.PROFILE
         ) {
+
             ProfileScreen(
-                onEditProfileClick = {
+
+                /*
+                 * Only authenticated users whose Firebase ID token
+                 * contains admin=true see the Admin button.
+                 */
+                isAdmin =
+                    authState
+                        .session
+                        ?.isAdmin == true,
+
+                onAdminClick = {
+
                     navController.navigate(
-                        WhyNotRoutes.EDIT_PROFILE
+                        WhyNotRoutes.ADMIN_ROOT
+                    ) {
+                        launchSingleTop = true
+                    }
+                },
+
+                onEditProfileClick = {
+
+                    navController.navigate(
+                        WhyNotRoutes
+                            .EDIT_PROFILE
                     )
                 },
 
                 onChangePasswordClick = {
+
                     navController.navigate(
                         WhyNotRoutes
                             .CHANGE_PASSWORD
@@ -683,6 +872,7 @@ fun WhyNotNavigation(
                         navController.navigate(
                             WhyNotRoutes.LOGIN
                         ) {
+
                             popUpTo(
                                 WhyNotRoutes.HOME
                             ) {
@@ -693,24 +883,28 @@ fun WhyNotNavigation(
                 },
 
                 onHomeClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.HOME
                     )
                 },
 
                 onWishlistsClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.WISHLISTS
                     )
                 },
 
                 onAddClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.ADD
                     )
                 },
 
                 onPurchasesClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.PURCHASES
                     )
@@ -723,16 +917,22 @@ fun WhyNotNavigation(
         composable(
             WhyNotRoutes.EDIT_PROFILE
         ) {
+
             EditProfileScreen(
                 onBackClick = {
-                    navController.popBackStack()
+
+                    navController
+                        .popBackStack()
                 },
 
                 onSaveChangesClick = {
-                    navController.popBackStack()
+
+                    navController
+                        .popBackStack()
                 },
 
                 onChangePasswordClick = {
+
                     navController.navigate(
                         WhyNotRoutes
                             .CHANGE_PASSWORD
@@ -740,30 +940,35 @@ fun WhyNotNavigation(
                 },
 
                 onHomeClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.HOME
                     )
                 },
 
                 onWishlistsClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.WISHLISTS
                     )
                 },
 
                 onAddClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.ADD
                     )
                 },
 
                 onPurchasesClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.PURCHASES
                     )
                 },
 
                 onProfileClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.PROFILE
                     )
@@ -774,40 +979,50 @@ fun WhyNotNavigation(
         composable(
             WhyNotRoutes.CHANGE_PASSWORD
         ) {
+
             ChangePasswordScreen(
                 onBackClick = {
-                    navController.popBackStack()
+
+                    navController
+                        .popBackStack()
                 },
 
                 onUpdatePasswordClick = {
-                    navController.popBackStack()
+
+                    navController
+                        .popBackStack()
                 },
 
                 onHomeClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.HOME
                     )
                 },
 
                 onWishlistsClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.WISHLISTS
                     )
                 },
 
                 onAddClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.ADD
                     )
                 },
 
                 onPurchasesClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.PURCHASES
                     )
                 },
 
                 onProfileClick = {
+
                     navController.navigateMain(
                         WhyNotRoutes.PROFILE
                     )
@@ -816,114 +1031,166 @@ fun WhyNotNavigation(
         }
 
         /*
-         * ADMIN GRAPH
+         * ---------------------------------------------------------
+         * ADMIN
+         * ---------------------------------------------------------
          *
-         * One AdminViewModel is scoped to ADMIN_ROOT.
-         * Therefore BQ1 and BQ3 share the same Firestore
-         * listeners while the user is inside Admin.
+         * The graph can technically be addressed by route, so every
+         * destination checks the authenticated user's admin claim
+         * BEFORE the AdminViewModel is created.
          *
-         * It is NOT instantiated for normal users merely
-         * by opening the normal application.
-         *
-         * Martin will later protect entry into ADMIN_ROOT
-         * with the admin route guard.
+         * Firestore Rules are still responsible for real backend
+         * authorization.
          */
+
         navigation(
+            route =
+                WhyNotRoutes.ADMIN_ROOT,
+
             startDestination =
                 WhyNotRoutes
-                    .ADMIN_SAVED_PRODUCTS,
-
-            route =
-                WhyNotRoutes.ADMIN_ROOT
+                    .ADMIN_SAVED_PRODUCTS
         ) {
 
+            /*
+             * BQ1
+             */
             composable(
                 WhyNotRoutes
                     .ADMIN_SAVED_PRODUCTS
-            ) { backStackEntry ->
+            ) {
+                    backStackEntry ->
 
-                val adminGraphEntry =
-                    remember(backStackEntry) {
+                AdminRouteGuard(
+                    isSignedIn =
+                        authState.session != null,
+
+                    isAdmin =
+                        authState
+                            .session
+                            ?.isAdmin == true,
+
+                    navController =
                         navController
-                            .getBackStackEntry(
-                                WhyNotRoutes
-                                    .ADMIN_ROOT
-                            )
-                    }
+                ) {
 
-                val adminViewModel:
-                        AdminViewModel =
-                    viewModel(
-                        viewModelStoreOwner =
-                            adminGraphEntry,
-                        factory = factory
+                    val adminGraphEntry =
+                        remember(
+                            backStackEntry
+                        ) {
+
+                            navController
+                                .getBackStackEntry(
+                                    WhyNotRoutes
+                                        .ADMIN_ROOT
+                                )
+                        }
+
+                    val adminViewModel:
+                            AdminViewModel =
+                        viewModel(
+                            viewModelStoreOwner =
+                                adminGraphEntry,
+
+                            factory =
+                                factory
+                        )
+
+                    val adminState by
+                    adminViewModel
+                        .state
+                        .collectAsStateWithLifecycle()
+
+                    AdminSavedProductsScreen(
+                        state =
+                            adminState,
+
+                        onRecommendedSavesClick = {
+
+                            navController
+                                .navigateAdmin(
+                                    WhyNotRoutes
+                                        .ADMIN_RECOMMENDED_SAVES
+                                )
+                        }
                     )
-
-                val adminState by
-                adminViewModel
-                    .state
-                    .collectAsStateWithLifecycle()
-
-                AdminSavedProductsScreen(
-                    state = adminState,
-
-                    onRecommendedSavesClick = {
-                        navController
-                            .navigateAdmin(
-                                WhyNotRoutes
-                                    .ADMIN_RECOMMENDED_SAVES
-                            )
-                    }
-                )
+                }
             }
 
+            /*
+             * BQ3
+             */
             composable(
                 WhyNotRoutes
                     .ADMIN_RECOMMENDED_SAVES
-            ) { backStackEntry ->
+            ) {
+                    backStackEntry ->
 
-                val adminGraphEntry =
-                    remember(backStackEntry) {
+                AdminRouteGuard(
+                    isSignedIn =
+                        authState.session != null,
+
+                    isAdmin =
+                        authState
+                            .session
+                            ?.isAdmin == true,
+
+                    navController =
                         navController
-                            .getBackStackEntry(
-                                WhyNotRoutes
-                                    .ADMIN_ROOT
-                            )
-                    }
+                ) {
 
-                val adminViewModel:
-                        AdminViewModel =
-                    viewModel(
-                        viewModelStoreOwner =
-                            adminGraphEntry,
-                        factory = factory
+                    val adminGraphEntry =
+                        remember(
+                            backStackEntry
+                        ) {
+
+                            navController
+                                .getBackStackEntry(
+                                    WhyNotRoutes
+                                        .ADMIN_ROOT
+                                )
+                        }
+
+                    val adminViewModel:
+                            AdminViewModel =
+                        viewModel(
+                            viewModelStoreOwner =
+                                adminGraphEntry,
+
+                            factory =
+                                factory
+                        )
+
+                    val adminState by
+                    adminViewModel
+                        .state
+                        .collectAsStateWithLifecycle()
+
+                    AdminRecommendedSavesScreen(
+                        state =
+                            adminState,
+
+                        onSavedProductsClick = {
+
+                            navController
+                                .navigateAdmin(
+                                    WhyNotRoutes
+                                        .ADMIN_SAVED_PRODUCTS
+                                )
+                        }
                     )
-
-                val adminState by
-                adminViewModel
-                    .state
-                    .collectAsStateWithLifecycle()
-
-                AdminRecommendedSavesScreen(
-                    state = adminState,
-
-                    onSavedProductsClick = {
-                        navController
-                            .navigateAdmin(
-                                WhyNotRoutes
-                                    .ADMIN_SAVED_PRODUCTS
-                            )
-                    }
-                )
+                }
             }
         }
     }
 }
 
-/**
- * Drops a stale message so a screen never opens
- * showing the previous failure.
+/*
+ * -------------------------------------------------------------
+ * HELPERS
+ * -------------------------------------------------------------
  */
+
 @Composable
 private fun ClearErrorOnEnter(
     clear: () -> Unit
@@ -933,9 +1200,63 @@ private fun ClearErrorOnEnter(
     }
 }
 
+/**
+ * Client-side Admin route guard.
+ *
+ * This prevents a non-admin user from creating the AdminViewModel
+ * or opening one of the Admin screens.
+ *
+ * IMPORTANT:
+ * This is a UX/access-control layer only.
+ * Firestore Security Rules remain the actual security boundary.
+ */
+@Composable
+private fun AdminRouteGuard(
+    isSignedIn: Boolean,
+    isAdmin: Boolean,
+    navController: NavHostController,
+    content: @Composable () -> Unit
+) {
+
+    if (!isAdmin) {
+
+        LaunchedEffect(
+            isSignedIn,
+            isAdmin
+        ) {
+
+            val destination =
+                if (isSignedIn) {
+                    WhyNotRoutes.HOME
+                } else {
+                    WhyNotRoutes.LOGIN
+                }
+
+            navController.navigate(
+                destination
+            ) {
+
+                popUpTo(
+                    WhyNotRoutes.ADMIN_ROOT
+                ) {
+                    inclusive = true
+                }
+
+                launchSingleTop = true
+            }
+        }
+
+        WhyNotLoading()
+        return
+    }
+
+    content()
+}
+
 private fun NavHostController.navigateMain(
     route: String
 ) {
+
     navigate(route) {
 
         popUpTo(
@@ -949,18 +1270,18 @@ private fun NavHostController.navigateMain(
 }
 
 /**
- * Keeps the Admin BQ navigation from growing indefinitely.
- *
- * At most the Admin start destination and the currently
- * selected secondary destination remain in the stack.
+ * Prevents repeatedly switching between BQ1 and BQ3 from
+ * indefinitely growing the Admin back stack.
  */
 private fun NavHostController.navigateAdmin(
     route: String
 ) {
+
     navigate(route) {
 
         popUpTo(
-            WhyNotRoutes.ADMIN_SAVED_PRODUCTS
+            WhyNotRoutes
+                .ADMIN_SAVED_PRODUCTS
         ) {
             inclusive = false
         }
