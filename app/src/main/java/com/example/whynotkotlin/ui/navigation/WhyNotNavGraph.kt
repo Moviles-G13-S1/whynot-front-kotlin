@@ -3,11 +3,13 @@ package com.example.whynotkotlin.ui.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import com.example.whynotkotlin.core.di.AppDependencies
 import com.example.whynotkotlin.core.di.WhyNotViewModelFactory
@@ -51,10 +53,19 @@ object WhyNotRoutes {
     const val NEW_PRODUCT = "new_product"
     const val PRODUCT_DETAIL = "product_detail"
 
-    // Admin routes prepared by Juan Felipe.
-    // Access control / route guard will be added separately by Martin.
-    const val ADMIN_SAVED_PRODUCTS = "admin_saved_products"
-    const val ADMIN_RECOMMENDED_SAVES = "admin_recommended_saves"
+    /*
+     * Admin navigation graph.
+     *
+     * Martin will later add the route guard that verifies
+     * the Firebase admin claim before entering this graph.
+     */
+    const val ADMIN_ROOT = "admin"
+
+    const val ADMIN_SAVED_PRODUCTS =
+        "admin_saved_products"
+
+    const val ADMIN_RECOMMENDED_SAVES =
+        "admin_recommended_saves"
 }
 
 @Composable
@@ -62,10 +73,11 @@ fun WhyNotNavigation(
     dependencies: AppDependencies
 ) {
     val navController = rememberNavController()
-    val factory = WhyNotViewModelFactory(dependencies)
+    val factory =
+        WhyNotViewModelFactory(dependencies)
 
-    // Created here so every normal application destination shares
-    // the same ViewModel instance for these features.
+    // Created here so every normal destination shares one instance
+    // of each ViewModel and therefore one Firestore listener.
     val authViewModel: AuthViewModel =
         viewModel(factory = factory)
 
@@ -76,18 +88,18 @@ fun WhyNotNavigation(
         viewModel(factory = factory)
 
     val authState by
-    authViewModel.state.collectAsStateWithLifecycle()
+    authViewModel.state
+        .collectAsStateWithLifecycle()
 
     val wishlistState by
-    wishlistViewModel.state.collectAsStateWithLifecycle()
+    wishlistViewModel.state
+        .collectAsStateWithLifecycle()
 
     val productState by
-    productViewModel.state.collectAsStateWithLifecycle()
+    productViewModel.state
+        .collectAsStateWithLifecycle()
 
     if (authState.checkingSession) {
-        // Firebase restores a persisted session asynchronously.
-        // Rendering login first would flash it for a user who is
-        // already signed in.
         WhyNotLoading()
         return
     }
@@ -103,10 +115,6 @@ fun WhyNotNavigation(
         navController = navController,
         startDestination = startDestination
     ) {
-
-        // ---------------------------------------------------------
-        // AUTHENTICATION
-        // ---------------------------------------------------------
 
         composable(
             WhyNotRoutes.LOGIN
@@ -128,7 +136,6 @@ fun WhyNotNavigation(
                         email,
                         password
                     ) {
-
                         navController.navigate(
                             WhyNotRoutes.HOME
                         ) {
@@ -187,7 +194,6 @@ fun WhyNotNavigation(
                             cityId = cityId
                         )
                     ) {
-
                         navController.navigate(
                             WhyNotRoutes.HOME
                         ) {
@@ -206,21 +212,11 @@ fun WhyNotNavigation(
             )
         }
 
-        // ---------------------------------------------------------
-        // HOME
-        // ---------------------------------------------------------
-
         composable(
             WhyNotRoutes.HOME
         ) {
-            /*
-             * Nearby and Recommendations still have their
-             * presentation integration pending.
-             *
-             * Juan Felipe already implemented their application
-             * logic/contracts. Final Home integration will happen
-             * when the remaining real dependencies are available.
-             */
+            // Nearby and Recommendations are integrated into Home
+            // once Miguel and Martin provide their remaining pieces.
             HomeScreen(
                 onHomeClick = {},
 
@@ -256,10 +252,6 @@ fun WhyNotNavigation(
             )
         }
 
-        // ---------------------------------------------------------
-        // WISHLISTS
-        // ---------------------------------------------------------
-
         composable(
             WhyNotRoutes.WISHLISTS
         ) {
@@ -268,9 +260,10 @@ fun WhyNotNavigation(
 
                 onWishlistClick = { wishlistId ->
 
-                    wishlistViewModel.selectWishlist(
-                        wishlistId
-                    )
+                    wishlistViewModel
+                        .selectWishlist(
+                            wishlistId
+                        )
 
                     navController.navigate(
                         WhyNotRoutes.WISHLIST_DETAIL
@@ -380,9 +373,8 @@ fun WhyNotNavigation(
                     wishlistState
                         .selectedWishlistId
                         ?.let {
-                            productState.forWishlist(
-                                it
-                            )
+                            productState
+                                .forWishlist(it)
                         }
                         .orEmpty(),
 
@@ -391,9 +383,10 @@ fun WhyNotNavigation(
 
                 onProductClick = { productId ->
 
-                    productViewModel.selectProduct(
-                        productId
-                    )
+                    productViewModel
+                        .selectProduct(
+                            productId
+                        )
 
                     navController.navigate(
                         WhyNotRoutes.PRODUCT_DETAIL
@@ -440,10 +433,6 @@ fun WhyNotNavigation(
             )
         }
 
-        // ---------------------------------------------------------
-        // PRODUCTS
-        // ---------------------------------------------------------
-
         composable(
             WhyNotRoutes.PRODUCT_DETAIL
         ) {
@@ -455,23 +444,26 @@ fun WhyNotNavigation(
                     productState.errorMessage,
 
                 onMarkPurchased = {
-
-                    productState.selected?.let(
-                        productViewModel::markPurchased
-                    )
+                    productState.selected
+                        ?.let(
+                            productViewModel::
+                            markPurchased
+                        )
                 },
 
                 onDeleteClick = {
 
-                    productState.selected?.let {
-                            product ->
+                    productState.selected
+                        ?.let { product ->
 
-                        productViewModel.deleteProduct(
-                            product.id
-                        ) {
-                            navController.popBackStack()
+                            productViewModel
+                                .deleteProduct(
+                                    product.id
+                                ) {
+                                    navController
+                                        .popBackStack()
+                                }
                         }
-                    }
                 },
 
                 onHomeClick = {
@@ -570,7 +562,8 @@ fun WhyNotNavigation(
                     wishlistState.summaries,
 
                 prefilledProductUrl =
-                    productState.pendingProductUrl,
+                    productState
+                        .pendingProductUrl,
 
                 saving =
                     productState.saving,
@@ -586,16 +579,20 @@ fun WhyNotNavigation(
                         imageUrl,
                         productUrl ->
 
-                    productViewModel.createProduct(
-                        wishlistId = wishlistId,
-                        name = name,
-                        brand = brand,
-                        price = price,
-                        imageUrl = imageUrl,
-                        productUrl = productUrl
-                    ) {
-                        navController.popBackStack()
-                    }
+                    productViewModel
+                        .createProduct(
+                            wishlistId =
+                                wishlistId,
+                            name = name,
+                            brand = brand,
+                            price = price,
+                            imageUrl = imageUrl,
+                            productUrl =
+                                productUrl
+                        ) {
+                            navController
+                                .popBackStack()
+                        }
                 },
 
                 onHomeClick = {
@@ -630,20 +627,9 @@ fun WhyNotNavigation(
             )
         }
 
-        // ---------------------------------------------------------
-        // PURCHASES
-        // ---------------------------------------------------------
-
         composable(
             WhyNotRoutes.PURCHASES
         ) {
-            /*
-             * Purchased products are already available through:
-             *
-             * ProductViewModel.state.purchased
-             *
-             * Presentation wiring remains separate.
-             */
             PurchasesScreen(
                 onHomeClick = {
                     navController.navigateMain(
@@ -673,10 +659,6 @@ fun WhyNotNavigation(
             )
         }
 
-        // ---------------------------------------------------------
-        // PROFILE
-        // ---------------------------------------------------------
-
         composable(
             WhyNotRoutes.PROFILE
         ) {
@@ -689,7 +671,8 @@ fun WhyNotNavigation(
 
                 onChangePasswordClick = {
                     navController.navigate(
-                        WhyNotRoutes.CHANGE_PASSWORD
+                        WhyNotRoutes
+                            .CHANGE_PASSWORD
                     )
                 },
 
@@ -751,7 +734,8 @@ fun WhyNotNavigation(
 
                 onChangePasswordClick = {
                     navController.navigate(
-                        WhyNotRoutes.CHANGE_PASSWORD
+                        WhyNotRoutes
+                            .CHANGE_PASSWORD
                     )
                 },
 
@@ -831,81 +815,114 @@ fun WhyNotNavigation(
             )
         }
 
-        // ---------------------------------------------------------
-        // ADMIN
-        // ---------------------------------------------------------
-        //
-        // Juan Felipe:
-        // BQ1 - Saved products per user
-        // BQ3 - Recommended products saved
-        //
-        // These routes are registered but there is intentionally
-        // no public Home/Profile button leading to them yet.
-        //
-        // Martin will later add the Admin access / route guard.
-        // ---------------------------------------------------------
+        /*
+         * ADMIN GRAPH
+         *
+         * One AdminViewModel is scoped to ADMIN_ROOT.
+         * Therefore BQ1 and BQ3 share the same Firestore
+         * listeners while the user is inside Admin.
+         *
+         * It is NOT instantiated for normal users merely
+         * by opening the normal application.
+         *
+         * Martin will later protect entry into ADMIN_ROOT
+         * with the admin route guard.
+         */
+        navigation(
+            startDestination =
+                WhyNotRoutes
+                    .ADMIN_SAVED_PRODUCTS,
 
-        composable(
-            WhyNotRoutes.ADMIN_SAVED_PRODUCTS
+            route =
+                WhyNotRoutes.ADMIN_ROOT
         ) {
-            val adminViewModel: AdminViewModel =
-                viewModel(
-                    factory = factory
-                )
 
-            val adminState by
-            adminViewModel
-                .state
-                .collectAsStateWithLifecycle()
+            composable(
+                WhyNotRoutes
+                    .ADMIN_SAVED_PRODUCTS
+            ) { backStackEntry ->
 
-            AdminSavedProductsScreen(
-                state = adminState,
-
-                onRecommendedSavesClick = {
-
-                    navController.navigate(
-                        WhyNotRoutes
-                            .ADMIN_RECOMMENDED_SAVES
-                    ) {
-                        launchSingleTop = true
+                val adminGraphEntry =
+                    remember(backStackEntry) {
+                        navController
+                            .getBackStackEntry(
+                                WhyNotRoutes
+                                    .ADMIN_ROOT
+                            )
                     }
-                }
-            )
-        }
 
-        composable(
-            WhyNotRoutes.ADMIN_RECOMMENDED_SAVES
-        ) {
-            val adminViewModel: AdminViewModel =
-                viewModel(
-                    factory = factory
-                )
+                val adminViewModel:
+                        AdminViewModel =
+                    viewModel(
+                        viewModelStoreOwner =
+                            adminGraphEntry,
+                        factory = factory
+                    )
 
-            val adminState by
-            adminViewModel
-                .state
-                .collectAsStateWithLifecycle()
+                val adminState by
+                adminViewModel
+                    .state
+                    .collectAsStateWithLifecycle()
 
-            AdminRecommendedSavesScreen(
-                state = adminState,
+                AdminSavedProductsScreen(
+                    state = adminState,
 
-                onSavedProductsClick = {
-
-                    navController.navigate(
-                        WhyNotRoutes
-                            .ADMIN_SAVED_PRODUCTS
-                    ) {
-                        launchSingleTop = true
+                    onRecommendedSavesClick = {
+                        navController
+                            .navigateAdmin(
+                                WhyNotRoutes
+                                    .ADMIN_RECOMMENDED_SAVES
+                            )
                     }
-                }
-            )
+                )
+            }
+
+            composable(
+                WhyNotRoutes
+                    .ADMIN_RECOMMENDED_SAVES
+            ) { backStackEntry ->
+
+                val adminGraphEntry =
+                    remember(backStackEntry) {
+                        navController
+                            .getBackStackEntry(
+                                WhyNotRoutes
+                                    .ADMIN_ROOT
+                            )
+                    }
+
+                val adminViewModel:
+                        AdminViewModel =
+                    viewModel(
+                        viewModelStoreOwner =
+                            adminGraphEntry,
+                        factory = factory
+                    )
+
+                val adminState by
+                adminViewModel
+                    .state
+                    .collectAsStateWithLifecycle()
+
+                AdminRecommendedSavesScreen(
+                    state = adminState,
+
+                    onSavedProductsClick = {
+                        navController
+                            .navigateAdmin(
+                                WhyNotRoutes
+                                    .ADMIN_SAVED_PRODUCTS
+                            )
+                    }
+                )
+            }
         }
     }
 }
 
 /**
- * Drops a stale message so a screen never opens showing the
- * previous failure.
+ * Drops a stale message so a screen never opens
+ * showing the previous failure.
  */
 @Composable
 private fun ClearErrorOnEnter(
@@ -916,10 +933,6 @@ private fun ClearErrorOnEnter(
     }
 }
 
-/**
- * Navigation helper for the five normal bottom-navigation
- * destinations.
- */
 private fun NavHostController.navigateMain(
     route: String
 ) {
@@ -927,6 +940,27 @@ private fun NavHostController.navigateMain(
 
         popUpTo(
             WhyNotRoutes.HOME
+        ) {
+            inclusive = false
+        }
+
+        launchSingleTop = true
+    }
+}
+
+/**
+ * Keeps the Admin BQ navigation from growing indefinitely.
+ *
+ * At most the Admin start destination and the currently
+ * selected secondary destination remain in the stack.
+ */
+private fun NavHostController.navigateAdmin(
+    route: String
+) {
+    navigate(route) {
+
+        popUpTo(
+            WhyNotRoutes.ADMIN_SAVED_PRODUCTS
         ) {
             inclusive = false
         }
