@@ -2,45 +2,74 @@ package com.example.whynotkotlin.core.di
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.example.whynotkotlin.features.admin.application.AdminViewModel
 import com.example.whynotkotlin.features.authentication.application.AuthViewModel
 import com.example.whynotkotlin.features.products.application.ProductViewModel
 import com.example.whynotkotlin.features.profile.application.ProfileViewModel
 import com.example.whynotkotlin.features.wishlists.application.WishlistViewModel
 
 /**
- * Constructs the ViewModels from [AppDependencies].
- *
- * A hand-written factory keeps the project free of an extra DI framework, which
- * the architecture does not ask for.
+ * Constructs the ViewModels from AppDependencies.
  */
 class WhyNotViewModelFactory(
     private val dependencies: AppDependencies
 ) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T = when {
-        modelClass.isAssignableFrom(AuthViewModel::class.java) -> AuthViewModel(
-            authRepository = dependencies.authRepository,
-            userRepository = dependencies.userRepository
+    override fun <T : ViewModel> create(
+        modelClass: Class<T>
+    ): T = when {
+
+        modelClass.isAssignableFrom(
+            AuthViewModel::class.java
+        ) -> AuthViewModel(
+            authRepository =
+                dependencies.authRepository,
+            userRepository =
+                dependencies.userRepository
         )
 
-        modelClass.isAssignableFrom(ProfileViewModel::class.java) -> ProfileViewModel(
-            authRepository = dependencies.authRepository,
-            userRepository = dependencies.userRepository,
-            wishlistRepository = dependencies.wishlistRepository
+        modelClass.isAssignableFrom(
+            ProfileViewModel::class.java
+        ) -> ProfileViewModel(
+            authRepository =
+                dependencies.authRepository,
+            userRepository =
+                dependencies.userRepository,
+            wishlistRepository =
+                dependencies.wishlistRepository
         )
 
-        modelClass.isAssignableFrom(WishlistViewModel::class.java) -> WishlistViewModel(
-            authRepository = dependencies.authRepository,
-            wishlistRepository = dependencies.wishlistRepository,
-            productRepository = dependencies.productRepository
+        modelClass.isAssignableFrom(
+            WishlistViewModel::class.java
+        ) -> WishlistViewModel(
+            authRepository =
+                dependencies.authRepository,
+            wishlistRepository =
+                dependencies.wishlistRepository,
+            productRepository =
+                dependencies.productRepository
         )
 
-        modelClass.isAssignableFrom(ProductViewModel::class.java) -> ProductViewModel(
-            authRepository = dependencies.authRepository,
-            productRepository = dependencies.productRepository
+        modelClass.isAssignableFrom(
+            ProductViewModel::class.java
+        ) -> ProductViewModel(
+            authRepository =
+                dependencies.authRepository,
+            productRepository =
+                dependencies.productRepository
         )
 
-        else -> throw IllegalArgumentException("Unknown ViewModel: ${modelClass.name}")
+        modelClass.isAssignableFrom(
+            AdminViewModel::class.java
+        ) -> AdminViewModel(
+            repository =
+                dependencies.adminRepository
+        )
+
+        else -> throw IllegalArgumentException(
+            "Unknown ViewModel: ${modelClass.name}"
+        )
+
     } as T
 }
