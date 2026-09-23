@@ -2,10 +2,13 @@ package com.example.whynotkotlin.core.di
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.example.whynotkotlin.features.admin.application.AdminInsightsViewModel
 import com.example.whynotkotlin.features.admin.application.AdminViewModel
 import com.example.whynotkotlin.features.authentication.application.AuthViewModel
+import com.example.whynotkotlin.features.nearby.application.NearbyStoreViewModel
 import com.example.whynotkotlin.features.products.application.ProductViewModel
 import com.example.whynotkotlin.features.profile.application.ProfileViewModel
+import com.example.whynotkotlin.features.recommendations.application.RecommendationViewModel
 import com.example.whynotkotlin.features.wishlists.application.WishlistViewModel
 
 /**
@@ -65,6 +68,29 @@ class WhyNotViewModelFactory(
         ) -> AdminViewModel(
             repository =
                 dependencies.adminRepository
+        )
+
+        modelClass.isAssignableFrom(
+            AdminInsightsViewModel::class.java
+        ) -> AdminInsightsViewModel(
+            repository =
+                dependencies.adminRepository
+        )
+
+        modelClass.isAssignableFrom(
+            NearbyStoreViewModel::class.java
+        ) -> NearbyStoreViewModel(
+            locationRepository =
+                dependencies.locationRepository,
+            nearbyStoreRepository =
+                dependencies.nearbyStoreRepository
+        )
+
+        modelClass.isAssignableFrom(
+            RecommendationViewModel::class.java
+        ) -> RecommendationViewModel(
+            repository =
+                dependencies.recommendationRepository
         )
 
         else -> throw IllegalArgumentException(
