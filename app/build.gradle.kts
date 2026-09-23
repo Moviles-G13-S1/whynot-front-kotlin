@@ -55,6 +55,7 @@ dependencies {
     // Needed by the recommendation and nearby-store features, which call the
     // shared callable Cloud Functions.
     implementation(libs.firebase.functions)
+    implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation(libs.kotlinx.coroutines.play.services)
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
