@@ -107,7 +107,7 @@ fun WhyNotNavigation(dependencies: AppDependencies) {
             RegisterScreen(
                 submitting = authState.submitting,
                 errorMessage = authState.errorMessage,
-                onSubmit = { name, email, password, gender, age, categoryId ->
+                onSubmit = { name, email, password, gender, age, categoryId, cityId ->
                     authViewModel.signUp(
                         email = email,
                         password = password,
@@ -115,7 +115,8 @@ fun WhyNotNavigation(dependencies: AppDependencies) {
                             name = name,
                             gender = gender,
                             age = age.trim().toIntOrNull() ?: 0,
-                            preferredCategoryId = categoryId
+                            preferredCategoryId = categoryId,
+                            cityId = cityId
                         )
                     ) {
                         navController.navigate(WhyNotRoutes.HOME) {
@@ -203,8 +204,8 @@ fun WhyNotNavigation(dependencies: AppDependencies) {
             ProductDetailScreen(
                 product = productState.selected,
                 errorMessage = productState.errorMessage,
-                onTogglePurchased = {
-                    productState.selected?.let(productViewModel::togglePurchased)
+                onMarkPurchased = {
+                    productState.selected?.let(productViewModel::markPurchased)
                 },
                 onDeleteClick = {
                     productState.selected?.let { product ->

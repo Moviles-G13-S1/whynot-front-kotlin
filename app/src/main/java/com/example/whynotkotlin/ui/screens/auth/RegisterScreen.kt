@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.whynotkotlin.features.profile.domain.CanonicalCities
 import com.example.whynotkotlin.features.profile.domain.Genders
 import com.example.whynotkotlin.features.wishlists.domain.CanonicalCategories
 import com.example.whynotkotlin.ui.components.WhyNotButton
@@ -34,9 +35,10 @@ import com.example.whynotkotlin.ui.theme.WhyNotBeige
 import com.example.whynotkotlin.ui.theme.WhyNotGray
 
 /**
- * Gender and preferred category are selects, not free text: the Security Rules
- * accept only the three gender values and a `preferredCategoryId` that
- * references a seeded category, so typed input would fail on submit.
+ * Gender, preferred category and city are selects, not free text: the Security
+ * Rules accept only the three gender values, a `preferredCategoryId` that
+ * references a seeded category and a `cityId` that references a seeded city, so
+ * typed input would fail on submit.
  */
 @Composable
 fun RegisterScreen(
@@ -48,7 +50,8 @@ fun RegisterScreen(
         password: String,
         gender: String,
         age: String,
-        preferredCategoryId: String
+        preferredCategoryId: String,
+        cityId: String
     ) -> Unit,
     onBackToLoginClick: () -> Unit
 ) {
@@ -58,6 +61,7 @@ fun RegisterScreen(
     var age by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var categoryId by remember { mutableStateOf("") }
+    var cityId by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -121,6 +125,14 @@ fun RegisterScreen(
                 onValueChange = { categoryId = it },
                 placeholder = "Select"
             )
+
+            WhyNotDropdownField(
+                label = "City",
+                selectedValue = cityId,
+                options = CanonicalCities.all.map { it.id to it.name },
+                onValueChange = { cityId = it },
+                placeholder = "Select"
+            )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -131,7 +143,7 @@ fun RegisterScreen(
 
         WhyNotButton(
             text = if (submitting) "Creating..." else "Create an account",
-            onClick = { onSubmit(name, email, password, gender, age, categoryId) },
+            onClick = { onSubmit(name, email, password, gender, age, categoryId, cityId) },
             enabled = !submitting
         )
 

@@ -42,12 +42,15 @@ class FirebaseUserRepository(
     ) {
         // The rules require every field, `email` to equal the authenticated
         // email, and both timestamps to equal the server time of this request.
+        // `cityId` became mandatory with the city catalog and must reference an
+        // existing `cities` document.
         val data = mapOf(
             "name" to draft.name.trim(),
             "email" to email.trim(),
             "gender" to draft.gender,
             "age" to draft.age,
             "preferredCategoryId" to draft.preferredCategoryId,
+            "cityId" to draft.cityId,
             "createdAt" to FieldValue.serverTimestamp(),
             "updatedAt" to FieldValue.serverTimestamp()
         )
@@ -62,6 +65,7 @@ class FirebaseUserRepository(
         update.gender?.let { data["gender"] = it }
         update.age?.let { data["age"] = it }
         update.preferredCategoryId?.let { data["preferredCategoryId"] = it }
+        update.cityId?.let { data["cityId"] = it }
 
         if (data.isEmpty()) return
 
@@ -81,6 +85,7 @@ private fun DocumentSnapshot.toUserProfile(): UserProfile? {
         gender = getString("gender").orEmpty(),
         age = getLong("age")?.toInt() ?: 0,
         preferredCategoryId = getString("preferredCategoryId").orEmpty(),
+        cityId = getString("cityId").orEmpty(),
         createdAt = getTimestamp("createdAt")?.toDate(),
         updatedAt = getTimestamp("updatedAt")?.toDate()
     )

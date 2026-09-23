@@ -28,6 +28,7 @@ fun CategoryChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     selected: Boolean = false,
+    enabled: Boolean = true,
     icon: ImageVector? = null
 ) {
     val shape = RoundedCornerShape(50)
@@ -43,7 +44,7 @@ fun CategoryChip(
                 BorderStroke(1.dp, if (selected) WhyNotBlack else WhyNotBorder),
                 shape
             )
-            .clickable { onClick() }
+            .clickable(enabled = enabled) { onClick() }
             .padding(horizontal = 18.dp, vertical = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(7.dp),
         verticalAlignment = Alignment.CenterVertically

@@ -59,7 +59,9 @@ class FirebaseProductRepository(
         val categoryId = requireWishlistCategory(draft.wishlistId)
         val document = firestore.collection(PRODUCTS).document()
 
-        val data = mapOf(
+        // `purchasedAt` must be present and null on create: the rules require
+        // the key and pair it with `purchased`.
+        val data = hashMapOf(
             "ownerId" to ownerId,
             "wishlistId" to draft.wishlistId,
             "categoryId" to categoryId,
@@ -69,6 +71,7 @@ class FirebaseProductRepository(
             "imageUrl" to draft.imageUrl.trim(),
             "productUrl" to draft.productUrl.trim(),
             "purchased" to false,
+            "purchasedAt" to null,
             "createdAt" to FieldValue.serverTimestamp(),
             "updatedAt" to FieldValue.serverTimestamp()
         )
@@ -90,7 +93,6 @@ class FirebaseProductRepository(
         update.price?.let { data["price"] = it }
         update.imageUrl?.let { data["imageUrl"] = it.trim() }
         update.productUrl?.let { data["productUrl"] = it.trim() }
-        update.purchased?.let { data["purchased"] = it }
 
         if (data.isEmpty()) return
 
@@ -99,8 +101,19 @@ class FirebaseProductRepository(
         firestore.collection(PRODUCTS).document(productId).update(data).await()
     }
 
-    override suspend fun setPurchased(productId: String, purchased: Boolean) {
-        updateProduct(productId, ProductUpdate(purchased = purchased))
+    override suspend fun markPurchased(productId: String) {
+        // The rules only accept the saved-to-purchased transition, and only
+        // when `purchasedAt` equals the server time of this request. Writing
+        // `purchased` on its own, or trying to go back to saved, is rejected.
+        firestore.collection(PRODUCTS).document(productId)
+            .update(
+                mapOf(
+                    "purchased" to true,
+                    "purchasedAt" to FieldValue.serverTimestamp(),
+                    "updatedAt" to FieldValue.serverTimestamp()
+                )
+            )
+            .await()
     }
 
     override suspend fun deleteProduct(productId: String) {
@@ -149,6 +162,7 @@ private fun DocumentSnapshot.toProduct(): Product? {
         imageUrl = getString("imageUrl").orEmpty(),
         productUrl = getString("productUrl").orEmpty(),
         purchased = getBoolean("purchased") == true,
+        purchasedAt = getTimestamp("purchasedAt")?.toDate(),
         createdAt = getTimestamp("createdAt")?.toDate(),
         updatedAt = getTimestamp("updatedAt")?.toDate()
     )
