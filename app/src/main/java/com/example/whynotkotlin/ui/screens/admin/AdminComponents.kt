@@ -28,7 +28,11 @@ import com.example.whynotkotlin.ui.theme.WhyNotWhite
 
 enum class AdminSection {
     SAVED_PRODUCTS,
-    RECOMMENDED_SAVES
+    RECOMMENDED_SAVES,
+
+    // Miguel: BQ4 and BQ6.
+    PURCHASES_BY_CATEGORY,
+    DEMOGRAPHIC_PROFILE
 }
 
 /**
@@ -47,6 +51,10 @@ fun AdminPage(
     selectedSection: AdminSection,
     onSavedProductsClick: () -> Unit,
     onRecommendedSavesClick: () -> Unit,
+    // Added by Miguel for BQ4 and BQ6. They default to no-ops so the screens
+    // that existed before keep compiling unchanged.
+    onPurchasesByCategoryClick: () -> Unit = {},
+    onDemographicProfileClick: () -> Unit = {},
     content: @Composable ColumnScope.() -> Unit
 ) {
     Column(
@@ -104,6 +112,30 @@ fun AdminPage(
                 selected =
                     selectedSection == AdminSection.RECOMMENDED_SAVES,
                 onClick = onRecommendedSavesClick,
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // A second row rather than four cramped items on one line.
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            AdminNavigationItem(
+                text = "Purchases",
+                selected =
+                    selectedSection == AdminSection.PURCHASES_BY_CATEGORY,
+                onClick = onPurchasesByCategoryClick,
+                modifier = Modifier.weight(1f)
+            )
+
+            AdminNavigationItem(
+                text = "Demographics",
+                selected =
+                    selectedSection == AdminSection.DEMOGRAPHIC_PROFILE,
+                onClick = onDemographicProfileClick,
                 modifier = Modifier.weight(1f)
             )
         }

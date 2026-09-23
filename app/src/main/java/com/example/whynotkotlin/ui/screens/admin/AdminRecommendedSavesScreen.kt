@@ -26,13 +26,18 @@ import com.example.whynotkotlin.ui.theme.WhyNotGray
 @Composable
 fun AdminRecommendedSavesScreen(
     state: AdminUiState,
-    onSavedProductsClick: () -> Unit
+    onSavedProductsClick: () -> Unit,
+    // Added by Miguel so the BQ4 and BQ6 tabs are reachable from here.
+    onPurchasesByCategoryClick: () -> Unit = {},
+    onDemographicProfileClick: () -> Unit = {}
 ) {
     AdminPage(
         title = "Recommended products",
         subtitle =
             "How many recommended products have been saved?",
         selectedSection = AdminSection.RECOMMENDED_SAVES,
+        onPurchasesByCategoryClick = onPurchasesByCategoryClick,
+        onDemographicProfileClick = onDemographicProfileClick,
         onSavedProductsClick = onSavedProductsClick,
         onRecommendedSavesClick = {}
     ) {
