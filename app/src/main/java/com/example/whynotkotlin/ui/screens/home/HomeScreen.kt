@@ -30,9 +30,18 @@ import com.example.whynotkotlin.ui.components.WhyNotBottomBar
 import com.example.whynotkotlin.ui.theme.WhyNotBeige
 import com.example.whynotkotlin.ui.theme.WhyNotBorder
 import com.example.whynotkotlin.ui.theme.WhyNotGray
+import com.example.whynotkotlin.features.nearby.application.NearbyStoreUiState
+import com.example.whynotkotlin.features.recommendations.application.RecommendationUiState
+import com.example.whynotkotlin.features.wishlists.domain.WishlistSummary
 
 @Composable
 fun HomeScreen(
+    nearbyState: NearbyStoreUiState,
+    recommendationState: RecommendationUiState,
+    wishlistSummaries: List<WishlistSummary>,
+    onLoadNearby: () -> Unit,
+    onLoadRecommendation: () -> Unit,
+    onSaveRecommendation: (String) -> Unit,
     onHomeClick: () -> Unit = {},
     onWishlistsClick: () -> Unit,
     onWishlistClick: (String) -> Unit,
@@ -135,47 +144,15 @@ fun HomeScreen(
 
                 Spacer(modifier = Modifier.height(26.dp))
 
-                Text(
-                    text = "Near you",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = WhyNotGray
+                HomeSmartSections(
+                    nearbyState = nearbyState,
+                    recommendationState = recommendationState,
+                    wishlistSummaries = wishlistSummaries,
+                    onLoadNearby = onLoadNearby,
+                    onLoadRecommendation = onLoadRecommendation,
+                    onSaveRecommendation = onSaveRecommendation,
+                    onOpenWishlists = onWishlistsClick
                 )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = "You are close to a Zara",
-                    style = MaterialTheme.typography.titleLarge
-                )
-
-                Text(
-                    text = "Perfect moment to try the new item",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = WhyNotGray
-                )
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                PlaceholderImage(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(116.dp)
-                )
-
-                Spacer(modifier = Modifier.height(26.dp))
-
-                Text(
-                    text = "Top picks for you",
-                    style = MaterialTheme.typography.titleLarge
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                ProductPreview(price = "$50")
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                ProductPreview(price = "$50")
             }
         }
 
