@@ -32,16 +32,20 @@ import com.example.whynotkotlin.ui.theme.WhyNotGray
 fun AdminDemographicProfileScreen(
     state: AdminInsightsUiState,
     onSavedProductsClick: () -> Unit,
+    onRepeatSaversClick: () -> Unit,
     onRecommendedSavesClick: () -> Unit,
-    onPurchasesByCategoryClick: () -> Unit
+    onPurchasesByCategoryClick: () -> Unit,
+    onZeroProductsClick: () -> Unit
 ) {
     AdminPage(
         title = "Demographic profile",
         subtitle = "Who buys in each category?",
         selectedSection = AdminSection.DEMOGRAPHIC_PROFILE,
         onSavedProductsClick = onSavedProductsClick,
+        onRepeatSaversClick = onRepeatSaversClick,
         onRecommendedSavesClick = onRecommendedSavesClick,
         onPurchasesByCategoryClick = onPurchasesByCategoryClick,
+        onZeroProductsClick = onZeroProductsClick,
         onDemographicProfileClick = {}
     ) {
 
