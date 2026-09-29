@@ -10,6 +10,7 @@ import com.example.whynotkotlin.features.products.application.ProductViewModel
 import com.example.whynotkotlin.features.profile.application.ProfileViewModel
 import com.example.whynotkotlin.features.recommendations.application.RecommendationViewModel
 import com.example.whynotkotlin.features.wishlists.application.WishlistViewModel
+import com.example.whynotkotlin.features.admin.application.AdminUserMetricsViewModel
 
 /**
  * Constructs the ViewModels from AppDependencies.
@@ -73,6 +74,13 @@ class WhyNotViewModelFactory(
         modelClass.isAssignableFrom(
             AdminInsightsViewModel::class.java
         ) -> AdminInsightsViewModel(
+            repository =
+                dependencies.adminRepository
+        )
+
+        modelClass.isAssignableFrom(
+            AdminUserMetricsViewModel::class.java
+        ) -> AdminUserMetricsViewModel(
             repository =
                 dependencies.adminRepository
         )

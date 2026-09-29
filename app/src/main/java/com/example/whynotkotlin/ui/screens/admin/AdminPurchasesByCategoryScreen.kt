@@ -35,7 +35,9 @@ import com.example.whynotkotlin.ui.theme.WhyNotWhite
 fun AdminPurchasesByCategoryScreen(
     state: AdminInsightsUiState,
     onSavedProductsClick: () -> Unit,
+    onRepeatSaversClick: () -> Unit,
     onRecommendedSavesClick: () -> Unit,
+    onZeroProductsClick: () -> Unit,
     onDemographicProfileClick: () -> Unit,
     onWindowChange: (Int) -> Unit
 ) {
@@ -45,8 +47,10 @@ fun AdminPurchasesByCategoryScreen(
             "Which category has the most purchases each month?",
         selectedSection = AdminSection.PURCHASES_BY_CATEGORY,
         onSavedProductsClick = onSavedProductsClick,
+        onRepeatSaversClick = onRepeatSaversClick,
         onRecommendedSavesClick = onRecommendedSavesClick,
         onPurchasesByCategoryClick = {},
+        onZeroProductsClick = onZeroProductsClick,
         onDemographicProfileClick = onDemographicProfileClick
     ) {
 
