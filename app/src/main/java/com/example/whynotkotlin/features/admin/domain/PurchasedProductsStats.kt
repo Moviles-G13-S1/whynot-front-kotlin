@@ -7,14 +7,18 @@ data class CategoryPurchaseCount(
 )
 
 /**
- * One calendar month of purchases, already resolved to its winning category.
+ * One calendar month of purchases, already resolved to its winning categories.
+ *
+ * [topCategoryIds] holds every category tied at the highest count, so a tie is
+ * reported as a tie instead of one of them being picked arbitrarily. It is
+ * empty only when the month has no purchases.
  */
 data class PurchaseMonth(
     val year: Int,
     val month: Int,
     val label: String,
     val totalPurchases: Int,
-    val topCategoryId: String?,
+    val topCategoryIds: List<String>,
     val topCategoryPurchases: Int,
     val byCategory: List<CategoryPurchaseCount>
 )
@@ -31,12 +35,15 @@ data class PurchaseMonth(
  *
  * Products purchased before the backend introduced `purchasedAt` have no month
  * and are reported in [undatedPurchases] instead of being silently dropped.
+ *
+ * [overallTopCategoryIds] follows the same tie rule as
+ * [PurchaseMonth.topCategoryIds].
  */
 data class PurchasedProductsStats(
     val months: List<PurchaseMonth> = emptyList(),
     val totalPurchases: Int = 0,
     val undatedPurchases: Int = 0,
-    val overallTopCategoryId: String? = null,
+    val overallTopCategoryIds: List<String> = emptyList(),
     val monthsWindow: Int = DEFAULT_MONTHS_WINDOW
 ) {
     companion object {

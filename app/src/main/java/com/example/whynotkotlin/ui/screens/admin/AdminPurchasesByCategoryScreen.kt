@@ -96,10 +96,19 @@ fun AdminPurchasesByCategoryScreen(
                         modifier = Modifier.weight(1f)
                     )
 
+                    val leaders = stats.overallTopCategoryIds
+                    val tied = leaders.size > 1
+
+                    // A tie is reported as a tie: naming only one of the
+                    // leaders would be an arbitrary answer to BQ4.
                     AdminMetricCard(
-                        label = "LEADING CATEGORY",
-                        value = categoryLabel(stats.overallTopCategoryId),
-                        subtitle = "across the window",
+                        label = if (tied) "LEADING CATEGORIES" else "LEADING CATEGORY",
+                        value = if (leaders.isEmpty()) {
+                            categoryLabel(null)
+                        } else {
+                            leaders.joinToString(", ") { categoryLabel(it) }
+                        },
+                        subtitle = if (tied) "tied across the window" else "across the window",
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -149,7 +158,11 @@ fun AdminPurchasesByCategoryScreen(
                             )
 
                             Text(
-                                text = "${month.totalPurchases} purchases",
+                                text = if (month.topCategoryIds.size > 1) {
+                                    "${month.totalPurchases} purchases · tie"
+                                } else {
+                                    "${month.totalPurchases} purchases"
+                                },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = WhyNotGray
                             )
@@ -179,8 +192,8 @@ fun AdminPurchasesByCategoryScreen(
                                     style =
                                         MaterialTheme.typography.bodySmall,
                                     color =
-                                        if (entry.categoryId ==
-                                            month.topCategoryId
+                                        if (entry.categoryId in
+                                            month.topCategoryIds
                                         ) {
                                             WhyNotBlack
                                         } else {
@@ -210,8 +223,8 @@ fun AdminPurchasesByCategoryScreen(
                                         )
                                         .height(6.dp)
                                         .background(
-                                            if (entry.categoryId ==
-                                                month.topCategoryId
+                                            if (entry.categoryId in
+                                                month.topCategoryIds
                                             ) {
                                                 WhyNotBlack
                                             } else {
