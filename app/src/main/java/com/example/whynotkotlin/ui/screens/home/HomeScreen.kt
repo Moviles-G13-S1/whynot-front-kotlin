@@ -33,6 +33,7 @@ import com.example.whynotkotlin.ui.theme.WhyNotGray
 
 @Composable
 fun HomeScreen(
+    userName: String?,
     onHomeClick: () -> Unit = {},
     onWishlistsClick: () -> Unit,
     onWishlistClick: (String) -> Unit,
@@ -66,7 +67,9 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "Good Morning, Juliana",
+                    text = userName?.trim()?.takeIf { it.isNotEmpty() }
+                        ?.let { "Good Morning, $it" }
+                        ?: "Good Morning",
                     style = MaterialTheme.typography.headlineMedium
                 )
 

@@ -16,6 +16,7 @@ import com.example.whynotkotlin.core.di.WhyNotViewModelFactory
 import com.example.whynotkotlin.features.admin.application.AdminViewModel
 import com.example.whynotkotlin.features.authentication.application.AuthViewModel
 import com.example.whynotkotlin.features.products.application.ProductViewModel
+import com.example.whynotkotlin.features.profile.application.ProfileViewModel
 import com.example.whynotkotlin.features.profile.domain.UserProfileDraft
 import com.example.whynotkotlin.features.wishlists.application.WishlistViewModel
 import com.example.whynotkotlin.ui.components.WhyNotLoading
@@ -106,6 +107,9 @@ fun WhyNotNavigation(
         viewModel(
             factory = factory
         )
+
+    val profileViewModel: ProfileViewModel = viewModel(factory = factory)
+    val profileState by profileViewModel.state.collectAsStateWithLifecycle()
 
     val authState by
     authViewModel
@@ -275,6 +279,9 @@ fun WhyNotNavigation(
         ) {
 
             HomeScreen(
+                userName = profileState.profile?.takeIf {
+                    it.uid == authState.session?.uid
+                }?.name,
                 onHomeClick = {},
 
                 onWishlistsClick = {
@@ -830,6 +837,7 @@ fun WhyNotNavigation(
         ) {
 
             ProfileScreen(
+                state = profileState,
 
                 /*
                  * Only authenticated users whose Firebase ID token
@@ -918,17 +926,19 @@ fun WhyNotNavigation(
             WhyNotRoutes.EDIT_PROFILE
         ) {
 
+            ClearErrorOnEnter(profileViewModel::clearError)
             EditProfileScreen(
+                state = profileState,
                 onBackClick = {
 
                     navController
                         .popBackStack()
                 },
 
-                onSaveChangesClick = {
-
-                    navController
-                        .popBackStack()
+                onSaveChangesClick = { name, gender, age, categoryId ->
+                    profileViewModel.updateProfile(name, gender, age, categoryId) {
+                        navController.popBackStack()
+                    }
                 },
 
                 onChangePasswordClick = {
@@ -980,17 +990,20 @@ fun WhyNotNavigation(
             WhyNotRoutes.CHANGE_PASSWORD
         ) {
 
+            ClearErrorOnEnter(authViewModel::clearError)
             ChangePasswordScreen(
+                submitting = authState.submitting,
+                errorMessage = authState.errorMessage,
                 onBackClick = {
 
                     navController
                         .popBackStack()
                 },
 
-                onUpdatePasswordClick = {
-
-                    navController
-                        .popBackStack()
+                onUpdatePasswordClick = { current, new, confirm ->
+                    authViewModel.changePassword(current, new, confirm) {
+                        navController.popBackStack()
+                    }
                 },
 
                 onHomeClick = {

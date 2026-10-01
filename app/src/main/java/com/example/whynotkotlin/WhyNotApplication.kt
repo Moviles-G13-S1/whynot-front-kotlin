@@ -14,6 +14,6 @@ class WhyNotApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        dependencies = AppDependencies.firebase()
+        dependencies = AppDependencies.firebase(this)
     }
 }
