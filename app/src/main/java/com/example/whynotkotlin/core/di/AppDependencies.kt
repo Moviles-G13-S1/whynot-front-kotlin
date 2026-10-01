@@ -15,6 +15,8 @@ import com.example.whynotkotlin.features.profile.data.FirebaseUserRepository
 import com.example.whynotkotlin.features.profile.domain.UserRepository
 import com.example.whynotkotlin.features.recommendations.data.FirebaseRecommendationRepository
 import com.example.whynotkotlin.features.recommendations.domain.RecommendationRepository
+import com.example.whynotkotlin.features.speech.data.AndroidSpeechRecognitionRepository
+import com.example.whynotkotlin.features.speech.domain.SpeechRecognitionRepository
 import com.example.whynotkotlin.features.wishlists.data.FirebaseWishlistRepository
 import com.example.whynotkotlin.features.wishlists.domain.WishlistRepository
 import com.google.firebase.auth.FirebaseAuth
@@ -33,7 +35,8 @@ class AppDependencies(
     val adminRepository: AdminRepository,
     val locationRepository: LocationRepository,
     val nearbyStoreRepository: NearbyStoreRepository,
-    val recommendationRepository: RecommendationRepository
+    val recommendationRepository: RecommendationRepository,
+    val speechRecognitionRepository: SpeechRecognitionRepository
 ) {
 
     companion object {
@@ -41,8 +44,9 @@ class AppDependencies(
         /**
          * Wires the real Firebase implementations.
          *
-         * [context] is only used by the location repository, which needs it to
-         * reach Play Services and to check the runtime permission.
+         * [context] is only used by the two device repositories: location
+         * needs it to reach Play Services, speech to reach the recognition
+         * service, and both to check their runtime permission.
          */
         fun firebase(context: Context): AppDependencies {
 
@@ -73,7 +77,10 @@ class AppDependencies(
                     FirebaseNearbyStoreRepository(functions),
 
                 recommendationRepository =
-                    FirebaseRecommendationRepository(functions)
+                    FirebaseRecommendationRepository(functions),
+
+                speechRecognitionRepository =
+                    AndroidSpeechRecognitionRepository(context)
             )
         }
     }

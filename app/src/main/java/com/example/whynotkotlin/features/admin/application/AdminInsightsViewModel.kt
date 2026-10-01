@@ -120,23 +120,28 @@ class AdminInsightsViewModel(
             .groupBy { (_, yearMonth) -> yearMonth }
             .map { (yearMonth, entries) ->
 
-                val byCategory = entries
+                val counts = entries
                     .groupingBy { (product, _) -> product.categoryId }
                     .eachCount()
+
+                // Ties are ordered by id so the bars do not reshuffle between
+                // snapshots that carry the same numbers.
+                val byCategory = counts
                     .map { (categoryId, count) ->
                         CategoryPurchaseCount(categoryId, count)
                     }
-                    .sortedByDescending { it.purchases }
-
-                val top = byCategory.firstOrNull()
+                    .sortedWith(
+                        compareByDescending<CategoryPurchaseCount> { it.purchases }
+                            .thenBy { it.categoryId }
+                    )
 
                 PurchaseMonth(
                     year = yearMonth.year,
                     month = yearMonth.month,
                     label = yearMonth.label(),
                     totalPurchases = entries.size,
-                    topCategoryId = top?.categoryId,
-                    topCategoryPurchases = top?.purchases ?: 0,
+                    topCategoryIds = categoriesTiedAtMax(counts),
+                    topCategoryPurchases = counts.values.maxOrNull() ?: 0,
                     byCategory = byCategory
                 )
             }
@@ -144,19 +149,32 @@ class AdminInsightsViewModel(
             // ordering happens here.
             .sortedByDescending { it.year * 100 + it.month }
 
-        val overallTop = inWindow
+        val overallCounts = inWindow
             .groupingBy { (product, _) -> product.categoryId }
             .eachCount()
-            .maxByOrNull { it.value }
-            ?.key
 
         return PurchasedProductsStats(
             months = months,
             totalPurchases = inWindow.size,
             undatedPurchases = purchased.size - dated.size,
-            overallTopCategoryId = overallTop,
+            overallTopCategoryIds = categoriesTiedAtMax(overallCounts),
             monthsWindow = window
         )
+    }
+
+    /**
+     * Every category that reaches the highest count, in a stable order.
+     *
+     * BQ4 asks which category leads. When two share the lead, naming only one
+     * would be an arbitrary answer, so all of them are returned.
+     */
+    private fun categoriesTiedAtMax(counts: Map<String, Int>): List<String> {
+        val max = counts.values.maxOrNull() ?: return emptyList()
+
+        return counts
+            .filterValues { it == max }
+            .keys
+            .sorted()
     }
 
     /**
