@@ -5,8 +5,13 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!--
+        Since Android 11 an app cannot see other packages' services unless it
+        declares them. Without this, SpeechRecognizer.isRecognitionAvailable()
+        returns false even on phones that have a recognition service.
+    -->
     <queries>
         <intent>
             <action android:name="android.speech.RecognitionService" />

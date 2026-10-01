@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -13,15 +14,26 @@ import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import com.example.whynotkotlin.core.di.AppDependencies
 import com.example.whynotkotlin.core.di.WhyNotViewModelFactory
+import com.example.whynotkotlin.features.admin.application.AdminInsightsUiState
+import com.example.whynotkotlin.features.admin.application.AdminInsightsViewModel
+import com.example.whynotkotlin.features.admin.application.AdminUserMetricsUiState
+import com.example.whynotkotlin.features.admin.application.AdminUserMetricsViewModel
 import com.example.whynotkotlin.features.admin.application.AdminViewModel
+import com.example.whynotkotlin.features.authentication.application.AuthUiState
 import com.example.whynotkotlin.features.authentication.application.AuthViewModel
+import com.example.whynotkotlin.features.nearby.application.NearbyStoreViewModel
 import com.example.whynotkotlin.features.products.application.ProductViewModel
 import com.example.whynotkotlin.features.profile.application.ProfileViewModel
 import com.example.whynotkotlin.features.profile.domain.UserProfileDraft
+import com.example.whynotkotlin.features.recommendations.application.RecommendationViewModel
 import com.example.whynotkotlin.features.wishlists.application.WishlistViewModel
 import com.example.whynotkotlin.ui.components.WhyNotLoading
+import com.example.whynotkotlin.ui.screens.admin.AdminDemographicProfileScreen
+import com.example.whynotkotlin.ui.screens.admin.AdminPurchasesByCategoryScreen
+import com.example.whynotkotlin.ui.screens.admin.AdminRepeatSaversScreen
 import com.example.whynotkotlin.ui.screens.admin.AdminRecommendedSavesScreen
 import com.example.whynotkotlin.ui.screens.admin.AdminSavedProductsScreen
+import com.example.whynotkotlin.ui.screens.admin.AdminZeroProductsScreen
 import com.example.whynotkotlin.ui.screens.auth.LoginScreen
 import com.example.whynotkotlin.ui.screens.auth.RegisterScreen
 import com.example.whynotkotlin.ui.screens.home.HomeScreen
@@ -74,8 +86,20 @@ object WhyNotRoutes {
     const val ADMIN_SAVED_PRODUCTS =
         "admin_saved_products"
 
+    const val ADMIN_REPEAT_SAVERS =
+        "admin_repeat_savers"
+
     const val ADMIN_RECOMMENDED_SAVES =
         "admin_recommended_saves"
+
+    const val ADMIN_PURCHASES_BY_CATEGORY =
+        "admin_purchases_by_category"
+
+    const val ADMIN_ZERO_PRODUCTS =
+        "admin_zero_products"
+
+    const val ADMIN_DEMOGRAPHIC_PROFILE =
+        "admin_demographic_profile"
 }
 
 @Composable
@@ -278,10 +302,41 @@ fun WhyNotNavigation(
             WhyNotRoutes.HOME
         ) {
 
+            val nearbyStoreViewModel:
+                    NearbyStoreViewModel =
+                viewModel(
+                    factory = factory
+                )
+
+            val recommendationViewModel:
+                    RecommendationViewModel =
+                viewModel(
+                    factory = factory
+                )
+
+            val nearbyState by
+            nearbyStoreViewModel
+                .state
+                .collectAsStateWithLifecycle()
+
+            val recommendationState by
+            recommendationViewModel
+                .state
+                .collectAsStateWithLifecycle()
+
             HomeScreen(
                 userName = profileState.profile?.takeIf {
                     it.uid == authState.session?.uid
                 }?.name,
+                nearbyState = nearbyState,
+                recommendationState = recommendationState,
+                wishlistSummaries = wishlistState.summaries,
+                onLoadNearby =
+                    nearbyStoreViewModel::loadNearestStore,
+                onLoadRecommendation =
+                    recommendationViewModel::loadRecommendation,
+                onSaveRecommendation =
+                    recommendationViewModel::saveRecommendation,
                 onHomeClick = {},
 
                 onWishlistsClick = {
@@ -1125,6 +1180,94 @@ fun WhyNotNavigation(
                                     WhyNotRoutes
                                         .ADMIN_RECOMMENDED_SAVES
                                 )
+                        },
+
+                        onRepeatSaversClick = {
+
+                            navController
+                                .navigateAdmin(
+                                    WhyNotRoutes
+                                        .ADMIN_REPEAT_SAVERS
+                                )
+                        },
+
+                        onPurchasesByCategoryClick = {
+
+                            navController
+                                .navigateAdmin(
+                                    WhyNotRoutes
+                                        .ADMIN_PURCHASES_BY_CATEGORY
+                                )
+                        },
+
+                        onZeroProductsClick = {
+
+                            navController
+                                .navigateAdmin(
+                                    WhyNotRoutes
+                                        .ADMIN_ZERO_PRODUCTS
+                                )
+                        },
+
+                        onDemographicProfileClick = {
+
+                            navController
+                                .navigateAdmin(
+                                    WhyNotRoutes
+                                        .ADMIN_DEMOGRAPHIC_PROFILE
+                                )
+                        }
+                    )
+                }
+            }
+
+            /*
+             * BQ2 â€” Martin
+             */
+            composable(
+                WhyNotRoutes
+                    .ADMIN_REPEAT_SAVERS
+            ) {
+                    backStackEntry ->
+
+                AdminUserMetricsHost(
+                    authState = authState,
+                    navController = navController,
+                    backStackEntry = backStackEntry,
+                    factory = factory
+                ) { metricsState ->
+
+                    AdminRepeatSaversScreen(
+                        state = metricsState,
+
+                        onSavedProductsClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_SAVED_PRODUCTS
+                            )
+                        },
+
+                        onRecommendedSavesClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_RECOMMENDED_SAVES
+                            )
+                        },
+
+                        onPurchasesByCategoryClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_PURCHASES_BY_CATEGORY
+                            )
+                        },
+
+                        onZeroProductsClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_ZERO_PRODUCTS
+                            )
+                        },
+
+                        onDemographicProfileClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_DEMOGRAPHIC_PROFILE
+                            )
                         }
                     )
                 }
@@ -1190,6 +1333,201 @@ fun WhyNotNavigation(
                                     WhyNotRoutes
                                         .ADMIN_SAVED_PRODUCTS
                                 )
+                        },
+
+                        onRepeatSaversClick = {
+
+                            navController
+                                .navigateAdmin(
+                                    WhyNotRoutes
+                                        .ADMIN_REPEAT_SAVERS
+                                )
+                        },
+
+                        onPurchasesByCategoryClick = {
+
+                            navController
+                                .navigateAdmin(
+                                    WhyNotRoutes
+                                        .ADMIN_PURCHASES_BY_CATEGORY
+                                )
+                        },
+
+                        onZeroProductsClick = {
+
+                            navController
+                                .navigateAdmin(
+                                    WhyNotRoutes
+                                        .ADMIN_ZERO_PRODUCTS
+                                )
+                        },
+
+                        onDemographicProfileClick = {
+
+                            navController
+                                .navigateAdmin(
+                                    WhyNotRoutes
+                                        .ADMIN_DEMOGRAPHIC_PROFILE
+                                )
+                        }
+                    )
+                }
+            }
+
+            /*
+             * BQ4 â€” Miguel
+             */
+            composable(
+                WhyNotRoutes
+                    .ADMIN_PURCHASES_BY_CATEGORY
+            ) {
+                    backStackEntry ->
+
+                AdminInsightsHost(
+                    authState = authState,
+                    navController = navController,
+                    backStackEntry = backStackEntry,
+                    factory = factory
+                ) { insightsState, insightsViewModel ->
+
+                    AdminPurchasesByCategoryScreen(
+                        state = insightsState,
+
+                        onSavedProductsClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_SAVED_PRODUCTS
+                            )
+                        },
+
+                        onRepeatSaversClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_REPEAT_SAVERS
+                            )
+                        },
+
+                        onRecommendedSavesClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_RECOMMENDED_SAVES
+                            )
+                        },
+
+                        onZeroProductsClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_ZERO_PRODUCTS
+                            )
+                        },
+
+                        onDemographicProfileClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_DEMOGRAPHIC_PROFILE
+                            )
+                        },
+
+                        onWindowChange =
+                            insightsViewModel::selectMonthsWindow
+                    )
+                }
+            }
+
+            /*
+             * BQ5 â€” Martin
+             */
+            composable(
+                WhyNotRoutes
+                    .ADMIN_ZERO_PRODUCTS
+            ) {
+                    backStackEntry ->
+
+                AdminUserMetricsHost(
+                    authState = authState,
+                    navController = navController,
+                    backStackEntry = backStackEntry,
+                    factory = factory
+                ) { metricsState ->
+
+                    AdminZeroProductsScreen(
+                        state = metricsState,
+
+                        onSavedProductsClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_SAVED_PRODUCTS
+                            )
+                        },
+
+                        onRepeatSaversClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_REPEAT_SAVERS
+                            )
+                        },
+
+                        onRecommendedSavesClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_RECOMMENDED_SAVES
+                            )
+                        },
+
+                        onPurchasesByCategoryClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_PURCHASES_BY_CATEGORY
+                            )
+                        },
+
+                        onDemographicProfileClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_DEMOGRAPHIC_PROFILE
+                            )
+                        }
+                    )
+                }
+            }
+
+            /*
+             * BQ6 â€” Miguel
+             */
+            composable(
+                WhyNotRoutes
+                    .ADMIN_DEMOGRAPHIC_PROFILE
+            ) {
+                    backStackEntry ->
+
+                AdminInsightsHost(
+                    authState = authState,
+                    navController = navController,
+                    backStackEntry = backStackEntry,
+                    factory = factory
+                ) { insightsState, _ ->
+
+                    AdminDemographicProfileScreen(
+                        state = insightsState,
+
+                        onSavedProductsClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_SAVED_PRODUCTS
+                            )
+                        },
+
+                        onRepeatSaversClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_REPEAT_SAVERS
+                            )
+                        },
+
+                        onRecommendedSavesClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_RECOMMENDED_SAVES
+                            )
+                        },
+
+                        onPurchasesByCategoryClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_PURCHASES_BY_CATEGORY
+                            )
+                        },
+
+                        onZeroProductsClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_ZERO_PRODUCTS
+                            )
                         }
                     )
                 }
@@ -1223,6 +1561,74 @@ private fun ClearErrorOnEnter(
  * This is a UX/access-control layer only.
  * Firestore Security Rules remain the actual security boundary.
  */
+/**
+ * Guards a BQ4/BQ6 destination and hands it the shared
+ * [AdminInsightsViewModel].
+ *
+ * The ViewModel is scoped to the admin graph entry, not to the destination, so
+ * moving between Purchases and Demographics keeps the same two Firestore
+ * listeners instead of reopening them on every tab change.
+ */
+@Composable
+private fun AdminInsightsHost(
+    authState: AuthUiState,
+    navController: NavHostController,
+    backStackEntry: NavBackStackEntry,
+    factory: WhyNotViewModelFactory,
+    content: @Composable (AdminInsightsUiState, AdminInsightsViewModel) -> Unit
+) {
+    AdminRouteGuard(
+        isSignedIn = authState.session != null,
+        isAdmin = authState.session?.isAdmin == true,
+        navController = navController
+    ) {
+        val adminGraphEntry = remember(backStackEntry) {
+            navController.getBackStackEntry(WhyNotRoutes.ADMIN_ROOT)
+        }
+
+        val insightsViewModel: AdminInsightsViewModel = viewModel(
+            viewModelStoreOwner = adminGraphEntry,
+            factory = factory
+        )
+
+        val insightsState by insightsViewModel
+            .state
+            .collectAsStateWithLifecycle()
+
+        content(insightsState, insightsViewModel)
+    }
+}
+
+@Composable
+private fun AdminUserMetricsHost(
+    authState: AuthUiState,
+    navController: NavHostController,
+    backStackEntry: NavBackStackEntry,
+    factory: WhyNotViewModelFactory,
+    content: @Composable (AdminUserMetricsUiState) -> Unit
+) {
+    AdminRouteGuard(
+        isSignedIn = authState.session != null,
+        isAdmin = authState.session?.isAdmin == true,
+        navController = navController
+    ) {
+        val adminGraphEntry = remember(backStackEntry) {
+            navController.getBackStackEntry(WhyNotRoutes.ADMIN_ROOT)
+        }
+
+        val metricsViewModel: AdminUserMetricsViewModel = viewModel(
+            viewModelStoreOwner = adminGraphEntry,
+            factory = factory
+        )
+
+        val metricsState by metricsViewModel
+            .state
+            .collectAsStateWithLifecycle()
+
+        content(metricsState)
+    }
+}
+
 @Composable
 private fun AdminRouteGuard(
     isSignedIn: Boolean,

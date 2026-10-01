@@ -26,7 +26,11 @@ import com.example.whynotkotlin.ui.theme.WhyNotGray
 @Composable
 fun AdminRecommendedSavesScreen(
     state: AdminUiState,
-    onSavedProductsClick: () -> Unit
+    onSavedProductsClick: () -> Unit,
+    onRepeatSaversClick: () -> Unit = {},
+    onPurchasesByCategoryClick: () -> Unit = {},
+    onZeroProductsClick: () -> Unit = {},
+    onDemographicProfileClick: () -> Unit = {}
 ) {
     AdminPage(
         title = "Recommended products",
@@ -34,7 +38,11 @@ fun AdminRecommendedSavesScreen(
             "How many recommended products have been saved?",
         selectedSection = AdminSection.RECOMMENDED_SAVES,
         onSavedProductsClick = onSavedProductsClick,
-        onRecommendedSavesClick = {}
+        onRepeatSaversClick = onRepeatSaversClick,
+        onRecommendedSavesClick = {},
+        onPurchasesByCategoryClick = onPurchasesByCategoryClick,
+        onZeroProductsClick = onZeroProductsClick,
+        onDemographicProfileClick = onDemographicProfileClick
     ) {
 
         when {

@@ -28,7 +28,11 @@ import com.example.whynotkotlin.ui.theme.WhyNotWhite
 
 enum class AdminSection {
     SAVED_PRODUCTS,
-    RECOMMENDED_SAVES
+    REPEAT_SAVERS,
+    RECOMMENDED_SAVES,
+    PURCHASES_BY_CATEGORY,
+    ZERO_PRODUCTS,
+    DEMOGRAPHIC_PROFILE
 }
 
 /**
@@ -47,6 +51,10 @@ fun AdminPage(
     selectedSection: AdminSection,
     onSavedProductsClick: () -> Unit,
     onRecommendedSavesClick: () -> Unit,
+    onRepeatSaversClick: () -> Unit = {},
+    onPurchasesByCategoryClick: () -> Unit = {},
+    onZeroProductsClick: () -> Unit = {},
+    onDemographicProfileClick: () -> Unit = {},
     content: @Composable ColumnScope.() -> Unit
 ) {
     Column(
@@ -93,17 +101,57 @@ fun AdminPage(
         ) {
             AdminNavigationItem(
                 text = "Saved products",
-                selected =
-                    selectedSection == AdminSection.SAVED_PRODUCTS,
+                selected = selectedSection == AdminSection.SAVED_PRODUCTS,
                 onClick = onSavedProductsClick,
                 modifier = Modifier.weight(1f)
             )
 
             AdminNavigationItem(
+                text = "Repeat saves",
+                selected = selectedSection == AdminSection.REPEAT_SAVERS,
+                onClick = onRepeatSaversClick,
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            AdminNavigationItem(
                 text = "Recommended",
-                selected =
-                    selectedSection == AdminSection.RECOMMENDED_SAVES,
+                selected = selectedSection == AdminSection.RECOMMENDED_SAVES,
                 onClick = onRecommendedSavesClick,
+                modifier = Modifier.weight(1f)
+            )
+
+            AdminNavigationItem(
+                text = "Purchases",
+                selected = selectedSection == AdminSection.PURCHASES_BY_CATEGORY,
+                onClick = onPurchasesByCategoryClick,
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            AdminNavigationItem(
+                text = "Zero products",
+                selected = selectedSection == AdminSection.ZERO_PRODUCTS,
+                onClick = onZeroProductsClick,
+                modifier = Modifier.weight(1f)
+            )
+
+            AdminNavigationItem(
+                text = "Demographics",
+                selected = selectedSection == AdminSection.DEMOGRAPHIC_PROFILE,
+                onClick = onDemographicProfileClick,
                 modifier = Modifier.weight(1f)
             )
         }

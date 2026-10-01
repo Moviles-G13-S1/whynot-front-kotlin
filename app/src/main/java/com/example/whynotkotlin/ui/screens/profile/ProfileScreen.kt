@@ -176,6 +176,14 @@ fun ProfileScreen(
                     filled = true
                 )
             }
+            Spacer(
+                modifier = Modifier.height(16.dp)
+            )
+
+            WhyNotButton(
+                text = "Sign out",
+                onClick = onLogoutClick
+            )
         }
 
         WhyNotBottomBar(
