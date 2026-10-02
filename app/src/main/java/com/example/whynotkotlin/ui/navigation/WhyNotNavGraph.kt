@@ -26,6 +26,7 @@ import com.example.whynotkotlin.features.products.application.ProductViewModel
 import com.example.whynotkotlin.features.profile.application.ProfileViewModel
 import com.example.whynotkotlin.features.profile.domain.UserProfileDraft
 import com.example.whynotkotlin.features.recommendations.application.RecommendationViewModel
+import com.example.whynotkotlin.features.speech.application.SpeechViewModel
 import com.example.whynotkotlin.features.wishlists.application.WishlistViewModel
 import com.example.whynotkotlin.ui.components.WhyNotLoading
 import com.example.whynotkotlin.ui.screens.admin.AdminDemographicProfileScreen
@@ -768,6 +769,22 @@ fun WhyNotNavigation(
             WhyNotRoutes.NEW_PRODUCT
         ) {
 
+            /*
+             * Scoped to this destination: leaving the form clears the
+             * ViewModel, which cancels any recognition still running and
+             * releases the microphone.
+             */
+            val speechViewModel:
+                    SpeechViewModel =
+                viewModel(
+                    factory = factory
+                )
+
+            val speechState by
+            speechViewModel
+                .state
+                .collectAsStateWithLifecycle()
+
             NewProductScreen(
                 wishlists =
                     wishlistState
@@ -784,6 +801,16 @@ fun WhyNotNavigation(
                 errorMessage =
                     productState
                         .errorMessage,
+
+                speechState =
+                    speechState,
+
+                onStartVoiceInput = {
+                    speechViewModel.startListening()
+                },
+
+                onVoiceInputConsumed =
+                    speechViewModel::reset,
 
                 onSave = {
                         wishlistId,
