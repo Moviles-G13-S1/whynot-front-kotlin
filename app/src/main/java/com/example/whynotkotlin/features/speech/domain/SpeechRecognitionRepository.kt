@@ -37,3 +37,4 @@ interface SpeechRecognitionRepository {
         languageTag: String = Locale.getDefault().toLanguageTag()
     ): String
 }
+

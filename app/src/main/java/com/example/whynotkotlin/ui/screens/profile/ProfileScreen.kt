@@ -14,6 +14,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import com.example.whynotkotlin.features.profile.application.ProfileUiState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,6 +28,7 @@ import com.example.whynotkotlin.ui.theme.WhyNotGray
 
 @Composable
 fun ProfileScreen(
+    state: ProfileUiState,
     onEditProfileClick: () -> Unit,
     onChangePasswordClick: () -> Unit,
     onLogoutClick: () -> Unit,
@@ -51,6 +55,7 @@ fun ProfileScreen(
         Column(
             modifier = Modifier
                 .weight(1f)
+                .verticalScroll(rememberScrollState())
                 .padding(
                     horizontal = 24.dp
                 ),
@@ -78,7 +83,7 @@ fun ProfileScreen(
             )
 
             Text(
-                text = "Juliana Durán",
+                text = state.profile?.name ?: if (state.loading) "Loading profile…" else "Profile unavailable",
                 style =
                     MaterialTheme
                         .typography
@@ -107,17 +112,17 @@ fun ProfileScreen(
 
                 ProfileInfo(
                     "Email",
-                    "j.duranl@uniandes.edu.co"
+                    state.profile?.email.orEmpty()
                 )
 
                 ProfileInfo(
                     "Gender",
-                    "Female"
+                    state.profile?.gender.orEmpty()
                 )
 
                 ProfileInfo(
                     "Age",
-                    "22"
+                    state.profile?.age?.toString().orEmpty()
                 )
 
                 ProfileInfo(
@@ -127,9 +132,11 @@ fun ProfileScreen(
 
                 ProfileInfo(
                     "Preferred Category",
-                    "Beauty"
+                    state.preferredCategoryName
                 )
             }
+
+            state.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 
             Text(
                 text = "✎ Edit Profile",

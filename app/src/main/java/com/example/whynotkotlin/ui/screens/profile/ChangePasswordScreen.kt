@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,7 +31,9 @@ import com.example.whynotkotlin.ui.theme.WhyNotGray
 @Composable
 fun ChangePasswordScreen(
     onBackClick: () -> Unit,
-    onUpdatePasswordClick: () -> Unit,
+    onUpdatePasswordClick: (String, String, String) -> Unit,
+    submitting: Boolean,
+    errorMessage: String?,
     onHomeClick: () -> Unit = {},
     onWishlistsClick: () -> Unit = {},
     onAddClick: () -> Unit = {},
@@ -42,7 +46,7 @@ fun ChangePasswordScreen(
 
     val canUpdate =
         currentPassword.isNotBlank() &&
-                newPassword.length >= 8 &&
+                newPassword.length >= 6 &&
                 newPassword == confirmPassword
 
     Column(
@@ -51,6 +55,7 @@ fun ChangePasswordScreen(
         Column(
             modifier = Modifier
                 .weight(1f)
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp)
         ) {
             Spacer(modifier = Modifier.height(30.dp))
@@ -110,7 +115,7 @@ fun ChangePasswordScreen(
                 )
 
                 Text(
-                    text = "Use at least 8 characters.",
+                    text = "Use at least 6 characters.",
                     style = MaterialTheme.typography.labelSmall,
                     color = WhyNotGray,
                     modifier = Modifier.padding(top = 22.dp)
@@ -129,10 +134,12 @@ fun ChangePasswordScreen(
             Spacer(modifier = Modifier.height(14.dp))
 
             WhyNotButton(
-                text = "Update password",
-                onClick = onUpdatePasswordClick,
-                enabled = canUpdate
+                text = if (submitting) "Updating…" else "Update password",
+                onClick = { onUpdatePasswordClick(currentPassword, newPassword, confirmPassword) },
+                enabled = canUpdate && !submitting
             )
+
+            errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 
             if (!canUpdate) {
                 Text(

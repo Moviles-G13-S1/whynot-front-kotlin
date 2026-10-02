@@ -10,11 +10,15 @@ import com.example.whynotkotlin.features.profile.domain.UserProfileUpdate
 import com.example.whynotkotlin.features.profile.domain.UserRepository
 import com.example.whynotkotlin.features.wishlists.domain.Category
 import com.example.whynotkotlin.features.wishlists.domain.WishlistRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 
@@ -47,6 +51,15 @@ class ProfileViewModel(
                 .flatMapLatest { user ->
                     if (user == null) flowOf(null)
                     else userRepository.observeProfile(user.uid)
+                        .onStart {
+                            _state.value = ProfileUiState(categories = _state.value.categories)
+                        }
+                        .catch { error ->
+                            _state.value = _state.value.copy(
+                                loading = false, errorMessage = error.readableMessage()
+                            )
+                            emit(null)
+                        }
                 }
                 .collect { profile ->
                     _state.value = _state.value.copy(profile = profile, loading = false)
@@ -54,15 +67,17 @@ class ProfileViewModel(
         }
 
         viewModelScope.launch {
-            runCatching { wishlistRepository.getCategories() }
-                .onSuccess { categories ->
+            authRepository.observeSession().collectLatest { user ->
+                if (user == null) return@collectLatest
+                try {
+                    val categories = wishlistRepository.getCategories()
                     _state.value = _state.value.copy(categories = categories)
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: Exception) {
+                    _state.value = _state.value.copy(errorMessage = error.readableMessage())
                 }
-                .onFailure { error ->
-                    _state.value = _state.value.copy(
-                        errorMessage = error.readableMessage()
-                    )
-                }
+            }
         }
     }
 
@@ -73,6 +88,7 @@ class ProfileViewModel(
         preferredCategoryId: String,
         onSuccess: () -> Unit
     ) {
+        if (_state.value.saving) return
         val uid = _state.value.profile?.uid
 
         if (uid == null) {

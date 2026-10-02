@@ -1,6 +1,7 @@
 package com.example.whynotkotlin.core.di
 
 import androidx.lifecycle.ViewModel
+import com.example.whynotkotlin.features.speech.application.SpeechViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.whynotkotlin.features.admin.application.AdminInsightsViewModel
 import com.example.whynotkotlin.features.admin.application.AdminViewModel
@@ -100,6 +101,9 @@ class WhyNotViewModelFactory(
             repository =
                 dependencies.recommendationRepository
         )
+
+        modelClass.isAssignableFrom(SpeechViewModel::class.java) ->
+            SpeechViewModel(dependencies.speechRecognitionRepository)
 
         else -> throw IllegalArgumentException(
             "Unknown ViewModel: ${modelClass.name}"

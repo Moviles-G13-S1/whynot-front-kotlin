@@ -33,3 +33,4 @@ class SpeechBusyException :
 /** Any other failure reported by the recognition service. */
 class SpeechServiceException(errorCode: Int) :
     SpeechRecognitionException("Voice input failed (code $errorCode).")
+

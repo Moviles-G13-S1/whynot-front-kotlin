@@ -121,7 +121,12 @@ class AndroidSpeechRecognitionRepository(
                     }
                 }
 
-                recognizer.startListening(recognitionIntent(languageTag))
+                try {
+                    recognizer.startListening(recognitionIntent(languageTag))
+                } catch (error: Exception) {
+                    release()
+                    if (continuation.isActive) continuation.resumeWithException(error)
+                }
             }
         }
 
@@ -159,3 +164,4 @@ private fun Int.toSpeechException(): SpeechRecognitionException = when (this) {
 
     else -> SpeechServiceException(this)
 }
+
