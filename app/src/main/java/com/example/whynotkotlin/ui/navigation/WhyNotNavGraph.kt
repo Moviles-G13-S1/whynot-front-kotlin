@@ -314,6 +314,12 @@ fun WhyNotNavigation(
                     factory = factory
                 )
 
+            val profileViewModel:
+                    ProfileViewModel =
+                viewModel(
+                    factory = factory
+                )
+
             val nearbyState by
             nearbyStoreViewModel
                 .state
@@ -321,6 +327,11 @@ fun WhyNotNavigation(
 
             val recommendationState by
             recommendationViewModel
+                .state
+                .collectAsStateWithLifecycle()
+            
+            val profileState by
+            profileViewModel
                 .state
                 .collectAsStateWithLifecycle()
 
@@ -347,9 +358,16 @@ fun WhyNotNavigation(
                 },
 
                 onWishlistClick = {
+                        wishlistId ->
 
-                    navController.navigateMain(
-                        WhyNotRoutes.WISHLISTS
+                    wishlistViewModel
+                        .selectWishlist(
+                            wishlistId
+                        )
+
+                    navController.navigate(
+                        WhyNotRoutes
+                            .WISHLIST_DETAIL
                     )
                 },
 
@@ -849,6 +867,9 @@ fun WhyNotNavigation(
         ) {
 
             PurchasesScreen(
+                purchases =
+                    productState.purchased,
+
                 onHomeClick = {
 
                     navController.navigateMain(

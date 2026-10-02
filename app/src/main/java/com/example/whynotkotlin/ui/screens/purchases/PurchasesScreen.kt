@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -22,35 +21,24 @@ import androidx.compose.material.icons.outlined.Percent
 import androidx.compose.material.icons.outlined.Sort
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import com.example.whynotkotlin.features.products.domain.Product
 import com.example.whynotkotlin.ui.components.WhyNotBottomBar
 import com.example.whynotkotlin.ui.theme.WhyNotBeige
 import com.example.whynotkotlin.ui.theme.WhyNotBorder
 import com.example.whynotkotlin.ui.theme.WhyNotGray
 import com.example.whynotkotlin.ui.theme.WhyNotWhite
 
-private data class PurchaseUi(
-    val name: String,
-    val price: String
-)
-
-private val samplePurchases = listOf(
-    PurchaseUi("Item name", "$100"),
-    PurchaseUi("Item name", "$100"),
-    PurchaseUi("Item name", "$100")
-)
-
 @Composable
 fun PurchasesScreen(
+    purchases: List<Product>,
     onHomeClick: () -> Unit,
     onWishlistsClick: () -> Unit,
     onAddClick: () -> Unit,
@@ -76,7 +64,7 @@ fun PurchasesScreen(
                 Spacer(modifier = Modifier.height(5.dp))
 
                 Text(
-                    text = "3 items",
+                    text = "${purchases.size} ${if (purchases.size == 1) "item" else "items"}",
                     style = MaterialTheme.typography.bodySmall,
                     color = WhyNotGray
                 )
@@ -99,34 +87,16 @@ fun PurchasesScreen(
             ) {
                 FilterChip(
                     label = "Filter",
-                    icon = {
-                        Icon(
-                            Icons.Outlined.Sort,
-                            contentDescription = null
-                        )
-                    },
                     modifier = Modifier.weight(1f)
                 )
 
                 FilterChip(
                     label = "Filter",
-                    icon = {
-                        Icon(
-                            Icons.Outlined.Percent,
-                            contentDescription = null
-                        )
-                    },
                     modifier = Modifier.weight(1f)
                 )
 
                 FilterChip(
                     label = "Filter",
-                    icon = {
-                        Icon(
-                            Icons.Outlined.FilterAlt,
-                            contentDescription = null
-                        )
-                    },
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -151,7 +121,10 @@ fun PurchasesScreen(
             horizontalArrangement = Arrangement.spacedBy(14.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            items(samplePurchases) { purchase ->
+            items(
+                items = purchases,
+                key = { product -> product.id }
+            ) { purchase ->
                 PurchaseCard(purchase)
             }
         }
@@ -169,7 +142,6 @@ fun PurchasesScreen(
 @Composable
 private fun FilterChip(
     label: String,
-    icon: @Composable () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -186,20 +158,6 @@ private fun FilterChip(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
-            Box(
-                modifier = Modifier.size(15.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                CompositionLocalProvider(
-                    LocalContentColor provides WhyNotGray,
-                    content = icon
-                )
-            }
-
-            Spacer(
-                modifier = Modifier.size(4.dp)
-            )
-
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelSmall,
@@ -211,7 +169,7 @@ private fun FilterChip(
 
 @Composable
 private fun PurchaseCard(
-    purchase: PurchaseUi
+    purchase: Product
 ) {
     Column(
         modifier = Modifier.fillMaxWidth()
@@ -236,7 +194,10 @@ private fun PurchaseCard(
         )
 
         Text(
-            text = purchase.price,
+            text = String.format(
+                "$%.2f",
+                purchase.price
+            ),
             style = MaterialTheme.typography.labelSmall,
             color = WhyNotGray
         )
