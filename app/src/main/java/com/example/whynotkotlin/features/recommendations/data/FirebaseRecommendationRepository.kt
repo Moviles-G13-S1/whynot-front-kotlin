@@ -6,86 +6,156 @@ import com.example.whynotkotlin.features.recommendations.domain.RecommendationSa
 import com.google.firebase.functions.FirebaseFunctions
 import kotlinx.coroutines.tasks.await
 
-private const val GET_RECOMMENDATION = "get_recommendation"
-private const val SAVE_RECOMMENDED_PRODUCT = "save_recommended_product"
-
 /**
- * Calls the shared callable Cloud Functions that own the Smart Recommendation
- * flow.
+ * Real Firebase implementation of RecommendationRepository.
  *
- * The similarity algorithm and the BQ3 counter live in the backend: this class
- * only carries values across the boundary. Nothing here decides what to
- * recommend or what counts as a recommended save.
+ * It communicates with the shared backend used by both mobile clients.
+ *
+ * get_recommendation:
+ * obtains one personalized recommendation and its recommendationEventId.
+ *
+ * save_recommended_product:
+ * saves the recommended product and updates BQ3 in the backend.
  */
 class FirebaseRecommendationRepository(
     private val functions: FirebaseFunctions
 ) : RecommendationRepository {
 
-    /**
-     * Returns the single recommendation the backend picked, or null when the
-     * most similar user has nothing new to offer.
-     */
     override suspend fun getRecommendation(): ProductRecommendation? {
+
         val result = functions
-            .getHttpsCallable(GET_RECOMMENDATION)
+            .getHttpsCallable("get_recommendation")
             .call()
             .await()
 
         val response = result.getData() as? Map<*, *>
-            ?: throw IllegalStateException("Invalid recommendation response.")
+            ?: throw IllegalStateException(
+                "Invalid recommendation response."
+            )
 
-        // The backend answers with an explicit null recommendation plus a
-        // message when there is no candidate, which is not an error.
-        val rawRecommendation = response["recommendation"]
-            ?: return null
+        val rawRecommendation =
+            response["recommendation"]
+                ?: return null
 
-        val recommendation = rawRecommendation as? Map<*, *>
-            ?: throw IllegalStateException("Invalid recommendation payload.")
+        val recommendation =
+            rawRecommendation as? Map<*, *>
+                ?: throw IllegalStateException(
+                    "Invalid recommendation data."
+                )
+
+        val recommendationEventId =
+            recommendation["recommendationEventId"]
+                    as? String
+                ?: throw IllegalStateException(
+                    "Recommendation event ID is missing."
+                )
+
+        val name =
+            recommendation["name"]
+                    as? String
+                ?: throw IllegalStateException(
+                    "Recommendation name is missing."
+                )
+
+        val brand =
+            recommendation["brand"]
+                    as? String
+                ?: throw IllegalStateException(
+                    "Recommendation brand is missing."
+                )
+
+        val price =
+            (recommendation["price"] as? Number)
+                ?.toDouble()
+                ?: throw IllegalStateException(
+                    "Recommendation price is missing."
+                )
+
+        val imageUrl =
+            recommendation["imageUrl"]
+                    as? String
+                ?: ""
+
+        val productUrl =
+            recommendation["productUrl"]
+                    as? String
+                ?: ""
+
+        val categoryId =
+            recommendation["categoryId"]
+                    as? String
+                ?: throw IllegalStateException(
+                    "Recommendation category is missing."
+                )
+
+        val reason =
+            recommendation["reason"]
+                    as? String
+                ?: ""
 
         return ProductRecommendation(
-            recommendationEventId = recommendation["recommendationEventId"] as? String
-                ?: throw IllegalStateException("Recommendation has no event id."),
+            recommendationEventId =
+                recommendationEventId,
 
-            name = recommendation["name"] as? String ?: "",
-            brand = recommendation["brand"] as? String ?: "",
-            price = (recommendation["price"] as? Number)?.toDouble() ?: 0.0,
-            imageUrl = recommendation["imageUrl"] as? String ?: "",
-            productUrl = recommendation["productUrl"] as? String ?: "",
-            categoryId = recommendation["categoryId"] as? String ?: "",
-            reason = recommendation["reason"] as? String ?: ""
+            name = name,
+
+            brand = brand,
+
+            price = price,
+
+            imageUrl = imageUrl,
+
+            productUrl = productUrl,
+
+            categoryId = categoryId,
+
+            reason = reason
         )
     }
 
-    /**
-     * Saves a recommended product into one of the user's wishlists.
-     *
-     * [recommendationEventId] is the id the backend handed out with the
-     * recommendation; it proves the recommendation was really shown to this
-     * user and makes the call idempotent, so a second tap returns the same
-     * product with `alreadySaved` set instead of creating a duplicate or
-     * counting twice.
-     */
     override suspend fun saveRecommendedProduct(
         recommendationEventId: String,
         wishlistId: String
     ): RecommendationSaveResult {
+
         val result = functions
-            .getHttpsCallable(SAVE_RECOMMENDED_PRODUCT)
+            .getHttpsCallable(
+                "save_recommended_product"
+            )
             .call(
                 mapOf(
-                    "recommendationEventId" to recommendationEventId,
-                    "wishlistId" to wishlistId
+                    "recommendationEventId" to
+                            recommendationEventId,
+
+                    "wishlistId" to
+                            wishlistId
                 )
             )
             .await()
 
-        val response = result.getData() as? Map<*, *>
-            ?: throw IllegalStateException("Invalid recommendation save response.")
+        val response =
+            result.getData() as? Map<*, *>
+                ?: throw IllegalStateException(
+                    "Invalid recommendation save response."
+                )
+
+        val saved =
+            response["saved"] as? Boolean
+                ?: throw IllegalStateException(
+                    "Save response is missing saved."
+                )
+
+        val alreadySaved =
+            response["alreadySaved"] as? Boolean
+                ?: false
+
+        val productId =
+            response["productId"] as? String
 
         return RecommendationSaveResult(
-            saved = response["saved"] as? Boolean == true,
-            alreadySaved = response["alreadySaved"] as? Boolean == true,
-            productId = response["productId"] as? String
+            saved = saved,
+            alreadySaved = alreadySaved,
+            productId = productId
         )
     }
 }

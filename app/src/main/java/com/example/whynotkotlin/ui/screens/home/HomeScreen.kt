@@ -36,7 +36,7 @@ import com.example.whynotkotlin.ui.theme.WhyNotGray
 
 @Composable
 fun HomeScreen(
-    userName: String,
+    userName: String?,
     nearbyState: NearbyStoreUiState,
     recommendationState: RecommendationUiState,
     wishlistSummaries: List<WishlistSummary>,
@@ -76,7 +76,9 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "Good Morning, ${userName.ifBlank { "there" }}",
+                    text = userName?.trim()?.takeIf { it.isNotEmpty() }
+                        ?.let { "Good Morning, $it" }
+                        ?: "Good Morning",
                     style = MaterialTheme.typography.headlineMedium
                 )
 

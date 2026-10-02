@@ -52,7 +52,7 @@ class AppDependencies(
 
             val auth = FirebaseAuth.getInstance()
             val firestore = FirebaseFirestore.getInstance()
-            val functions = FirebaseFunctions.getInstance()
+            val functions = FirebaseFunctions.getInstance("us-central1")
 
             return AppDependencies(
                 authRepository =

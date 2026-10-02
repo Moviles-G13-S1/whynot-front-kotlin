@@ -112,6 +112,7 @@ class AuthViewModel(
     }
 
     private fun submit(onSuccess: () -> Unit, block: suspend () -> Unit) {
+        if (_state.value.submitting) return
         _state.value = _state.value.copy(submitting = true, errorMessage = null)
 
         viewModelScope.launch {
