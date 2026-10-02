@@ -26,16 +26,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.whynotkotlin.features.nearby.application.NearbyStoreUiState
+import com.example.whynotkotlin.features.recommendations.application.RecommendationUiState
+import com.example.whynotkotlin.features.wishlists.domain.WishlistSummary
 import com.example.whynotkotlin.ui.components.WhyNotBottomBar
 import com.example.whynotkotlin.ui.theme.WhyNotBeige
 import com.example.whynotkotlin.ui.theme.WhyNotBorder
 import com.example.whynotkotlin.ui.theme.WhyNotGray
-import com.example.whynotkotlin.features.nearby.application.NearbyStoreUiState
-import com.example.whynotkotlin.features.recommendations.application.RecommendationUiState
-import com.example.whynotkotlin.features.wishlists.domain.WishlistSummary
 
 @Composable
 fun HomeScreen(
+    userName: String,
     nearbyState: NearbyStoreUiState,
     recommendationState: RecommendationUiState,
     wishlistSummaries: List<WishlistSummary>,
@@ -75,7 +76,7 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "Good Morning, Juliana",
+                    text = "Good Morning, ${userName.ifBlank { "there" }}",
                     style = MaterialTheme.typography.headlineMedium
                 )
 
@@ -113,33 +114,31 @@ fun HomeScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    WishlistPreview(
-                        label = "Beauty",
-                        onClick = {
-                            onWishlistClick("Beauty")
-                        },
-                        modifier = Modifier.weight(1f)
+                if (wishlistSummaries.isEmpty()) {
+                    Text(
+                        text = "You do not have any wishlists yet.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = WhyNotGray
                     )
-
-                    WishlistPreview(
-                        label = "Clothes",
-                        onClick = {
-                            onWishlistClick("Clothes")
-                        },
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    WishlistPreview(
-                        label = "Tech",
-                        onClick = {
-                            onWishlistClick("Tech")
-                        },
-                        modifier = Modifier.weight(1f)
-                    )
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        wishlistSummaries
+                            .take(3)
+                            .forEach { summary ->
+                                WishlistPreview(
+                                    label = summary.categoryName,
+                                    onClick = {
+                                        onWishlistClick(
+                                            summary.wishlist.id
+                                        )
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(26.dp))
@@ -226,29 +225,6 @@ private fun WishlistPreview(
         Text(
             text = label,
             style = MaterialTheme.typography.bodyMedium
-        )
-    }
-}
-
-@Composable
-private fun ProductPreview(
-    price: String
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        PlaceholderImage(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(122.dp)
-        )
-
-        Spacer(modifier = Modifier.height(6.dp))
-
-        Text(
-            text = price,
-            style = MaterialTheme.typography.labelSmall,
-            color = WhyNotGray
         )
     }
 }

@@ -23,6 +23,7 @@ import com.example.whynotkotlin.features.authentication.application.AuthUiState
 import com.example.whynotkotlin.features.authentication.application.AuthViewModel
 import com.example.whynotkotlin.features.nearby.application.NearbyStoreViewModel
 import com.example.whynotkotlin.features.products.application.ProductViewModel
+import com.example.whynotkotlin.features.profile.application.ProfileViewModel
 import com.example.whynotkotlin.features.profile.domain.UserProfileDraft
 import com.example.whynotkotlin.features.recommendations.application.RecommendationViewModel
 import com.example.whynotkotlin.features.wishlists.application.WishlistViewModel
@@ -310,6 +311,12 @@ fun WhyNotNavigation(
                     factory = factory
                 )
 
+            val profileViewModel:
+                    ProfileViewModel =
+                viewModel(
+                    factory = factory
+                )
+
             val nearbyState by
             nearbyStoreViewModel
                 .state
@@ -319,8 +326,19 @@ fun WhyNotNavigation(
             recommendationViewModel
                 .state
                 .collectAsStateWithLifecycle()
+            
+            val profileState by
+            profileViewModel
+                .state
+                .collectAsStateWithLifecycle()
 
             HomeScreen(
+                userName =
+                    profileState
+                        .profile
+                        ?.name
+                        .orEmpty(),
+
                 nearbyState = nearbyState,
                 recommendationState = recommendationState,
                 wishlistSummaries = wishlistState.summaries,
@@ -340,9 +358,16 @@ fun WhyNotNavigation(
                 },
 
                 onWishlistClick = {
+                        wishlistId ->
 
-                    navController.navigateMain(
-                        WhyNotRoutes.WISHLISTS
+                    wishlistViewModel
+                        .selectWishlist(
+                            wishlistId
+                        )
+
+                    navController.navigate(
+                        WhyNotRoutes
+                            .WISHLIST_DETAIL
                     )
                 },
 
@@ -842,6 +867,9 @@ fun WhyNotNavigation(
         ) {
 
             PurchasesScreen(
+                purchases =
+                    productState.purchased,
+
                 onHomeClick = {
 
                     navController.navigateMain(
