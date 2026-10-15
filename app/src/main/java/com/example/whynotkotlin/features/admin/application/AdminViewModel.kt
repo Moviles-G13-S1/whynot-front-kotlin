@@ -13,29 +13,18 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
-/**
- * Shared ViewModel for the Admin module.
- *
- * Juan Felipe implements BQ1 and BQ3 here.
- *
- * BQ1 is calculated from all existing product documents.
- * BQ3 is read from the backend-maintained administrative metric.
- */
 class AdminViewModel(
     private val repository: AdminRepository
 ) : ViewModel() {
-
     private val _state = MutableStateFlow(AdminUiState())
     val state: StateFlow<AdminUiState> = _state.asStateFlow()
 
     init {
-        observeJuanFelipeMetrics()
+        observeAdminMetrics()
     }
 
-    private fun observeJuanFelipeMetrics() {
-
+    private fun observeAdminMetrics() {
         viewModelScope.launch {
-
             combine(
                 repository.observeAllProducts(),
                 repository.observeRecommendedProductSaves()
@@ -66,23 +55,14 @@ class AdminViewModel(
     }
 
     fun clearError() {
-
         _state.value = _state.value.copy(
             errorMessage = null
         )
     }
 
-    /**
-     * BQ1:
-     * How many products has a user saved?
-     *
-     * Only users who currently have at least one product are considered here.
-     * Users with zero products belong to BQ5.
-     */
     private fun calculateSavedProductsStats(
         products: List<Product>
     ): SavedProductsStats {
-
         val productsByUser = products
             .groupingBy { product ->
                 product.ownerId

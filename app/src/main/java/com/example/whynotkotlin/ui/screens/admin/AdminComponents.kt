@@ -35,15 +35,6 @@ enum class AdminSection {
     DEMOGRAPHIC_PROFILE
 }
 
-/**
- * Shared visual structure for Admin screens.
- *
- * Juan Felipe leaves this component reusable so the remaining
- * Business Questions can use the same Admin visual structure.
- *
- * Access control is intentionally NOT handled here.
- * The Admin route guard belongs to Martin.
- */
 @Composable
 fun AdminPage(
     title: String,

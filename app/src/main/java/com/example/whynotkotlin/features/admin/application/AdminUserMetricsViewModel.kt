@@ -21,20 +21,9 @@ data class AdminUserMetricsUiState(
     val errorMessage: String? = null
 )
 
-/**
- * Martin's Admin Business Questions.
- *
- * BQ2: How many users save another product after their first one?
- * BQ5: How many users have 0 products saved?
- *
- * The current data model stores the products that exist right now, not a full
- * save-history log. For BQ2, a repeat saver is therefore a registered user who
- * currently has at least two product documents.
- */
 class AdminUserMetricsViewModel(
     private val repository: AdminRepository
 ) : ViewModel() {
-
     private val _state = MutableStateFlow(AdminUserMetricsUiState())
     val state: StateFlow<AdminUserMetricsUiState> = _state.asStateFlow()
 

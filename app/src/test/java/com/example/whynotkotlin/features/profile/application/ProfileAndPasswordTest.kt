@@ -36,7 +36,7 @@ class ProfileAndPasswordTest {
     }
 
     private class Users : UserRepository {
-        val profile = UserProfile("uid", "Juan", "user@example.com", "Male", 22, "tech", "", null, null)
+        val profile = UserProfile("uid", "Test User", "user@example.com", "Male", 22, "tech", "", null, null)
         var update: UserProfileUpdate? = null
         var uid: String? = null
         var failure: Exception? = null
@@ -67,7 +67,7 @@ class ProfileAndPasswordTest {
         advanceUntilIdle()
         assertEquals(users.profile, vm.state.value.profile)
         var success = false
-        vm.updateProfile("Juan Felipe", "Male", "23", "beauty") { success = true }
+        vm.updateProfile("Test User", "Male", "23", "beauty") { success = true }
         assertFalse(success)
         advanceUntilIdle()
         assertEquals("uid", users.uid)
@@ -83,7 +83,7 @@ class ProfileAndPasswordTest {
         advanceUntilIdle()
         users.failure = IllegalStateException("No connection")
         var success = false
-        vm.updateProfile("Juan", "Male", "23", "tech") { success = true }
+        vm.updateProfile("Test User", "Male", "23", "tech") { success = true }
         advanceUntilIdle()
         assertFalse(success)
         assertFalse(vm.state.value.saving)

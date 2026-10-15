@@ -30,25 +30,12 @@ data class AdminInsightsUiState(
     val errorMessage: String? = null
 )
 
-/**
- * Miguel implements BQ4 and BQ6 here.
- *
- * This is a separate ViewModel from [AdminViewModel] on purpose: BQ1/BQ3,
- * BQ2/BQ5 and BQ4/BQ6 belong to three different people, and one shared
- * ViewModel would have all three editing the same file. Both read the same
- * [AdminRepository], so the data path stays single.
- *
- * Every figure is derived in memory from the two collection-wide reads, which
- * the rules only allow to an account carrying the `admin` claim.
- */
 class AdminInsightsViewModel(
     private val repository: AdminRepository
 ) : ViewModel() {
-
     private val _state = MutableStateFlow(AdminInsightsUiState())
     val state: StateFlow<AdminInsightsUiState> = _state.asStateFlow()
 
-    // Kept outside the flow so changing the window does not refetch anything.
     private val monthsWindow =
         MutableStateFlow(PurchasedProductsStats.DEFAULT_MONTHS_WINDOW)
 
@@ -94,16 +81,10 @@ class AdminInsightsViewModel(
         _state.value = _state.value.copy(errorMessage = null)
     }
 
-    /**
-     * BQ4:
-     * Which category has the highest number of products marked as purchased
-     * per month?
-     */
     private fun calculatePurchasedProductsStats(
         products: List<Product>,
         window: Int
     ): PurchasedProductsStats {
-
         val purchased = products.filter { it.purchased }
 
         val dated = purchased.mapNotNull { product ->
@@ -124,8 +105,6 @@ class AdminInsightsViewModel(
                     .groupingBy { (product, _) -> product.categoryId }
                     .eachCount()
 
-                // Ties are ordered by id so the bars do not reshuffle between
-                // snapshots that carry the same numbers.
                 val byCategory = counts
                     .map { (categoryId, count) ->
                         CategoryPurchaseCount(categoryId, count)
@@ -145,8 +124,7 @@ class AdminInsightsViewModel(
                     byCategory = byCategory
                 )
             }
-            // Newest first: no orderBy is possible on the query, so the whole
-            // ordering happens here.
+
             .sortedByDescending { it.year * 100 + it.month }
 
         val overallCounts = inWindow
@@ -162,12 +140,6 @@ class AdminInsightsViewModel(
         )
     }
 
-    /**
-     * Every category that reaches the highest count, in a stable order.
-     *
-     * BQ4 asks which category leads. When two share the lead, naming only one
-     * would be an arbitrary answer, so all of them are returned.
-     */
     private fun categoriesTiedAtMax(counts: Map<String, Int>): List<String> {
         val max = counts.values.maxOrNull() ?: return emptyList()
 
@@ -177,19 +149,12 @@ class AdminInsightsViewModel(
             .sorted()
     }
 
-    /**
-     * BQ6:
-     * What is the demographic profile of the average buyer per category?
-     */
     private fun calculateDemographicProfile(
         products: List<Product>,
         users: List<UserProfile>
     ): DemographicProfileStats {
-
         val profilesByUid = users.associateBy { it.uid }
 
-        // One entry per (category, buyer) pair, so buying five phones counts
-        // the same as buying one.
         val buyersByCategory = products
             .filter { it.purchased }
             .groupBy { it.categoryId }
@@ -266,10 +231,6 @@ class AdminInsightsViewModel(
             .sortedByDescending { it.userCount }
     }
 
-    /**
-     * The leading cities, with everything else folded into a single remainder
-     * row so the numbers still add up to the buyer count.
-     */
     private fun topCities(buyers: List<UserProfile>): List<CityShare> {
         val counts = buyers
             .groupingBy {
@@ -291,17 +252,10 @@ class AdminInsightsViewModel(
     }
 }
 
-/**
- * A year and month pair.
- *
- * `java.time` needs API 26 or desugaring and the app targets API 24, so the
- * calendar maths uses [Calendar].
- */
 private data class YearMonth(
     val year: Int,
     val month: Int
 ) : Comparable<YearMonth> {
-
     override fun compareTo(other: YearMonth): Int =
         (year * 100 + month) - (other.year * 100 + other.month)
 

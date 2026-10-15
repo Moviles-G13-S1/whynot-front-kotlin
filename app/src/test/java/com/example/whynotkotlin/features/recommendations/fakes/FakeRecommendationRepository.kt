@@ -4,21 +4,6 @@ import com.example.whynotkotlin.features.recommendations.domain.ProductRecommend
 import com.example.whynotkotlin.features.recommendations.domain.RecommendationRepository
 import com.example.whynotkotlin.features.recommendations.domain.RecommendationSaveResult
 
-/**
- * FAKE SOLO PARA PRUEBAS.
- *
- * Esta funcionalidad se prueba con datos fake mientras Miguel implementa
- * FirebaseRecommendationRepository y conecta:
- *
- * - get_recommendation
- * - save_recommended_product
- *
- * NO usar esta clase en src/main.
- * NO registrarla en AppDependencies.
- *
- * Cuando llegue la implementación real de Miguel, este fake seguirá existiendo
- * únicamente para pruebas automatizadas.
- */
 class FakeRecommendationRepository(
     var recommendation: ProductRecommendation? =
         ProductRecommendation(
@@ -42,7 +27,6 @@ class FakeRecommendationRepository(
     var loadError: Exception? = null,
     var saveError: Exception? = null
 ) : RecommendationRepository {
-
     var lastRecommendationEventId: String? = null
     var lastWishlistId: String? = null
 
@@ -55,7 +39,6 @@ class FakeRecommendationRepository(
         recommendationEventId: String,
         wishlistId: String
     ): RecommendationSaveResult {
-
         saveError?.let { throw it }
 
         lastRecommendationEventId = recommendationEventId
