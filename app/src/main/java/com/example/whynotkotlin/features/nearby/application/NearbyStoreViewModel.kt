@@ -9,23 +9,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-/**
- * Coordinates the Context-Aware nearby-store flow.
- *
- * IMPORTANT:
- * This ViewModel only depends on interfaces.
- *
- * During Juan Felipe's development it is tested with fake repositories located
- * exclusively under src/test.
- *
- * Miguel will later provide the real Android location implementation.
- * This ViewModel should not need to change when that happens.
- */
 class NearbyStoreViewModel(
     private val locationRepository: LocationRepository,
     private val nearbyStoreRepository: NearbyStoreRepository
 ) : ViewModel() {
-
     private val _state = MutableStateFlow(NearbyStoreUiState())
 
     val state: StateFlow<NearbyStoreUiState> =
@@ -54,7 +41,6 @@ class NearbyStoreViewModel(
                     loading = false,
                     errorMessage = null
                 )
-
             } catch (exception: Exception) {
                 _state.value = NearbyStoreUiState(
                     store = null,

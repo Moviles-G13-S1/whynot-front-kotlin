@@ -5,25 +5,13 @@ import com.example.whynotkotlin.features.nearby.domain.NearbyStoreRepository
 import com.google.firebase.functions.FirebaseFunctions
 import kotlinx.coroutines.tasks.await
 
-/**
- * Real Firebase implementation of NearbyStoreRepository.
- *
- * This class calls the production Cloud Function get_nearest_store.
- * It contains NO fake data.
- *
- * Juan Felipe owns this repository as part of the Nearby integration.
- * Miguel will later provide the real Android location implementation
- * that supplies the latitude and longitude used here.
- */
 class FirebaseNearbyStoreRepository(
     private val functions: FirebaseFunctions
 ) : NearbyStoreRepository {
-
     override suspend fun getNearestStore(
         latitude: Double,
         longitude: Double
     ): NearbyStore? {
-
         val result = functions
             .getHttpsCallable("get_nearest_store")
             .call(
