@@ -18,15 +18,15 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.whynotkotlin.controller.SpeechUiState
+import com.example.whynotkotlin.model.SpeechUnavailableException
 import com.example.whynotkotlin.model.WishlistSummary
 import com.example.whynotkotlin.view.components.CategoryChip
 import com.example.whynotkotlin.view.components.ProductPictureField
@@ -37,6 +37,8 @@ import com.example.whynotkotlin.view.components.VoiceInputButton
 import com.example.whynotkotlin.view.components.WhyNotTextField
 import com.example.whynotkotlin.view.theme.WhyNotCream
 import com.example.whynotkotlin.view.theme.WhyNotGray
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 
 /** The fields that can be filled by voice. */
 private enum class VoiceField { NAME, BRAND }
@@ -66,9 +68,7 @@ fun NewProductScreen(
         imageUrl: String,
         productUrl: String
     ) -> Unit,
-    speechState: SpeechUiState = SpeechUiState.Idle,
-    onStartVoiceInput: () -> Unit = {},
-    onVoiceInputConsumed: () -> Unit = {},
+    listenForSpeech: suspend () -> String = { throw SpeechUnavailableException() },
     onHomeClick: () -> Unit = {},
     onWishlistsClick: () -> Unit = {},
     onAddClick: () -> Unit = {},
@@ -85,39 +85,37 @@ fun NewProductScreen(
     var voiceTarget by remember { mutableStateOf<VoiceField?>(null) }
     var voiceError by remember { mutableStateOf<String?>(null) }
 
-    val listening = speechState is SpeechUiState.Listening
+    var listening by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
-    LaunchedEffect(speechState) {
-        when (speechState) {
-            is SpeechUiState.Result -> {
+    fun startVoiceInput(field: VoiceField) {
+        voiceTarget = field
+        voiceError = null
+
+        // One recognition at a time; a tap while listening only retargets it.
+        if (listening) return
+        listening = true
+
+        scope.launch {
+            try {
                 // Recognisers return lower case; a product name reads better
                 // with a capital first letter.
-                val text = speechState.text.replaceFirstChar { it.uppercaseChar() }
+                val text = listenForSpeech().replaceFirstChar { it.uppercaseChar() }
 
                 when (voiceTarget) {
                     VoiceField.NAME -> name = text
                     VoiceField.BRAND -> brand = text
                     null -> Unit
                 }
-
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                voiceError = error.message ?: "Voice input failed. Try again."
+            } finally {
+                listening = false
                 voiceTarget = null
-                onVoiceInputConsumed()
             }
-
-            is SpeechUiState.Error -> {
-                voiceError = speechState.message
-                voiceTarget = null
-                onVoiceInputConsumed()
-            }
-
-            else -> Unit
         }
-    }
-
-    fun startVoiceInput(field: VoiceField) {
-        voiceTarget = field
-        voiceError = null
-        onStartVoiceInput()
     }
 
     Column(

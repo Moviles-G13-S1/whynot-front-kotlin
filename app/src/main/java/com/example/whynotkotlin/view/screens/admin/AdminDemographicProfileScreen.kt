@@ -17,7 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import com.example.whynotkotlin.controller.AdminInsightsUiState
+import com.example.whynotkotlin.model.AdminInsights
 import com.example.whynotkotlin.model.CategoryDemographics
 import com.example.whynotkotlin.view.theme.WhyNotBlack
 import com.example.whynotkotlin.view.theme.WhyNotBorder
@@ -30,7 +30,9 @@ import com.example.whynotkotlin.view.theme.WhyNotGray
  */
 @Composable
 fun AdminDemographicProfileScreen(
-    state: AdminInsightsUiState,
+    insights: AdminInsights,
+    loading: Boolean,
+    errorMessage: String?,
     onSavedProductsClick: () -> Unit,
     onRepeatSaversClick: () -> Unit,
     onRecommendedSavesClick: () -> Unit,
@@ -50,19 +52,19 @@ fun AdminDemographicProfileScreen(
     ) {
 
         when {
-            state.loading -> {
+            loading -> {
                 CircularProgressIndicator()
             }
 
-            state.errorMessage != null -> {
+            errorMessage != null -> {
                 Text(
-                    text = state.errorMessage,
+                    text = errorMessage,
                     color = WhyNotGray
                 )
             }
 
             else -> {
-                val stats = state.demographicProfileStats
+                val stats = insights.demographicProfileStats
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),

@@ -1,85 +1,55 @@
 package com.example.whynotkotlin.controller
 
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.example.whynotkotlin.model.repositories.AdminRepository
+import com.example.whynotkotlin.model.AdminDataset
+import com.example.whynotkotlin.model.AdminInsights
 import com.example.whynotkotlin.model.AgeGroupShare
 import com.example.whynotkotlin.model.CategoryDemographics
 import com.example.whynotkotlin.model.CategoryPurchaseCount
 import com.example.whynotkotlin.model.CityShare
 import com.example.whynotkotlin.model.DemographicProfileStats
 import com.example.whynotkotlin.model.GenderShare
+import com.example.whynotkotlin.model.Product
 import com.example.whynotkotlin.model.PurchaseMonth
 import com.example.whynotkotlin.model.PurchasedProductsStats
-import com.example.whynotkotlin.model.Product
 import com.example.whynotkotlin.model.UserProfile
-import kotlinx.coroutines.flow.MutableStateFlow
+import com.example.whynotkotlin.model.repositories.AdminRepository
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
-data class AdminInsightsUiState(
-    val purchasedProductsStats: PurchasedProductsStats = PurchasedProductsStats(),
-    val demographicProfileStats: DemographicProfileStats = DemographicProfileStats(),
-    val loading: Boolean = true,
-    val errorMessage: String? = null
-)
+/**
+ * BQ4 (top purchased category per month) and the buyers' demographic profile.
+ *
+ * Both are computed in memory from every product and user, so the stream only
+ * carries the raw [AdminDataset]; the months window is a view selection and is
+ * applied by [insights].
+ */
+class AdminInsightsController(
+    repository: AdminRepository,
+    scope: CoroutineScope
+) {
 
-class AdminInsightsViewModel(
-    private val repository: AdminRepository
-) : ViewModel() {
-    private val _state = MutableStateFlow(AdminInsightsUiState())
-    val state: StateFlow<AdminInsightsUiState> = _state.asStateFlow()
+    val dataset: StateFlow<Result<AdminDataset>?> =
+        combine(
+            repository.observeAllProducts(),
+            repository.observeAllUsers()
+        ) { products, users -> AdminDataset(products, users) }
+            .asResults()
+            .shareIn(scope)
 
-    private val monthsWindow =
-        MutableStateFlow(PurchasedProductsStats.DEFAULT_MONTHS_WINDOW)
-
-    init {
-        observeInsights()
-    }
-
-    private fun observeInsights() {
-        viewModelScope.launch {
-            combine(
-                repository.observeAllProducts(),
-                repository.observeAllUsers(),
-                monthsWindow
-            ) { products, users, window ->
-
-                AdminInsightsUiState(
-                    purchasedProductsStats =
-                        calculatePurchasedProductsStats(products, window),
-                    demographicProfileStats =
-                        calculateDemographicProfile(products, users),
-                    loading = false,
-                    errorMessage = null
-                )
-            }
-                .catch { exception ->
-                    _state.value = _state.value.copy(
-                        loading = false,
-                        errorMessage = exception.message
-                            ?: "Unable to load admin insights."
-                    )
-                }
-                .collect { newState ->
-                    _state.value = newState
-                }
-        }
-    }
-
-    fun selectMonthsWindow(months: Int) {
-        monthsWindow.value = months
-    }
-
-    fun clearError() {
-        _state.value = _state.value.copy(errorMessage = null)
-    }
+    fun insights(
+        dataset: AdminDataset,
+        monthsWindow: Int = PurchasedProductsStats.DEFAULT_MONTHS_WINDOW
+    ): AdminInsights =
+        AdminInsights(
+            purchasedProductsStats =
+                calculatePurchasedProductsStats(dataset.products, monthsWindow),
+            demographicProfileStats =
+                calculateDemographicProfile(dataset.products, dataset.users)
+        )
 
     private fun calculatePurchasedProductsStats(
         products: List<Product>,

@@ -1,64 +1,32 @@
 package com.example.whynotkotlin.controller
 
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.example.whynotkotlin.model.repositories.AdminRepository
-import com.example.whynotkotlin.model.SavedProductsBucket
-import com.example.whynotkotlin.model.SavedProductsStats
 import com.example.whynotkotlin.model.Product
-import kotlinx.coroutines.flow.MutableStateFlow
+import com.example.whynotkotlin.model.SavedProductsBucket
+import com.example.whynotkotlin.model.SavedProductsOverview
+import com.example.whynotkotlin.model.SavedProductsStats
+import com.example.whynotkotlin.model.repositories.AdminRepository
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.launch
 
-class AdminViewModel(
-    private val repository: AdminRepository
-) : ViewModel() {
-    private val _state = MutableStateFlow(AdminUiState())
-    val state: StateFlow<AdminUiState> = _state.asStateFlow()
+/** BQ1 (saved-products distribution) and BQ3 (saves from recommendations). */
+class AdminSavedProductsController(
+    repository: AdminRepository,
+    scope: CoroutineScope
+) {
 
-    init {
-        observeAdminMetrics()
-    }
-
-    private fun observeAdminMetrics() {
-        viewModelScope.launch {
-            combine(
-                repository.observeAllProducts(),
-                repository.observeRecommendedProductSaves()
-            ) { products, recommendedProductsSaved ->
-
-                AdminUiState(
-                    savedProductsStats =
-                        calculateSavedProductsStats(products),
-                    recommendedProductsSaved =
-                        recommendedProductsSaved,
-                    loading = false,
-                    errorMessage = null
-                )
-            }
-                .catch { exception ->
-
-                    _state.value = _state.value.copy(
-                        loading = false,
-                        errorMessage = exception.message
-                            ?: "Unable to load admin metrics."
-                    )
-                }
-                .collect { newState ->
-
-                    _state.value = newState
-                }
+    val overview: StateFlow<Result<SavedProductsOverview>?> =
+        combine(
+            repository.observeAllProducts(),
+            repository.observeRecommendedProductSaves()
+        ) { products, recommendedProductsSaved ->
+            SavedProductsOverview(
+                savedProductsStats = calculateSavedProductsStats(products),
+                recommendedProductsSaved = recommendedProductsSaved
+            )
         }
-    }
-
-    fun clearError() {
-        _state.value = _state.value.copy(
-            errorMessage = null
-        )
-    }
+            .asResults()
+            .shareIn(scope)
 
     private fun calculateSavedProductsStats(
         products: List<Product>

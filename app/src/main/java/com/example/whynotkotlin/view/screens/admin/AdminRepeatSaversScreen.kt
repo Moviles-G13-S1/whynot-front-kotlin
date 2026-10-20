@@ -11,7 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.whynotkotlin.controller.AdminUserMetricsUiState
+import com.example.whynotkotlin.model.UserActivityMetrics
 import com.example.whynotkotlin.view.theme.WhyNotGray
 
 /**
@@ -20,7 +20,9 @@ import com.example.whynotkotlin.view.theme.WhyNotGray
  */
 @Composable
 fun AdminRepeatSaversScreen(
-    state: AdminUserMetricsUiState,
+    metrics: UserActivityMetrics,
+    loading: Boolean,
+    errorMessage: String?,
     onSavedProductsClick: () -> Unit,
     onRecommendedSavesClick: () -> Unit,
     onPurchasesByCategoryClick: () -> Unit,
@@ -39,13 +41,13 @@ fun AdminRepeatSaversScreen(
         onDemographicProfileClick = onDemographicProfileClick
     ) {
         when {
-            state.loading -> {
+            loading -> {
                 CircularProgressIndicator()
             }
 
-            state.errorMessage != null -> {
+            errorMessage != null -> {
                 Text(
-                    text = state.errorMessage,
+                    text = errorMessage,
                     color = WhyNotGray
                 )
             }
@@ -57,7 +59,7 @@ fun AdminRepeatSaversScreen(
                 ) {
                     AdminMetricCard(
                         label = "REPEAT SAVERS",
-                        value = state.repeatSaverUsers.toString(),
+                        value = metrics.repeatSaverUsers.toString(),
                         subtitle = "users with 2+ products",
                         modifier = Modifier.weight(1f)
                     )
@@ -66,7 +68,7 @@ fun AdminRepeatSaversScreen(
                         label = "REPEAT RATE",
                         value = String.format(
                             "%.1f%%",
-                            state.repeatSaverPercentage
+                            metrics.repeatSaverPercentage
                         ),
                         subtitle = "of active savers",
                         modifier = Modifier.weight(1f)
@@ -77,7 +79,7 @@ fun AdminRepeatSaversScreen(
 
                 AdminMetricCard(
                     label = "ACTIVE SAVERS",
-                    value = state.activeUsers.toString(),
+                    value = metrics.activeUsers.toString(),
                     subtitle = "users with at least 1 product",
                     modifier = Modifier.fillMaxWidth()
                 )

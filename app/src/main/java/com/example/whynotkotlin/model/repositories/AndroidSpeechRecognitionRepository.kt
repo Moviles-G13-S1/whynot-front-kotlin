@@ -110,7 +110,7 @@ class AndroidSpeechRecognitionRepository(
                     override fun onEvent(eventType: Int, params: Bundle?) = Unit
                 })
 
-                // Leaving the screen cancels the ViewModel's coroutine, which
+                // Leaving the screen cancels its coroutine, which
                 // must also switch the microphone off.
                 continuation.invokeOnCancellation {
                     mainHandler.post {

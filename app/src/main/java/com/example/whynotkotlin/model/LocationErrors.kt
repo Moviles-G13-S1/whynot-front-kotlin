@@ -4,7 +4,7 @@ package com.example.whynotkotlin.model
  * The user has not granted a location permission yet.
  *
  * The repository cannot ask for it: requesting a runtime permission needs an
- * Activity, so the screen must request it and call the ViewModel again.
+ * Activity, so the screen must request it and call the controller again.
  */
 class LocationPermissionDeniedException :
     Exception("Location permission is required to find stores near you.")

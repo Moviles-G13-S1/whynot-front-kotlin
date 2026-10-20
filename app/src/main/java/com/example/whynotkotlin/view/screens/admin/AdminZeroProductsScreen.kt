@@ -11,7 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.whynotkotlin.controller.AdminUserMetricsUiState
+import com.example.whynotkotlin.model.UserActivityMetrics
 import com.example.whynotkotlin.view.theme.WhyNotGray
 
 /**
@@ -20,7 +20,9 @@ import com.example.whynotkotlin.view.theme.WhyNotGray
  */
 @Composable
 fun AdminZeroProductsScreen(
-    state: AdminUserMetricsUiState,
+    metrics: UserActivityMetrics,
+    loading: Boolean,
+    errorMessage: String?,
     onSavedProductsClick: () -> Unit,
     onRepeatSaversClick: () -> Unit,
     onRecommendedSavesClick: () -> Unit,
@@ -39,13 +41,13 @@ fun AdminZeroProductsScreen(
         onDemographicProfileClick = onDemographicProfileClick
     ) {
         when {
-            state.loading -> {
+            loading -> {
                 CircularProgressIndicator()
             }
 
-            state.errorMessage != null -> {
+            errorMessage != null -> {
                 Text(
-                    text = state.errorMessage,
+                    text = errorMessage,
                     color = WhyNotGray
                 )
             }
@@ -57,7 +59,7 @@ fun AdminZeroProductsScreen(
                 ) {
                     AdminMetricCard(
                         label = "ZERO PRODUCTS",
-                        value = state.zeroProductUsers.toString(),
+                        value = metrics.zeroProductUsers.toString(),
                         subtitle = "registered users",
                         modifier = Modifier.weight(1f)
                     )
@@ -66,7 +68,7 @@ fun AdminZeroProductsScreen(
                         label = "SHARE",
                         value = String.format(
                             "%.1f%%",
-                            state.zeroProductPercentage
+                            metrics.zeroProductPercentage
                         ),
                         subtitle = "of all users",
                         modifier = Modifier.weight(1f)
@@ -77,7 +79,7 @@ fun AdminZeroProductsScreen(
 
                 AdminMetricCard(
                     label = "TOTAL USERS",
-                    value = state.totalUsers.toString(),
+                    value = metrics.totalUsers.toString(),
                     subtitle = "registered profiles",
                     modifier = Modifier.fillMaxWidth()
                 )

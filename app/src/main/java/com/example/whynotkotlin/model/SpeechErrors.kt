@@ -1,7 +1,7 @@
 package com.example.whynotkotlin.model
 
 /**
- * The failures the ViewModel can tell apart.
+ * The failures the app can tell apart.
  *
  * They share a base type so a screen can catch every speech problem at once,
  * while still reacting differently to the permission case: that one needs the

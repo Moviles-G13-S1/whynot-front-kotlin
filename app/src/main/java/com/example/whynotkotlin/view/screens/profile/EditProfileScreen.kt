@@ -17,7 +17,8 @@ import androidx.compose.material3.Text
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.saveable.rememberSaveable
-import com.example.whynotkotlin.controller.ProfileUiState
+import com.example.whynotkotlin.model.UserProfile
+import com.example.whynotkotlin.model.Category
 import com.example.whynotkotlin.model.Genders
 import com.example.whynotkotlin.view.components.WhyNotDropdownField
 import androidx.compose.runtime.Composable
@@ -36,7 +37,12 @@ import com.example.whynotkotlin.view.theme.WhyNotGray
 
 @Composable
 fun EditProfileScreen(
-    state: ProfileUiState,
+    profile: UserProfile?,
+    categories: List<Category>,
+    preferredCategoryName: String,
+    loading: Boolean,
+    saving: Boolean,
+    errorMessage: String?,
     onBackClick: () -> Unit,
     onSaveChangesClick: (String, String, String, String) -> Unit,
     onChangePasswordClick: () -> Unit = {},
@@ -46,10 +52,9 @@ fun EditProfileScreen(
     onPurchasesClick: () -> Unit = {},
     onProfileClick: () -> Unit = {}
 ) {
-    val profile = state.profile
     if (profile == null) {
         Column(Modifier.padding(24.dp)) {
-            Text(state.errorMessage ?: if (state.loading) "Loading profile…" else "Profile unavailable")
+            Text(errorMessage ?: if (loading) "Loading profile…" else "Profile unavailable")
             WhyNotButton(text = "Back", onClick = onBackClick)
         }
         return
@@ -123,7 +128,7 @@ fun EditProfileScreen(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                WhyNotDropdownField("Gender", gender, Genders.all.map { it to it }, { gender = it }, enabled = !state.saving)
+                WhyNotDropdownField("Gender", gender, Genders.all.map { it to it }, { gender = it }, enabled = !saving)
 
                 Spacer(modifier = Modifier.height(10.dp))
 
@@ -141,9 +146,9 @@ fun EditProfileScreen(
 
                     WhyNotDropdownField(
                         selectedValue = category,
-                        options = state.categories.map { it.id to it.name },
-                        placeholder = state.preferredCategoryName,
-                        enabled = !state.saving,
+                        options = categories.map { it.id to it.name },
+                        placeholder = preferredCategoryName,
+                        enabled = !saving,
                         onValueChange = { category = it },
                         label = "Preferred Category",
                         modifier = Modifier.weight(0.58f)
@@ -173,13 +178,13 @@ fun EditProfileScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             WhyNotButton(
-                text = if (state.saving) "Saving…" else "Save changes",
+                text = if (saving) "Saving…" else "Save changes",
                 onClick = { onSaveChangesClick(name, gender, age, category) },
-                enabled = changed && !state.saving
+                enabled = changed && !saving
             )
 
             Text(
-                text = state.errorMessage ?: if (changed) "" else "No changes to save",
+                text = errorMessage ?: if (changed) "" else "No changes to save",
                 style = MaterialTheme.typography.labelSmall,
                 color = WhyNotGray,
                 modifier = Modifier

@@ -17,7 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import com.example.whynotkotlin.controller.AdminUiState
+import com.example.whynotkotlin.model.SavedProductsOverview
 import com.example.whynotkotlin.view.theme.WhyNotBlack
 import com.example.whynotkotlin.view.theme.WhyNotBorder
 import com.example.whynotkotlin.view.theme.WhyNotGray
@@ -28,7 +28,9 @@ import com.example.whynotkotlin.view.theme.WhyNotGray
  */
 @Composable
 fun AdminSavedProductsScreen(
-    state: AdminUiState,
+    overview: SavedProductsOverview,
+    loading: Boolean,
+    errorMessage: String?,
     onRecommendedSavesClick: () -> Unit,
     onRepeatSaversClick: () -> Unit = {},
     onPurchasesByCategoryClick: () -> Unit = {},
@@ -48,19 +50,19 @@ fun AdminSavedProductsScreen(
     ) {
 
         when {
-            state.loading -> {
+            loading -> {
                 CircularProgressIndicator()
             }
 
-            state.errorMessage != null -> {
+            errorMessage != null -> {
                 Text(
-                    text = state.errorMessage,
+                    text = errorMessage,
                     color = WhyNotGray
                 )
             }
 
             else -> {
-                val stats = state.savedProductsStats
+                val stats = overview.savedProductsStats
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),

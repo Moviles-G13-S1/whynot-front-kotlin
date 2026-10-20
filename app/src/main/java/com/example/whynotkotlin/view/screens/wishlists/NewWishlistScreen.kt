@@ -21,7 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.whynotkotlin.controller.WishlistUiState
+import com.example.whynotkotlin.model.Category
 import com.example.whynotkotlin.view.components.ProductPictureField
 import com.example.whynotkotlin.view.components.WhyNotBottomBar
 import com.example.whynotkotlin.view.components.WhyNotDropdownField
@@ -32,7 +32,9 @@ import com.example.whynotkotlin.view.theme.WhyNotGray
 
 @Composable
 fun NewWishlistScreen(
-    state: WishlistUiState,
+    availableCategories: List<Category>,
+    saving: Boolean,
+    errorMessage: String?,
     onSave: (categoryId: String, imageUrl: String) -> Unit,
     onCancelClick: () -> Unit,
     onHomeClick: () -> Unit = {},
@@ -46,7 +48,7 @@ fun NewWishlistScreen(
 
     // Only categories without a wishlist yet, so the user cannot create a
     // duplicate. The backend does not enforce this, it is a UI convention.
-    val options = state.availableCategories.map { it.id to it.name }
+    val options = availableCategories.map { it.id to it.name }
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -97,7 +99,7 @@ fun NewWishlistScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            WhyNotErrorBanner(message = state.errorMessage)
+            WhyNotErrorBanner(message = errorMessage)
 
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -112,10 +114,10 @@ fun NewWishlistScreen(
                     modifier = Modifier.clickable { onCancelClick() }
                 )
 
-                val canSave = categoryId.isNotBlank() && !state.saving
+                val canSave = categoryId.isNotBlank() && !saving
 
                 Text(
-                    text = if (state.saving) "Saving..." else "Save",
+                    text = if (saving) "Saving..." else "Save",
                     style = MaterialTheme.typography.bodyLarge,
                     color = if (canSave) WhyNotGray else WhyNotDisabled,
                     modifier = Modifier.clickable(enabled = canSave) {

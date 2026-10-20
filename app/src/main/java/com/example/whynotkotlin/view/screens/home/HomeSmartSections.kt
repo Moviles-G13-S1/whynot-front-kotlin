@@ -31,8 +31,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import com.example.whynotkotlin.controller.NearbyStoreUiState
-import com.example.whynotkotlin.controller.RecommendationUiState
+import com.example.whynotkotlin.model.NearbyStore
+import com.example.whynotkotlin.model.ProductRecommendation
 import com.example.whynotkotlin.model.WishlistSummary
 import com.example.whynotkotlin.view.components.WhyNotButton
 import com.example.whynotkotlin.view.components.WhyNotErrorBanner
@@ -41,8 +41,14 @@ import com.example.whynotkotlin.view.theme.WhyNotGray
 
 @Composable
 fun HomeSmartSections(
-    nearbyState: NearbyStoreUiState,
-    recommendationState: RecommendationUiState,
+    nearbyStore: NearbyStore?,
+    nearbyLoading: Boolean,
+    nearbyErrorMessage: String?,
+    recommendation: ProductRecommendation?,
+    recommendationLoading: Boolean,
+    recommendationSaving: Boolean,
+    recommendationSaved: Boolean,
+    recommendationErrorMessage: String?,
     wishlistSummaries: List<WishlistSummary>,
     onLoadNearby: () -> Unit,
     onLoadRecommendation: () -> Unit,
@@ -69,9 +75,9 @@ fun HomeSmartSections(
     LaunchedEffect(locationPermissionGranted) {
         if (
             locationPermissionGranted &&
-            nearbyState.store == null &&
-            !nearbyState.loading &&
-            nearbyState.errorMessage == null
+            nearbyStore == null &&
+            !nearbyLoading &&
+            nearbyErrorMessage == null
         ) {
             onLoadNearby()
         }
@@ -79,16 +85,18 @@ fun HomeSmartSections(
 
     LaunchedEffect(Unit) {
         if (
-            recommendationState.recommendation == null &&
-            !recommendationState.loading &&
-            recommendationState.errorMessage == null
+            recommendation == null &&
+            !recommendationLoading &&
+            recommendationErrorMessage == null
         ) {
             onLoadRecommendation()
         }
     }
 
     NearbySection(
-        state = nearbyState,
+        store = nearbyStore,
+        loading = nearbyLoading,
+        errorMessage = nearbyErrorMessage,
         permissionGranted = locationPermissionGranted,
         onRequestPermission = {
             locationPermissionLauncher.launch(
@@ -104,7 +112,11 @@ fun HomeSmartSections(
     Spacer(modifier = Modifier.height(26.dp))
 
     RecommendationSection(
-        state = recommendationState,
+        recommendation = recommendation,
+        loading = recommendationLoading,
+        saving = recommendationSaving,
+        saved = recommendationSaved,
+        errorMessage = recommendationErrorMessage,
         wishlistSummaries = wishlistSummaries,
         onRetry = onLoadRecommendation,
         onSave = onSaveRecommendation,
@@ -114,7 +126,9 @@ fun HomeSmartSections(
 
 @Composable
 private fun NearbySection(
-    state: NearbyStoreUiState,
+    store: NearbyStore?,
+    loading: Boolean,
+    errorMessage: String?,
     permissionGranted: Boolean,
     onRequestPermission: () -> Unit,
     onRetry: () -> Unit
@@ -150,7 +164,7 @@ private fun NearbySection(
             )
         }
 
-        state.loading -> {
+        loading -> {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -167,9 +181,9 @@ private fun NearbySection(
             }
         }
 
-        state.errorMessage != null -> {
+        errorMessage != null -> {
             WhyNotErrorBanner(
-                message = state.errorMessage
+                message = errorMessage
             )
 
             Spacer(modifier = Modifier.height(10.dp))
@@ -180,7 +194,7 @@ private fun NearbySection(
             )
         }
 
-        state.store == null -> {
+        store == null -> {
             Text(
                 text = "No nearby store found",
                 style = MaterialTheme.typography.titleLarge
@@ -203,7 +217,7 @@ private fun NearbySection(
         }
 
         else -> {
-            val store = state.store ?: return
+            if (store == null) return
 
             Text(
                 text = "You are close to ${store.name}",
@@ -232,7 +246,11 @@ private fun NearbySection(
 
 @Composable
 private fun RecommendationSection(
-    state: RecommendationUiState,
+    recommendation: ProductRecommendation?,
+    loading: Boolean,
+    saving: Boolean,
+    saved: Boolean,
+    errorMessage: String?,
     wishlistSummaries: List<WishlistSummary>,
     onRetry: () -> Unit,
     onSave: (String) -> Unit,
@@ -245,7 +263,7 @@ private fun RecommendationSection(
 
     Spacer(modifier = Modifier.height(12.dp))
 
-    if (state.loading) {
+    if (loading) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -263,12 +281,10 @@ private fun RecommendationSection(
         return
     }
 
-    val recommendation = state.recommendation
-
     if (recommendation == null) {
-        if (state.errorMessage != null) {
+        if (errorMessage != null) {
             WhyNotErrorBanner(
-                message = state.errorMessage
+                message = errorMessage
             )
 
             Spacer(modifier = Modifier.height(10.dp))
@@ -332,18 +348,18 @@ private fun RecommendationSection(
         )
     }
 
-    if (state.errorMessage != null) {
+    if (errorMessage != null) {
         Spacer(modifier = Modifier.height(10.dp))
 
         WhyNotErrorBanner(
-            message = state.errorMessage
+            message = errorMessage
         )
     }
 
     Spacer(modifier = Modifier.height(12.dp))
 
     when {
-        state.saved -> {
+        saved -> {
             WhyNotButton(
                 text = "Saved",
                 onClick = {},
@@ -373,7 +389,7 @@ private fun RecommendationSection(
         else -> {
             WhyNotButton(
                 text =
-                    if (state.saving) {
+                    if (saving) {
                         "Saving..."
                     } else {
                         "Save to ${matchingWishlist.categoryName}"
@@ -383,7 +399,7 @@ private fun RecommendationSection(
                         matchingWishlist.wishlist.id
                     )
                 },
-                enabled = !state.saving,
+                enabled = !saving,
                 filled = true
             )
         }

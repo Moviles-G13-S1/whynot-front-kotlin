@@ -26,8 +26,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.whynotkotlin.controller.NearbyStoreUiState
-import com.example.whynotkotlin.controller.RecommendationUiState
+import com.example.whynotkotlin.model.ProductRecommendation
+import com.example.whynotkotlin.model.NearbyStore
 import com.example.whynotkotlin.model.WishlistSummary
 import com.example.whynotkotlin.view.components.WhyNotBottomBar
 import com.example.whynotkotlin.view.theme.WhyNotBeige
@@ -37,8 +37,14 @@ import com.example.whynotkotlin.view.theme.WhyNotGray
 @Composable
 fun HomeScreen(
     userName: String?,
-    nearbyState: NearbyStoreUiState,
-    recommendationState: RecommendationUiState,
+    nearbyStore: NearbyStore?,
+    nearbyLoading: Boolean,
+    nearbyErrorMessage: String?,
+    recommendation: ProductRecommendation?,
+    recommendationLoading: Boolean,
+    recommendationSaving: Boolean,
+    recommendationSaved: Boolean,
+    recommendationErrorMessage: String?,
     wishlistSummaries: List<WishlistSummary>,
     onLoadNearby: () -> Unit,
     onLoadRecommendation: () -> Unit,
@@ -146,8 +152,14 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(26.dp))
 
                 HomeSmartSections(
-                    nearbyState = nearbyState,
-                    recommendationState = recommendationState,
+                    nearbyStore = nearbyStore,
+                    nearbyLoading = nearbyLoading,
+                    nearbyErrorMessage = nearbyErrorMessage,
+                    recommendation = recommendation,
+                    recommendationLoading = recommendationLoading,
+                    recommendationSaving = recommendationSaving,
+                    recommendationSaved = recommendationSaved,
+                    recommendationErrorMessage = recommendationErrorMessage,
                     wishlistSummaries = wishlistSummaries,
                     onLoadNearby = onLoadNearby,
                     onLoadRecommendation = onLoadRecommendation,

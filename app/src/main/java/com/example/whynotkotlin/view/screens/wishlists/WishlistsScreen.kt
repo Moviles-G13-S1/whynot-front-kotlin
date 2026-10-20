@@ -17,7 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.whynotkotlin.controller.WishlistUiState
+import com.example.whynotkotlin.model.WishlistSummary
 import com.example.whynotkotlin.view.components.WhyNotBottomBar
 import com.example.whynotkotlin.view.components.WhyNotEmptyState
 import com.example.whynotkotlin.view.components.WhyNotErrorBanner
@@ -27,7 +27,9 @@ import com.example.whynotkotlin.view.theme.WhyNotGray
 
 @Composable
 fun WishlistsScreen(
-    state: WishlistUiState,
+    summaries: List<WishlistSummary>,
+    loading: Boolean,
+    errorMessage: String?,
     onWishlistClick: (String) -> Unit,
     onNewWishlistClick: () -> Unit,
     onHomeClick: () -> Unit = {},
@@ -62,14 +64,14 @@ fun WishlistsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            WhyNotErrorBanner(message = state.errorMessage)
+            WhyNotErrorBanner(message = errorMessage)
 
             Spacer(modifier = Modifier.height(8.dp))
 
             when {
-                state.loading -> WhyNotLoading(modifier = Modifier.weight(1f))
+                loading -> WhyNotLoading(modifier = Modifier.weight(1f))
 
-                state.summaries.isEmpty() -> WhyNotEmptyState(
+                summaries.isEmpty() -> WhyNotEmptyState(
                     title = "No wishlists yet",
                     hint = "Create one to start saving the things you want.",
                     modifier = Modifier.weight(1f)
@@ -81,7 +83,7 @@ fun WishlistsScreen(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalArrangement = Arrangement.spacedBy(20.dp)
                 ) {
-                    items(state.summaries) { summary ->
+                    items(summaries) { summary ->
                         WishlistCard(
                             name = summary.categoryName,
                             itemCount = summary.productCount,

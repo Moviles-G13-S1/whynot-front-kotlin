@@ -9,7 +9,7 @@ import java.util.Locale
  * Nothing is recorded or stored; the audio goes to the device's recognition
  * service and only the resulting text comes back.
  *
- * The ViewModel owns the listening / error / result states. This contract only
+ * The screen owns the listening / error / result states. This contract only
  * answers "what did the user say?" and fails with one of the exceptions in
  * SpeechErrors.kt when it cannot.
  */

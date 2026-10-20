@@ -9,7 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.whynotkotlin.controller.AdminUiState
+import com.example.whynotkotlin.model.SavedProductsOverview
 import com.example.whynotkotlin.view.theme.WhyNotGray
 
 /**
@@ -25,7 +25,9 @@ import com.example.whynotkotlin.view.theme.WhyNotGray
  */
 @Composable
 fun AdminRecommendedSavesScreen(
-    state: AdminUiState,
+    overview: SavedProductsOverview,
+    loading: Boolean,
+    errorMessage: String?,
     onSavedProductsClick: () -> Unit,
     onRepeatSaversClick: () -> Unit = {},
     onPurchasesByCategoryClick: () -> Unit = {},
@@ -46,13 +48,13 @@ fun AdminRecommendedSavesScreen(
     ) {
 
         when {
-            state.loading -> {
+            loading -> {
                 CircularProgressIndicator()
             }
 
-            state.errorMessage != null -> {
+            errorMessage != null -> {
                 Text(
-                    text = state.errorMessage,
+                    text = errorMessage,
                     color = WhyNotGray
                 )
             }
@@ -61,7 +63,7 @@ fun AdminRecommendedSavesScreen(
                 AdminMetricCard(
                     label = "RECOMMENDED PRODUCTS SAVED",
                     value =
-                        state.recommendedProductsSaved.toString(),
+                        overview.recommendedProductsSaved.toString(),
                     subtitle = "total successful saves",
                     modifier = Modifier.fillMaxWidth()
                 )

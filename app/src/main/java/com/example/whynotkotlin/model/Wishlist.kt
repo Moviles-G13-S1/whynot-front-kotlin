@@ -29,3 +29,25 @@ data class WishlistSummary(
     val categoryName: String,
     val productCount: Int
 )
+
+/** Every wishlist of the signed-in user, plus the category catalog. */
+data class WishlistCatalog(
+    val summaries: List<WishlistSummary> = emptyList(),
+    val categories: List<Category> = emptyList()
+) {
+    fun find(wishlistId: String?): WishlistSummary? =
+        summaries.firstOrNull { it.wishlist.id == wishlistId }
+
+    /**
+     * Categories that do not have a wishlist yet.
+     *
+     * One wishlist per category is a UI behaviour, not a backend invariant:
+     * auto-generated wishlist ids make the check impossible to enforce
+     * atomically in Security Rules.
+     */
+    val availableCategories: List<Category>
+        get() {
+            val used = summaries.map { it.wishlist.categoryId }.toSet()
+            return categories.filterNot { it.id in used }
+        }
+}

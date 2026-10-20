@@ -16,11 +16,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import com.example.whynotkotlin.controller.ProfileUiState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.whynotkotlin.model.UserProfile
 import com.example.whynotkotlin.view.components.WhyNotBottomBar
 import com.example.whynotkotlin.view.components.WhyNotButton
 import com.example.whynotkotlin.view.theme.WhyNotBeige
@@ -28,7 +28,10 @@ import com.example.whynotkotlin.view.theme.WhyNotGray
 
 @Composable
 fun ProfileScreen(
-    state: ProfileUiState,
+    profile: UserProfile?,
+    preferredCategoryName: String,
+    loading: Boolean,
+    errorMessage: String?,
     onEditProfileClick: () -> Unit,
     onChangePasswordClick: () -> Unit,
     onLogoutClick: () -> Unit,
@@ -83,7 +86,7 @@ fun ProfileScreen(
             )
 
             Text(
-                text = state.profile?.name ?: if (state.loading) "Loading profile…" else "Profile unavailable",
+                text = profile?.name ?: if (loading) "Loading profile…" else "Profile unavailable",
                 style =
                     MaterialTheme
                         .typography
@@ -112,17 +115,17 @@ fun ProfileScreen(
 
                 ProfileInfo(
                     "Email",
-                    state.profile?.email.orEmpty()
+                    profile?.email.orEmpty()
                 )
 
                 ProfileInfo(
                     "Gender",
-                    state.profile?.gender.orEmpty()
+                    profile?.gender.orEmpty()
                 )
 
                 ProfileInfo(
                     "Age",
-                    state.profile?.age?.toString().orEmpty()
+                    profile?.age?.toString().orEmpty()
                 )
 
                 ProfileInfo(
@@ -132,11 +135,11 @@ fun ProfileScreen(
 
                 ProfileInfo(
                     "Preferred Category",
-                    state.preferredCategoryName
+                    preferredCategoryName
                 )
             }
 
-            state.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 
             Text(
                 text = "✎ Edit Profile",
