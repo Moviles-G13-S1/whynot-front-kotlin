@@ -47,9 +47,16 @@ fun ProductDetailRoute(
 
 @Composable
 fun AddProductRoute(navigator: WhyNotNavigator) {
+    val catalogResult by LocalAppDependencies.current
+        .wishlistController
+        .catalog
+        .collectAsStateWithLifecycle()
+
     AddProductScreen(
         onContinueWithLink = navigator::toNewProduct,
         onAddManuallyClick = { navigator.toNewProduct() },
+        hasWishlists = catalogResult?.getOrNull()?.summaries?.isNotEmpty(),
+        onCreateWishlistClick = navigator::toNewWishlist,
         onHomeClick = navigator::toHome,
         onWishlistsClick = navigator::toWishlists,
         onAddClick = {},
@@ -71,6 +78,7 @@ fun NewProductRoute(
 
     NewProductScreen(
         wishlists = catalogResult?.getOrNull()?.summaries.orEmpty(),
+        loadingWishlists = catalogResult == null,
         prefilledProductUrl = prefilledProductUrl,
         saving = submission.running,
         errorMessage = submission.errorMessage
@@ -87,6 +95,7 @@ fun NewProductRoute(
                 )
             }
         },
+        onCreateWishlistClick = navigator::toNewWishlist,
         onHomeClick = navigator::toHome,
         onWishlistsClick = navigator::toWishlists,
         onAddClick = navigator::toAdd,

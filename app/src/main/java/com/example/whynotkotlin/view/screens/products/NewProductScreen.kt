@@ -39,10 +39,14 @@ import com.example.whynotkotlin.view.theme.WhyNotGray
  *
  * `brand` and `price` are required by the Security Rules, so they are part of
  * the form even though the original mockup only showed name and picture.
+ *
+ * A product can only be saved into one of the user's wishlists. Without any,
+ * the form points to creating one instead of offering a save that cannot work.
  */
 @Composable
 fun NewProductScreen(
     wishlists: List<WishlistSummary>,
+    loadingWishlists: Boolean = false,
     prefilledProductUrl: String,
     saving: Boolean,
     errorMessage: String?,
@@ -54,6 +58,7 @@ fun NewProductScreen(
         imageUrl: String,
         productUrl: String
     ) -> Unit,
+    onCreateWishlistClick: () -> Unit = {},
     onHomeClick: () -> Unit = {},
     onWishlistsClick: () -> Unit = {},
     onAddClick: () -> Unit = {},
@@ -149,11 +154,24 @@ fun NewProductScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            if (wishlists.isEmpty()) {
+            if (loadingWishlists) {
                 Text(
-                    text = "Create a wishlist first to save products into it.",
+                    text = "Loading your wishlists...",
                     style = MaterialTheme.typography.bodyMedium,
                     color = WhyNotGray
+                )
+            } else if (wishlists.isEmpty()) {
+                Text(
+                    text = "Create a wishlist before adding a product.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = WhyNotGray
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                WhyNotButton(
+                    text = "Create wishlist",
+                    onClick = onCreateWishlistClick
                 )
             } else {
                 Row(
