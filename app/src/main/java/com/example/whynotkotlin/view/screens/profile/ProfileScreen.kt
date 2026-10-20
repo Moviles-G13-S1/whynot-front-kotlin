@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,6 +13,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.foundation.rememberScrollState
@@ -141,13 +145,8 @@ fun ProfileScreen(
 
             errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 
-            Text(
-                text = "✎ Edit Profile",
-                style =
-                    MaterialTheme
-                        .typography
-                        .bodyLarge,
-                color = WhyNotGray,
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .align(
                         Alignment.End
@@ -159,7 +158,24 @@ fun ProfileScreen(
                     .clickable {
                         onEditProfileClick()
                     }
-            )
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Edit,
+                    contentDescription = null,
+                    tint = WhyNotGray,
+                    modifier = Modifier.size(15.dp)
+                )
+
+                Text(
+                    text = "Edit Profile",
+                    style =
+                        MaterialTheme
+                            .typography
+                            .bodyLarge,
+                    color = WhyNotGray,
+                    modifier = Modifier.padding(start = 6.dp)
+                )
+            }
 
             /*
              * Permanent Admin entry point.
