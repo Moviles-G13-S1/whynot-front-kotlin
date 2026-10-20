@@ -1,0 +1,1535 @@
+package com.example.whynotkotlin.view.navigation
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.navigation
+import androidx.navigation.compose.rememberNavController
+import com.example.whynotkotlin.app.AppDependencies
+import com.example.whynotkotlin.app.WhyNotViewModelFactory
+import com.example.whynotkotlin.controller.AdminInsightsUiState
+import com.example.whynotkotlin.controller.AdminInsightsViewModel
+import com.example.whynotkotlin.controller.AdminUserMetricsUiState
+import com.example.whynotkotlin.controller.AdminUserMetricsViewModel
+import com.example.whynotkotlin.controller.AdminViewModel
+import com.example.whynotkotlin.controller.AuthUiState
+import com.example.whynotkotlin.controller.AuthViewModel
+import com.example.whynotkotlin.controller.NearbyStoreViewModel
+import com.example.whynotkotlin.controller.ProductViewModel
+import com.example.whynotkotlin.controller.ProfileViewModel
+import com.example.whynotkotlin.model.UserProfileDraft
+import com.example.whynotkotlin.controller.RecommendationViewModel
+import com.example.whynotkotlin.controller.SpeechViewModel
+import com.example.whynotkotlin.controller.WishlistViewModel
+import com.example.whynotkotlin.view.components.WhyNotLoading
+import com.example.whynotkotlin.view.screens.admin.AdminDemographicProfileScreen
+import com.example.whynotkotlin.view.screens.admin.AdminPurchasesByCategoryScreen
+import com.example.whynotkotlin.view.screens.admin.AdminRepeatSaversScreen
+import com.example.whynotkotlin.view.screens.admin.AdminRecommendedSavesScreen
+import com.example.whynotkotlin.view.screens.admin.AdminSavedProductsScreen
+import com.example.whynotkotlin.view.screens.admin.AdminZeroProductsScreen
+import com.example.whynotkotlin.view.screens.auth.LoginScreen
+import com.example.whynotkotlin.view.screens.auth.RegisterScreen
+import com.example.whynotkotlin.view.screens.home.HomeScreen
+import com.example.whynotkotlin.view.screens.products.AddProductScreen
+import com.example.whynotkotlin.view.screens.products.NewProductScreen
+import com.example.whynotkotlin.view.screens.products.ProductDetailScreen
+import com.example.whynotkotlin.view.screens.profile.ChangePasswordScreen
+import com.example.whynotkotlin.view.screens.profile.EditProfileScreen
+import com.example.whynotkotlin.view.screens.profile.ProfileScreen
+import com.example.whynotkotlin.view.screens.purchases.PurchasesScreen
+import com.example.whynotkotlin.view.screens.wishlists.NewWishlistScreen
+import com.example.whynotkotlin.view.screens.wishlists.WishlistDetailScreen
+import com.example.whynotkotlin.view.screens.wishlists.WishlistsScreen
+
+object WhyNotRoutes {
+    const val LOGIN = "login"
+    const val REGISTER = "register"
+
+    const val HOME = "home"
+    const val WISHLISTS = "wishlists"
+    const val ADD = "add"
+    const val PURCHASES = "purchases"
+    const val PROFILE = "profile"
+
+    const val EDIT_PROFILE =
+        "edit_profile"
+
+    const val CHANGE_PASSWORD =
+        "change_password"
+
+    const val NEW_WISHLIST =
+        "new_wishlist"
+
+    const val WISHLIST_DETAIL =
+        "wishlist_detail"
+
+    const val NEW_PRODUCT =
+        "new_product"
+
+    const val PRODUCT_DETAIL =
+        "product_detail"
+
+    const val ADMIN_ROOT =
+        "admin"
+
+    const val ADMIN_SAVED_PRODUCTS =
+        "admin_saved_products"
+
+    const val ADMIN_REPEAT_SAVERS =
+        "admin_repeat_savers"
+
+    const val ADMIN_RECOMMENDED_SAVES =
+        "admin_recommended_saves"
+
+    const val ADMIN_PURCHASES_BY_CATEGORY =
+        "admin_purchases_by_category"
+
+    const val ADMIN_ZERO_PRODUCTS =
+        "admin_zero_products"
+
+    const val ADMIN_DEMOGRAPHIC_PROFILE =
+        "admin_demographic_profile"
+}
+
+@Composable
+fun WhyNotNavigation(
+    dependencies: AppDependencies
+) {
+    val navController =
+        rememberNavController()
+
+    val factory =
+        WhyNotViewModelFactory(
+            dependencies
+        )
+
+    val authViewModel:
+            AuthViewModel =
+        viewModel(
+            factory = factory
+        )
+
+    val wishlistViewModel:
+            WishlistViewModel =
+        viewModel(
+            factory = factory
+        )
+
+    val productViewModel:
+            ProductViewModel =
+        viewModel(
+            factory = factory
+        )
+
+    val profileViewModel: ProfileViewModel = viewModel(factory = factory)
+    val profileState by profileViewModel.state.collectAsStateWithLifecycle()
+
+    val authState by
+    authViewModel
+        .state
+        .collectAsStateWithLifecycle()
+
+    val wishlistState by
+    wishlistViewModel
+        .state
+        .collectAsStateWithLifecycle()
+
+    val productState by
+    productViewModel
+        .state
+        .collectAsStateWithLifecycle()
+
+    if (authState.checkingSession) {
+        WhyNotLoading()
+        return
+    }
+
+    val startDestination =
+        if (authState.session == null) {
+            WhyNotRoutes.LOGIN
+        } else {
+            WhyNotRoutes.HOME
+        }
+
+    NavHost(
+        navController = navController,
+        startDestination =
+            startDestination
+    ) {
+        composable(
+            WhyNotRoutes.LOGIN
+        ) {
+            ClearErrorOnEnter(
+                authViewModel::clearError
+            )
+
+            LoginScreen(
+                submitting =
+                    authState.submitting,
+
+                errorMessage =
+                    authState.errorMessage,
+
+                onSubmit = {
+                        email,
+                        password ->
+
+                    authViewModel.signIn(
+                        email,
+                        password
+                    ) {
+                        navController.navigate(
+                            WhyNotRoutes.HOME
+                        ) {
+                            popUpTo(
+                                WhyNotRoutes.LOGIN
+                            ) {
+                                inclusive = true
+                            }
+                        }
+                    }
+                },
+
+                onCreateAccountClick = {
+                    navController.navigate(
+                        WhyNotRoutes.REGISTER
+                    )
+                }
+            )
+        }
+
+        composable(
+            WhyNotRoutes.REGISTER
+        ) {
+            ClearErrorOnEnter(
+                authViewModel::clearError
+            )
+
+            RegisterScreen(
+                submitting =
+                    authState.submitting,
+
+                errorMessage =
+                    authState.errorMessage,
+
+                onSubmit = {
+                        name,
+                        email,
+                        password,
+                        gender,
+                        age,
+                        categoryId,
+                        cityId ->
+
+                    authViewModel.signUp(
+                        email = email,
+                        password = password,
+
+                        draft =
+                            UserProfileDraft(
+                                name = name,
+                                gender = gender,
+
+                                age =
+                                    age
+                                        .trim()
+                                        .toIntOrNull()
+                                        ?: 0,
+
+                                preferredCategoryId =
+                                    categoryId,
+
+                                cityId =
+                                    cityId
+                            )
+                    ) {
+                        navController.navigate(
+                            WhyNotRoutes.HOME
+                        ) {
+                            popUpTo(
+                                WhyNotRoutes.LOGIN
+                            ) {
+                                inclusive = true
+                            }
+                        }
+                    }
+                },
+
+                onBackToLoginClick = {
+                    navController
+                        .popBackStack()
+                }
+            )
+        }
+
+        composable(
+            WhyNotRoutes.HOME
+        ) {
+            val nearbyStoreViewModel:
+                    NearbyStoreViewModel =
+                viewModel(
+                    factory = factory
+                )
+
+            val recommendationViewModel:
+                    RecommendationViewModel =
+                viewModel(
+                    factory = factory
+                )
+
+            val profileViewModel:
+                    ProfileViewModel =
+                viewModel(
+                    factory = factory
+                )
+
+            val nearbyState by
+            nearbyStoreViewModel
+                .state
+                .collectAsStateWithLifecycle()
+
+            val recommendationState by
+            recommendationViewModel
+                .state
+                .collectAsStateWithLifecycle()
+
+            val profileState by
+            profileViewModel
+                .state
+                .collectAsStateWithLifecycle()
+
+            HomeScreen(
+                userName = profileState.profile?.takeIf {
+                    it.uid == authState.session?.uid
+                }?.name,
+                nearbyState = nearbyState,
+                recommendationState = recommendationState,
+                wishlistSummaries = wishlistState.summaries,
+                onLoadNearby =
+                    nearbyStoreViewModel::loadNearestStore,
+                onLoadRecommendation =
+                    recommendationViewModel::loadRecommendation,
+                onSaveRecommendation =
+                    recommendationViewModel::saveRecommendation,
+                onHomeClick = {},
+
+                onWishlistsClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.WISHLISTS
+                    )
+                },
+
+                onWishlistClick = {
+                        wishlistId ->
+
+                    wishlistViewModel
+                        .selectWishlist(
+                            wishlistId
+                        )
+
+                    navController.navigate(
+                        WhyNotRoutes
+                            .WISHLIST_DETAIL
+                    )
+                },
+
+                onAddClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.ADD
+                    )
+                },
+
+                onPurchasesClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.PURCHASES
+                    )
+                },
+
+                onProfileClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.PROFILE
+                    )
+                }
+            )
+        }
+
+        composable(
+            WhyNotRoutes.WISHLISTS
+        ) {
+            WishlistsScreen(
+                state =
+                    wishlistState,
+
+                onWishlistClick = {
+                        wishlistId ->
+
+                    wishlistViewModel
+                        .selectWishlist(
+                            wishlistId
+                        )
+
+                    navController.navigate(
+                        WhyNotRoutes
+                            .WISHLIST_DETAIL
+                    )
+                },
+
+                onNewWishlistClick = {
+                    wishlistViewModel
+                        .clearError()
+
+                    navController.navigate(
+                        WhyNotRoutes
+                            .NEW_WISHLIST
+                    )
+                },
+
+                onHomeClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.HOME
+                    )
+                },
+
+                onWishlistsClick = {},
+
+                onAddClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.ADD
+                    )
+                },
+
+                onPurchasesClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.PURCHASES
+                    )
+                },
+
+                onProfileClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.PROFILE
+                    )
+                }
+            )
+        }
+
+        composable(
+            WhyNotRoutes.NEW_WISHLIST
+        ) {
+            NewWishlistScreen(
+                state =
+                    wishlistState,
+
+                onSave = {
+                        categoryId,
+                        imageUrl ->
+
+                    wishlistViewModel
+                        .createWishlist(
+                            categoryId,
+                            imageUrl
+                        ) {
+                            navController
+                                .popBackStack()
+                        }
+                },
+
+                onCancelClick = {
+                    navController
+                        .popBackStack()
+                },
+
+                onHomeClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.HOME
+                    )
+                },
+
+                onWishlistsClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.WISHLISTS
+                    )
+                },
+
+                onAddClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.ADD
+                    )
+                },
+
+                onPurchasesClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.PURCHASES
+                    )
+                },
+
+                onProfileClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.PROFILE
+                    )
+                }
+            )
+        }
+
+        composable(
+            WhyNotRoutes.WISHLIST_DETAIL
+        ) {
+            WishlistDetailScreen(
+                wishlistName =
+                    wishlistState
+                        .selected
+                        ?.categoryName
+                        ?: "Wishlist",
+
+                products =
+                    wishlistState
+                        .selectedWishlistId
+                        ?.let {
+                            productState
+                                .forWishlist(it)
+                        }
+                        .orEmpty(),
+
+                errorMessage =
+                    productState
+                        .errorMessage,
+
+                onProductClick = {
+                        productId ->
+
+                    productViewModel
+                        .selectProduct(
+                            productId
+                        )
+
+                    navController.navigate(
+                        WhyNotRoutes
+                            .PRODUCT_DETAIL
+                    )
+                },
+
+                onAddItemClick = {
+                    productViewModel
+                        .clearError()
+
+                    navController.navigate(
+                        WhyNotRoutes
+                            .NEW_PRODUCT
+                    )
+                },
+
+                onHomeClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.HOME
+                    )
+                },
+
+                onWishlistsClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.WISHLISTS
+                    )
+                },
+
+                onAddClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.ADD
+                    )
+                },
+
+                onPurchasesClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.PURCHASES
+                    )
+                },
+
+                onProfileClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.PROFILE
+                    )
+                }
+            )
+        }
+
+        composable(
+            WhyNotRoutes.PRODUCT_DETAIL
+        ) {
+            ProductDetailScreen(
+                product =
+                    productState.selected,
+
+                errorMessage =
+                    productState
+                        .errorMessage,
+
+                onMarkPurchased = {
+                    productState
+                        .selected
+                        ?.let(
+                            productViewModel::
+                            markPurchased
+                        )
+                },
+
+                onDeleteClick = {
+                    productState
+                        .selected
+                        ?.let {
+                                product ->
+
+                            productViewModel
+                                .deleteProduct(
+                                    product.id
+                                ) {
+                                    navController
+                                        .popBackStack()
+                                }
+                        }
+                },
+
+                onHomeClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.HOME
+                    )
+                },
+
+                onWishlistsClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.WISHLISTS
+                    )
+                },
+
+                onAddClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.ADD
+                    )
+                },
+
+                onPurchasesClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.PURCHASES
+                    )
+                },
+
+                onProfileClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.PROFILE
+                    )
+                }
+            )
+        }
+
+        composable(
+            WhyNotRoutes.ADD
+        ) {
+            AddProductScreen(
+                onContinueWithLink = {
+                        link ->
+
+                    productViewModel
+                        .setPendingProductUrl(
+                            link
+                        )
+
+                    navController.navigate(
+                        WhyNotRoutes
+                            .NEW_PRODUCT
+                    )
+                },
+
+                onAddManuallyClick = {
+                    productViewModel
+                        .setPendingProductUrl(
+                            ""
+                        )
+
+                    navController.navigate(
+                        WhyNotRoutes
+                            .NEW_PRODUCT
+                    )
+                },
+
+                onHomeClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.HOME
+                    )
+                },
+
+                onWishlistsClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.WISHLISTS
+                    )
+                },
+
+                onAddClick = {},
+
+                onPurchasesClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.PURCHASES
+                    )
+                },
+
+                onProfileClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.PROFILE
+                    )
+                }
+            )
+        }
+
+        composable(
+            WhyNotRoutes.NEW_PRODUCT
+        ) {
+            val speechViewModel:
+                    SpeechViewModel =
+                viewModel(
+                    factory = factory
+                )
+
+            val speechState by
+            speechViewModel
+                .state
+                .collectAsStateWithLifecycle()
+
+            NewProductScreen(
+                wishlists =
+                    wishlistState
+                        .summaries,
+
+                prefilledProductUrl =
+                    productState
+                        .pendingProductUrl,
+
+                saving =
+                    productState
+                        .saving,
+
+                errorMessage =
+                    productState
+                        .errorMessage,
+
+                speechState =
+                    speechState,
+
+                onStartVoiceInput = {
+                    speechViewModel.startListening()
+                },
+
+                onVoiceInputConsumed =
+                    speechViewModel::reset,
+
+                onSave = {
+                        wishlistId,
+                        name,
+                        brand,
+                        price,
+                        imageUrl,
+                        productUrl ->
+
+                    productViewModel
+                        .createProduct(
+                            wishlistId =
+                                wishlistId,
+
+                            name =
+                                name,
+
+                            brand =
+                                brand,
+
+                            price =
+                                price,
+
+                            imageUrl =
+                                imageUrl,
+
+                            productUrl =
+                                productUrl
+                        ) {
+                            navController
+                                .popBackStack()
+                        }
+                },
+
+                onHomeClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.HOME
+                    )
+                },
+
+                onWishlistsClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.WISHLISTS
+                    )
+                },
+
+                onAddClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.ADD
+                    )
+                },
+
+                onPurchasesClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.PURCHASES
+                    )
+                },
+
+                onProfileClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.PROFILE
+                    )
+                }
+            )
+        }
+
+        composable(
+            WhyNotRoutes.PURCHASES
+        ) {
+            PurchasesScreen(
+                purchases =
+                    productState.purchased,
+
+                onHomeClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.HOME
+                    )
+                },
+
+                onWishlistsClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.WISHLISTS
+                    )
+                },
+
+                onAddClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.ADD
+                    )
+                },
+
+                onPurchasesClick = {},
+
+                onProfileClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.PROFILE
+                    )
+                }
+            )
+        }
+
+        composable(
+            WhyNotRoutes.PROFILE
+        ) {
+            ProfileScreen(
+                state = profileState,
+
+                isAdmin =
+                    authState
+                        .session
+                        ?.isAdmin == true,
+
+                onAdminClick = {
+                    navController.navigate(
+                        WhyNotRoutes.ADMIN_ROOT
+                    ) {
+                        launchSingleTop = true
+                    }
+                },
+
+                onEditProfileClick = {
+                    navController.navigate(
+                        WhyNotRoutes
+                            .EDIT_PROFILE
+                    )
+                },
+
+                onChangePasswordClick = {
+                    navController.navigate(
+                        WhyNotRoutes
+                            .CHANGE_PASSWORD
+                    )
+                },
+
+                onLogoutClick = {
+                    authViewModel.signOut {
+                        navController.navigate(
+                            WhyNotRoutes.LOGIN
+                        ) {
+                            popUpTo(
+                                WhyNotRoutes.HOME
+                            ) {
+                                inclusive = true
+                            }
+                        }
+                    }
+                },
+
+                onHomeClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.HOME
+                    )
+                },
+
+                onWishlistsClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.WISHLISTS
+                    )
+                },
+
+                onAddClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.ADD
+                    )
+                },
+
+                onPurchasesClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.PURCHASES
+                    )
+                },
+
+                onProfileClick = {}
+            )
+        }
+
+        composable(
+            WhyNotRoutes.EDIT_PROFILE
+        ) {
+            ClearErrorOnEnter(profileViewModel::clearError)
+            EditProfileScreen(
+                state = profileState,
+                onBackClick = {
+                    navController
+                        .popBackStack()
+                },
+
+                onSaveChangesClick = { name, gender, age, categoryId ->
+                    profileViewModel.updateProfile(name, gender, age, categoryId) {
+                        navController.popBackStack()
+                    }
+                },
+
+                onChangePasswordClick = {
+                    navController.navigate(
+                        WhyNotRoutes
+                            .CHANGE_PASSWORD
+                    )
+                },
+
+                onHomeClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.HOME
+                    )
+                },
+
+                onWishlistsClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.WISHLISTS
+                    )
+                },
+
+                onAddClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.ADD
+                    )
+                },
+
+                onPurchasesClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.PURCHASES
+                    )
+                },
+
+                onProfileClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.PROFILE
+                    )
+                }
+            )
+        }
+
+        composable(
+            WhyNotRoutes.CHANGE_PASSWORD
+        ) {
+            ClearErrorOnEnter(authViewModel::clearError)
+            ChangePasswordScreen(
+                submitting = authState.submitting,
+                errorMessage = authState.errorMessage,
+                onBackClick = {
+                    navController
+                        .popBackStack()
+                },
+
+                onUpdatePasswordClick = { current, new, confirm ->
+                    authViewModel.changePassword(current, new, confirm) {
+                        navController.popBackStack()
+                    }
+                },
+
+                onHomeClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.HOME
+                    )
+                },
+
+                onWishlistsClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.WISHLISTS
+                    )
+                },
+
+                onAddClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.ADD
+                    )
+                },
+
+                onPurchasesClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.PURCHASES
+                    )
+                },
+
+                onProfileClick = {
+                    navController.navigateMain(
+                        WhyNotRoutes.PROFILE
+                    )
+                }
+            )
+        }
+
+        navigation(
+            route =
+                WhyNotRoutes.ADMIN_ROOT,
+
+            startDestination =
+                WhyNotRoutes
+                    .ADMIN_SAVED_PRODUCTS
+        ) {
+            composable(
+                WhyNotRoutes
+                    .ADMIN_SAVED_PRODUCTS
+            ) {
+                    backStackEntry ->
+
+                AdminRouteGuard(
+                    isSignedIn =
+                        authState.session != null,
+
+                    isAdmin =
+                        authState
+                            .session
+                            ?.isAdmin == true,
+
+                    navController =
+                        navController
+                ) {
+                    val adminGraphEntry =
+                        remember(
+                            backStackEntry
+                        ) {
+                            navController
+                                .getBackStackEntry(
+                                    WhyNotRoutes
+                                        .ADMIN_ROOT
+                                )
+                        }
+
+                    val adminViewModel:
+                            AdminViewModel =
+                        viewModel(
+                            viewModelStoreOwner =
+                                adminGraphEntry,
+
+                            factory =
+                                factory
+                        )
+
+                    val adminState by
+                    adminViewModel
+                        .state
+                        .collectAsStateWithLifecycle()
+
+                    AdminSavedProductsScreen(
+                        state =
+                            adminState,
+
+                        onRecommendedSavesClick = {
+                            navController
+                                .navigateAdmin(
+                                    WhyNotRoutes
+                                        .ADMIN_RECOMMENDED_SAVES
+                                )
+                        },
+
+                        onRepeatSaversClick = {
+                            navController
+                                .navigateAdmin(
+                                    WhyNotRoutes
+                                        .ADMIN_REPEAT_SAVERS
+                                )
+                        },
+
+                        onPurchasesByCategoryClick = {
+                            navController
+                                .navigateAdmin(
+                                    WhyNotRoutes
+                                        .ADMIN_PURCHASES_BY_CATEGORY
+                                )
+                        },
+
+                        onZeroProductsClick = {
+                            navController
+                                .navigateAdmin(
+                                    WhyNotRoutes
+                                        .ADMIN_ZERO_PRODUCTS
+                                )
+                        },
+
+                        onDemographicProfileClick = {
+                            navController
+                                .navigateAdmin(
+                                    WhyNotRoutes
+                                        .ADMIN_DEMOGRAPHIC_PROFILE
+                                )
+                        }
+                    )
+                }
+            }
+
+            composable(
+                WhyNotRoutes
+                    .ADMIN_REPEAT_SAVERS
+            ) {
+                    backStackEntry ->
+
+                AdminUserMetricsHost(
+                    authState = authState,
+                    navController = navController,
+                    backStackEntry = backStackEntry,
+                    factory = factory
+                ) { metricsState ->
+
+                    AdminRepeatSaversScreen(
+                        state = metricsState,
+
+                        onSavedProductsClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_SAVED_PRODUCTS
+                            )
+                        },
+
+                        onRecommendedSavesClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_RECOMMENDED_SAVES
+                            )
+                        },
+
+                        onPurchasesByCategoryClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_PURCHASES_BY_CATEGORY
+                            )
+                        },
+
+                        onZeroProductsClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_ZERO_PRODUCTS
+                            )
+                        },
+
+                        onDemographicProfileClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_DEMOGRAPHIC_PROFILE
+                            )
+                        }
+                    )
+                }
+            }
+
+            composable(
+                WhyNotRoutes
+                    .ADMIN_RECOMMENDED_SAVES
+            ) {
+                    backStackEntry ->
+
+                AdminRouteGuard(
+                    isSignedIn =
+                        authState.session != null,
+
+                    isAdmin =
+                        authState
+                            .session
+                            ?.isAdmin == true,
+
+                    navController =
+                        navController
+                ) {
+                    val adminGraphEntry =
+                        remember(
+                            backStackEntry
+                        ) {
+                            navController
+                                .getBackStackEntry(
+                                    WhyNotRoutes
+                                        .ADMIN_ROOT
+                                )
+                        }
+
+                    val adminViewModel:
+                            AdminViewModel =
+                        viewModel(
+                            viewModelStoreOwner =
+                                adminGraphEntry,
+
+                            factory =
+                                factory
+                        )
+
+                    val adminState by
+                    adminViewModel
+                        .state
+                        .collectAsStateWithLifecycle()
+
+                    AdminRecommendedSavesScreen(
+                        state =
+                            adminState,
+
+                        onSavedProductsClick = {
+                            navController
+                                .navigateAdmin(
+                                    WhyNotRoutes
+                                        .ADMIN_SAVED_PRODUCTS
+                                )
+                        },
+
+                        onRepeatSaversClick = {
+                            navController
+                                .navigateAdmin(
+                                    WhyNotRoutes
+                                        .ADMIN_REPEAT_SAVERS
+                                )
+                        },
+
+                        onPurchasesByCategoryClick = {
+                            navController
+                                .navigateAdmin(
+                                    WhyNotRoutes
+                                        .ADMIN_PURCHASES_BY_CATEGORY
+                                )
+                        },
+
+                        onZeroProductsClick = {
+                            navController
+                                .navigateAdmin(
+                                    WhyNotRoutes
+                                        .ADMIN_ZERO_PRODUCTS
+                                )
+                        },
+
+                        onDemographicProfileClick = {
+                            navController
+                                .navigateAdmin(
+                                    WhyNotRoutes
+                                        .ADMIN_DEMOGRAPHIC_PROFILE
+                                )
+                        }
+                    )
+                }
+            }
+
+            composable(
+                WhyNotRoutes
+                    .ADMIN_PURCHASES_BY_CATEGORY
+            ) {
+                    backStackEntry ->
+
+                AdminInsightsHost(
+                    authState = authState,
+                    navController = navController,
+                    backStackEntry = backStackEntry,
+                    factory = factory
+                ) { insightsState, insightsViewModel ->
+
+                    AdminPurchasesByCategoryScreen(
+                        state = insightsState,
+
+                        onSavedProductsClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_SAVED_PRODUCTS
+                            )
+                        },
+
+                        onRepeatSaversClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_REPEAT_SAVERS
+                            )
+                        },
+
+                        onRecommendedSavesClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_RECOMMENDED_SAVES
+                            )
+                        },
+
+                        onZeroProductsClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_ZERO_PRODUCTS
+                            )
+                        },
+
+                        onDemographicProfileClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_DEMOGRAPHIC_PROFILE
+                            )
+                        },
+
+                        onWindowChange =
+                            insightsViewModel::selectMonthsWindow
+                    )
+                }
+            }
+
+            composable(
+                WhyNotRoutes
+                    .ADMIN_ZERO_PRODUCTS
+            ) {
+                    backStackEntry ->
+
+                AdminUserMetricsHost(
+                    authState = authState,
+                    navController = navController,
+                    backStackEntry = backStackEntry,
+                    factory = factory
+                ) { metricsState ->
+
+                    AdminZeroProductsScreen(
+                        state = metricsState,
+
+                        onSavedProductsClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_SAVED_PRODUCTS
+                            )
+                        },
+
+                        onRepeatSaversClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_REPEAT_SAVERS
+                            )
+                        },
+
+                        onRecommendedSavesClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_RECOMMENDED_SAVES
+                            )
+                        },
+
+                        onPurchasesByCategoryClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_PURCHASES_BY_CATEGORY
+                            )
+                        },
+
+                        onDemographicProfileClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_DEMOGRAPHIC_PROFILE
+                            )
+                        }
+                    )
+                }
+            }
+
+            composable(
+                WhyNotRoutes
+                    .ADMIN_DEMOGRAPHIC_PROFILE
+            ) {
+                    backStackEntry ->
+
+                AdminInsightsHost(
+                    authState = authState,
+                    navController = navController,
+                    backStackEntry = backStackEntry,
+                    factory = factory
+                ) { insightsState, _ ->
+
+                    AdminDemographicProfileScreen(
+                        state = insightsState,
+
+                        onSavedProductsClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_SAVED_PRODUCTS
+                            )
+                        },
+
+                        onRepeatSaversClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_REPEAT_SAVERS
+                            )
+                        },
+
+                        onRecommendedSavesClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_RECOMMENDED_SAVES
+                            )
+                        },
+
+                        onPurchasesByCategoryClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_PURCHASES_BY_CATEGORY
+                            )
+                        },
+
+                        onZeroProductsClick = {
+                            navController.navigateAdmin(
+                                WhyNotRoutes.ADMIN_ZERO_PRODUCTS
+                            )
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ClearErrorOnEnter(
+    clear: () -> Unit
+) {
+    LaunchedEffect(Unit) {
+        clear()
+    }
+}
+
+@Composable
+private fun AdminInsightsHost(
+    authState: AuthUiState,
+    navController: NavHostController,
+    backStackEntry: NavBackStackEntry,
+    factory: WhyNotViewModelFactory,
+    content: @Composable (AdminInsightsUiState, AdminInsightsViewModel) -> Unit
+) {
+    AdminRouteGuard(
+        isSignedIn = authState.session != null,
+        isAdmin = authState.session?.isAdmin == true,
+        navController = navController
+    ) {
+        val adminGraphEntry = remember(backStackEntry) {
+            navController.getBackStackEntry(WhyNotRoutes.ADMIN_ROOT)
+        }
+
+        val insightsViewModel: AdminInsightsViewModel = viewModel(
+            viewModelStoreOwner = adminGraphEntry,
+            factory = factory
+        )
+
+        val insightsState by insightsViewModel
+            .state
+            .collectAsStateWithLifecycle()
+
+        content(insightsState, insightsViewModel)
+    }
+}
+
+@Composable
+private fun AdminUserMetricsHost(
+    authState: AuthUiState,
+    navController: NavHostController,
+    backStackEntry: NavBackStackEntry,
+    factory: WhyNotViewModelFactory,
+    content: @Composable (AdminUserMetricsUiState) -> Unit
+) {
+    AdminRouteGuard(
+        isSignedIn = authState.session != null,
+        isAdmin = authState.session?.isAdmin == true,
+        navController = navController
+    ) {
+        val adminGraphEntry = remember(backStackEntry) {
+            navController.getBackStackEntry(WhyNotRoutes.ADMIN_ROOT)
+        }
+
+        val metricsViewModel: AdminUserMetricsViewModel = viewModel(
+            viewModelStoreOwner = adminGraphEntry,
+            factory = factory
+        )
+
+        val metricsState by metricsViewModel
+            .state
+            .collectAsStateWithLifecycle()
+
+        content(metricsState)
+    }
+}
+
+@Composable
+private fun AdminRouteGuard(
+    isSignedIn: Boolean,
+    isAdmin: Boolean,
+    navController: NavHostController,
+    content: @Composable () -> Unit
+) {
+    if (!isAdmin) {
+        LaunchedEffect(
+            isSignedIn,
+            isAdmin
+        ) {
+            val destination =
+                if (isSignedIn) {
+                    WhyNotRoutes.HOME
+                } else {
+                    WhyNotRoutes.LOGIN
+                }
+
+            navController.navigate(
+                destination
+            ) {
+                popUpTo(
+                    WhyNotRoutes.ADMIN_ROOT
+                ) {
+                    inclusive = true
+                }
+
+                launchSingleTop = true
+            }
+        }
+
+        WhyNotLoading()
+        return
+    }
+
+    content()
+}
+
+private fun NavHostController.navigateMain(
+    route: String
+) {
+    navigate(route) {
+        popUpTo(
+            WhyNotRoutes.HOME
+        ) {
+            inclusive = false
+        }
+
+        launchSingleTop = true
+    }
+}
+
+private fun NavHostController.navigateAdmin(
+    route: String
+) {
+    navigate(route) {
+        popUpTo(
+            WhyNotRoutes
+                .ADMIN_SAVED_PRODUCTS
+        ) {
+            inclusive = false
+        }
+
+        launchSingleTop = true
+    }
+}
