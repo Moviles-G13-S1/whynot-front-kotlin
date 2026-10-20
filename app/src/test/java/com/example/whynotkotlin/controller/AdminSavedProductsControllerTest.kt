@@ -34,7 +34,7 @@ class AdminSavedProductsControllerTest {
     }
 
     @Test
-    fun `BQ1 calculates all distribution buckets and BQ3 exposes backend metric`() =
+    fun `BQ1 calculates all distribution buckets and BQ3 exposes event count`() =
         runTest(dispatcher) {
 
             /*
