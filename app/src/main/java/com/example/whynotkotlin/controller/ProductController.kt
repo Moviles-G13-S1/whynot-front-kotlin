@@ -2,14 +2,17 @@ package com.example.whynotkotlin.controller
 
 import com.example.whynotkotlin.model.Product
 import com.example.whynotkotlin.model.ProductDraft
+import com.example.whynotkotlin.model.ProductSaveFailure
 import com.example.whynotkotlin.model.ValidationException
 import com.example.whynotkotlin.model.repositories.AuthRepository
 import com.example.whynotkotlin.model.repositories.ProductRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 
 /**
  * Product intents.
@@ -22,7 +25,7 @@ import kotlinx.coroutines.flow.flowOf
 class ProductController(
     private val authRepository: AuthRepository,
     private val productRepository: ProductRepository,
-    scope: CoroutineScope
+    private val scope: CoroutineScope
 ) {
 
     val products: StateFlow<Result<List<Product>>?> =
@@ -42,6 +45,11 @@ class ProductController(
     fun forWishlist(products: List<Product>, wishlistId: String): List<Product> =
         products.filter { it.wishlistId == wishlistId }
 
+    /**
+     * Validates and saves a product, recording the attempt for BQ Type 2: a
+     * success once the product is written, or a failure with its reason when
+     * validation or the backend rejects it.
+     */
     suspend fun createProduct(
         wishlistId: String,
         name: String,
@@ -56,27 +64,55 @@ class ProductController(
         val parsedPrice = price.trim().replace(",", ".").toDoubleOrNull()
 
         val validationError = when {
-            name.isBlank() -> "Enter a product name"
-            brand.isBlank() -> "Enter a brand"
-            parsedPrice == null -> "Enter a valid price"
-            parsedPrice < 0 -> "The price cannot be negative"
-            wishlistId.isBlank() -> "Choose a wishlist"
+            name.isBlank() -> ProductSaveFailure.MISSING_NAME to "Enter a product name"
+            brand.isBlank() -> ProductSaveFailure.MISSING_BRAND to "Enter a brand"
+            parsedPrice == null -> ProductSaveFailure.INVALID_PRICE to "Enter a valid price"
+            parsedPrice < 0 -> ProductSaveFailure.NEGATIVE_PRICE to "The price cannot be negative"
+            wishlistId.isBlank() -> ProductSaveFailure.MISSING_WISHLIST to "Choose a wishlist"
             else -> null
         }
 
-        validationError?.let { throw ValidationException(it) }
+        validationError?.let { (failure, message) ->
+            recordSaveAttempt(uid, failure)
+            throw ValidationException(message)
+        }
 
-        productRepository.createProduct(
-            ownerId = uid,
-            draft = ProductDraft(
-                wishlistId = wishlistId,
-                name = name,
-                brand = brand,
-                price = parsedPrice!!,
-                imageUrl = imageUrl,
-                productUrl = productUrl
+        try {
+            productRepository.createProduct(
+                ownerId = uid,
+                draft = ProductDraft(
+                    wishlistId = wishlistId,
+                    name = name,
+                    brand = brand,
+                    price = parsedPrice!!,
+                    imageUrl = imageUrl,
+                    productUrl = productUrl
+                )
             )
-        )
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            recordSaveAttempt(uid, ProductSaveFailure.BACKEND_ERROR)
+            throw error
+        }
+
+        recordSaveAttempt(uid, failure = null)
+    }
+
+    /**
+     * Records the attempt in the background. It is analytics only, so it never
+     * delays the save and a failure to record it is ignored.
+     */
+    private fun recordSaveAttempt(ownerId: String, failure: ProductSaveFailure?) {
+        scope.launch {
+            try {
+                productRepository.recordSaveAttempt(ownerId, failure)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                // Losing one analytics event must not surface as a save error.
+            }
+        }
     }
 
     /**

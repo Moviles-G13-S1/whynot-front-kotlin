@@ -43,11 +43,17 @@ import com.example.whynotkotlin.view.theme.WhyNotWhite
  * Saving from a link alone is not possible yet: the contract requires a name,
  * brand and price, and no backend scrapes product pages. Continuing therefore
  * carries the link into the manual form instead of writing a product here.
+ *
+ * A product always belongs to a wishlist, so both ways of adding one are only
+ * offered once the user has a wishlist. [hasWishlists] is null while the
+ * wishlists are still loading, and the buttons stay disabled until it is known.
  */
 @Composable
 fun AddProductScreen(
     onContinueWithLink: (String) -> Unit,
     onAddManuallyClick: () -> Unit,
+    hasWishlists: Boolean? = true,
+    onCreateWishlistClick: () -> Unit = {},
     onHomeClick: () -> Unit = {},
     onWishlistsClick: () -> Unit = {},
     onAddClick: () -> Unit = {},
@@ -82,6 +88,24 @@ fun AddProductScreen(
 
             Spacer(modifier = Modifier.height(18.dp))
 
+            if (hasWishlists == false) {
+                Text(
+                    text = "Create a wishlist before adding a product.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = WhyNotGray
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                WhyNotButton(
+                    text = "Create wishlist",
+                    onClick = onCreateWishlistClick,
+                    filled = true
+                )
+
+                Spacer(modifier = Modifier.height(18.dp))
+            }
+
             LinkField(
                 value = link,
                 onValueChange = { link = it }
@@ -93,7 +117,7 @@ fun AddProductScreen(
                 text = "Continue",
                 onClick = { onContinueWithLink(link) },
                 filled = true,
-                enabled = link.isNotBlank()
+                enabled = hasWishlists == true && link.isNotBlank()
             )
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -108,7 +132,8 @@ fun AddProductScreen(
 
             WhyNotButton(
                 text = "Add manually",
-                onClick = onAddManuallyClick
+                onClick = onAddManuallyClick,
+                enabled = hasWishlists == true
             )
         }
 

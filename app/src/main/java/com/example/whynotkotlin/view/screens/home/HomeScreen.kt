@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -206,13 +205,6 @@ private fun SearchBar() {
             modifier = Modifier
                 .weight(1f)
                 .padding(start = 7.dp)
-        )
-
-        Icon(
-            imageVector = Icons.Outlined.Mic,
-            contentDescription = "Voice search",
-            tint = WhyNotGray,
-            modifier = Modifier.size(17.dp)
         )
     }
 }

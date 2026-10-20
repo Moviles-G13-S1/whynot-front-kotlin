@@ -15,7 +15,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material.icons.outlined.LocationOn
+import androidx.compose.material.icons.outlined.Storefront
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -226,15 +232,26 @@ private fun NearbySection(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            Text(
-                text = "${String.format("%.2f", store.distanceKm)} km away · ${store.address}",
-                style = MaterialTheme.typography.bodySmall,
-                color = WhyNotGray
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Outlined.LocationOn,
+                    contentDescription = null,
+                    tint = WhyNotGray,
+                    modifier = Modifier.size(15.dp)
+                )
+
+                Text(
+                    text = "${String.format("%.2f", store.distanceKm)} km away · ${store.address}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = WhyNotGray,
+                    modifier = Modifier.padding(start = 4.dp)
+                )
+            }
 
             Spacer(modifier = Modifier.height(10.dp))
 
             FeatureImagePlaceholder(
+                icon = Icons.Outlined.Storefront,
                 label = store.name,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -310,6 +327,7 @@ private fun RecommendationSection(
     }
 
     FeatureImagePlaceholder(
+        icon = Icons.Outlined.AutoAwesome,
         label = recommendation.name,
         modifier = Modifier
             .fillMaxWidth()
@@ -406,8 +424,14 @@ private fun RecommendationSection(
     }
 }
 
+/**
+ * Stands in for a picture the backend does not provide yet. The icons match
+ * the Flutter app: a storefront for the nearby store and sparkles for the
+ * recommendation.
+ */
 @Composable
 private fun FeatureImagePlaceholder(
+    icon: ImageVector,
     label: String,
     modifier: Modifier = Modifier
 ) {
@@ -417,13 +441,25 @@ private fun FeatureImagePlaceholder(
             .background(WhyNotBeige),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = WhyNotGray,
-            textAlign = TextAlign.Center,
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(12.dp)
-        )
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = WhyNotGray,
+                modifier = Modifier.size(24.dp)
+            )
+
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodySmall,
+                color = WhyNotGray,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(start = 10.dp)
+            )
+        }
     }
 }
 
