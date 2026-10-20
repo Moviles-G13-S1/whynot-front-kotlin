@@ -65,7 +65,6 @@ fun NewProductRoute(
 ) {
     val dependencies = LocalAppDependencies.current
     val productController = dependencies.productController
-    val speechController = dependencies.speechController
     val catalogResult by dependencies.wishlistController.catalog.collectAsStateWithLifecycle()
     val productsResult by productController.products.collectAsStateWithLifecycle()
     val submission = rememberSubmission()
@@ -88,7 +87,6 @@ fun NewProductRoute(
                 )
             }
         },
-        listenForSpeech = { speechController.listen() },
         onHomeClick = navigator::toHome,
         onWishlistsClick = navigator::toWishlists,
         onAddClick = navigator::toAdd,

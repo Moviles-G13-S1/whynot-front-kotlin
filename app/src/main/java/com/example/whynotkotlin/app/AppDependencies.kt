@@ -10,11 +10,9 @@ import com.example.whynotkotlin.controller.NearbyStoreController
 import com.example.whynotkotlin.controller.ProductController
 import com.example.whynotkotlin.controller.ProfileController
 import com.example.whynotkotlin.controller.RecommendationController
-import com.example.whynotkotlin.controller.SpeechController
 import com.example.whynotkotlin.controller.WishlistController
 import com.example.whynotkotlin.model.repositories.AdminRepository
 import com.example.whynotkotlin.model.repositories.AndroidLocationRepository
-import com.example.whynotkotlin.model.repositories.AndroidSpeechRecognitionRepository
 import com.example.whynotkotlin.model.repositories.AuthRepository
 import com.example.whynotkotlin.model.repositories.FirebaseAdminRepository
 import com.example.whynotkotlin.model.repositories.FirebaseAuthRepository
@@ -27,7 +25,6 @@ import com.example.whynotkotlin.model.repositories.LocationRepository
 import com.example.whynotkotlin.model.repositories.NearbyStoreRepository
 import com.example.whynotkotlin.model.repositories.ProductRepository
 import com.example.whynotkotlin.model.repositories.RecommendationRepository
-import com.example.whynotkotlin.model.repositories.SpeechRecognitionRepository
 import com.example.whynotkotlin.model.repositories.UserRepository
 import com.example.whynotkotlin.model.repositories.WishlistRepository
 import com.google.firebase.auth.FirebaseAuth
@@ -53,7 +50,6 @@ class AppDependencies(
     locationRepository: LocationRepository,
     nearbyStoreRepository: NearbyStoreRepository,
     recommendationRepository: RecommendationRepository,
-    speechRecognitionRepository: SpeechRecognitionRepository,
     scope: CoroutineScope
 ) {
 
@@ -75,9 +71,6 @@ class AppDependencies(
     val recommendationController =
         RecommendationController(recommendationRepository)
 
-    val speechController =
-        SpeechController(speechRecognitionRepository)
-
     val adminSavedProductsController =
         AdminSavedProductsController(adminRepository, scope)
 
@@ -92,9 +85,8 @@ class AppDependencies(
         /**
          * Wires the real Firebase implementations.
          *
-         * [context] is only used by the two device repositories: location
-         * needs it to reach Play Services, speech to reach the recognition
-         * service, and both to check their runtime permission.
+         * [context] is only used by the location repository, to reach Play
+         * Services and to check its runtime permission.
          */
         fun firebase(context: Context): AppDependencies {
 
@@ -126,9 +118,6 @@ class AppDependencies(
 
                 recommendationRepository =
                     FirebaseRecommendationRepository(functions),
-
-                speechRecognitionRepository =
-                    AndroidSpeechRecognitionRepository(context),
 
                 scope =
                     CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)

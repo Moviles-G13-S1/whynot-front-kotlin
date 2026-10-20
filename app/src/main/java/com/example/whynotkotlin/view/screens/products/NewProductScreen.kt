@@ -21,38 +21,24 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.whynotkotlin.model.SpeechUnavailableException
 import com.example.whynotkotlin.model.WishlistSummary
 import com.example.whynotkotlin.view.components.CategoryChip
 import com.example.whynotkotlin.view.components.ProductPictureField
 import com.example.whynotkotlin.view.components.WhyNotBottomBar
 import com.example.whynotkotlin.view.components.WhyNotButton
 import com.example.whynotkotlin.view.components.WhyNotErrorBanner
-import com.example.whynotkotlin.view.components.VoiceInputButton
 import com.example.whynotkotlin.view.components.WhyNotTextField
 import com.example.whynotkotlin.view.theme.WhyNotCream
 import com.example.whynotkotlin.view.theme.WhyNotGray
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.launch
-
-/** The fields that can be filled by voice. */
-private enum class VoiceField { NAME, BRAND }
 
 /**
  * The manual product form.
  *
  * `brand` and `price` are required by the Security Rules, so they are part of
  * the form even though the original mockup only showed name and picture.
- *
- * Name and brand can be dictated through the microphone (the sensor feature).
- * There is one microphone per field; the screen remembers which one was
- * tapped, writes the transcription there, and then hands the state back with
- * [onVoiceInputConsumed] so the same result is never applied twice.
  */
 @Composable
 fun NewProductScreen(
@@ -68,7 +54,6 @@ fun NewProductScreen(
         imageUrl: String,
         productUrl: String
     ) -> Unit,
-    listenForSpeech: suspend () -> String = { throw SpeechUnavailableException() },
     onHomeClick: () -> Unit = {},
     onWishlistsClick: () -> Unit = {},
     onAddClick: () -> Unit = {},
@@ -81,42 +66,6 @@ fun NewProductScreen(
     var imageUrl by remember { mutableStateOf("") }
     var productUrl by remember { mutableStateOf(prefilledProductUrl) }
     var selectedWishlistId by remember { mutableStateOf("") }
-
-    var voiceTarget by remember { mutableStateOf<VoiceField?>(null) }
-    var voiceError by remember { mutableStateOf<String?>(null) }
-
-    var listening by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
-
-    fun startVoiceInput(field: VoiceField) {
-        voiceTarget = field
-        voiceError = null
-
-        // One recognition at a time; a tap while listening only retargets it.
-        if (listening) return
-        listening = true
-
-        scope.launch {
-            try {
-                // Recognisers return lower case; a product name reads better
-                // with a capital first letter.
-                val text = listenForSpeech().replaceFirstChar { it.uppercaseChar() }
-
-                when (voiceTarget) {
-                    VoiceField.NAME -> name = text
-                    VoiceField.BRAND -> brand = text
-                    null -> Unit
-                }
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (error: Exception) {
-                voiceError = error.message ?: "Voice input failed. Try again."
-            } finally {
-                listening = false
-                voiceTarget = null
-            }
-        }
-    }
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -146,31 +95,15 @@ fun NewProductScreen(
                     )
                     .padding(horizontal = 18.dp, vertical = 20.dp)
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.Bottom
-                ) {
-                    WhyNotTextField(
-                        value = name,
-                        onValueChange = { name = it },
-                        label = "Name",
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    VoiceInputButton(
-                        onVoiceInput = { startVoiceInput(VoiceField.NAME) },
-                        enabled = !saving,
-                        isListening = listening && voiceTarget == VoiceField.NAME,
-                        modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
-                    )
-                }
+                WhyNotTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = "Name"
+                )
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.Bottom
-                ) {
+                Row(modifier = Modifier.fillMaxWidth()) {
                     WhyNotTextField(
                         value = brand,
                         onValueChange = { brand = it },
@@ -178,14 +111,7 @@ fun NewProductScreen(
                         modifier = Modifier.weight(0.6f)
                     )
 
-                    VoiceInputButton(
-                        onVoiceInput = { startVoiceInput(VoiceField.BRAND) },
-                        enabled = !saving,
-                        isListening = listening && voiceTarget == VoiceField.BRAND,
-                        modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
-                    )
-
-                    Spacer(modifier = Modifier.size(8.dp))
+                    Spacer(modifier = Modifier.size(12.dp))
 
                     WhyNotTextField(
                         value = price,
@@ -193,18 +119,6 @@ fun NewProductScreen(
                         label = "Price",
                         placeholder = "0",
                         modifier = Modifier.weight(0.4f)
-                    )
-                }
-
-                if (listening) {
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    Text(
-                        text = "Listening… say the product ${
-                            if (voiceTarget == VoiceField.BRAND) "brand" else "name"
-                        }",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = WhyNotGray
                     )
                 }
 
@@ -267,7 +181,7 @@ fun NewProductScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            WhyNotErrorBanner(message = errorMessage ?: voiceError)
+            WhyNotErrorBanner(message = errorMessage)
 
             Spacer(modifier = Modifier.height(16.dp))
 
