@@ -2,6 +2,7 @@ package com.example.whynotkotlin.model.repositories
 
 import com.example.whynotkotlin.model.Product
 import com.example.whynotkotlin.model.ProductDraft
+import com.example.whynotkotlin.model.ProductSaveFailure
 import com.example.whynotkotlin.model.ProductUpdate
 
 import kotlinx.coroutines.flow.Flow
@@ -34,4 +35,10 @@ interface ProductRepository {
     suspend fun markPurchased(productId: String)
 
     suspend fun deleteProduct(productId: String)
+
+    /**
+     * Records one attempt by [ownerId] to save a product: a success when
+     * [failure] is null, otherwise the reason it failed.
+     */
+    suspend fun recordSaveAttempt(ownerId: String, failure: ProductSaveFailure?)
 }

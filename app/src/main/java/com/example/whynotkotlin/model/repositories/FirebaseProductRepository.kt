@@ -4,6 +4,7 @@ import com.example.whynotkotlin.model.Wishlist
 
 import com.example.whynotkotlin.model.Product
 import com.example.whynotkotlin.model.ProductDraft
+import com.example.whynotkotlin.model.ProductSaveFailure
 import com.example.whynotkotlin.model.repositories.ProductRepository
 import com.example.whynotkotlin.model.ProductUpdate
 import com.google.firebase.firestore.DocumentSnapshot
@@ -17,6 +18,10 @@ import kotlinx.coroutines.tasks.await
 
 private const val WISHLISTS = "wishlists"
 private const val PRODUCTS = "products"
+private const val PRODUCT_SAVE_EVENTS = "productSaveEvents"
+
+/** Tells Android save attempts apart from iOS ones in `productSaveEvents`. */
+private const val PLATFORM = "android"
 
 class FirebaseProductRepository(
     private val firestore: FirebaseFirestore
@@ -120,6 +125,20 @@ class FirebaseProductRepository(
 
     override suspend fun deleteProduct(productId: String) {
         firestore.collection(PRODUCTS).document(productId).delete().await()
+    }
+
+    override suspend fun recordSaveAttempt(ownerId: String, failure: ProductSaveFailure?) {
+        // The rules accept exactly these keys: `reason` is null on success and
+        // `createdAt` must be the server time.
+        val data = hashMapOf(
+            "userId" to ownerId,
+            "platform" to PLATFORM,
+            "outcome" to if (failure == null) "success" else "failure",
+            "reason" to failure?.code,
+            "createdAt" to FieldValue.serverTimestamp()
+        )
+
+        firestore.collection(PRODUCT_SAVE_EVENTS).add(data).await()
     }
 
     private suspend fun requireWishlistCategory(wishlistId: String): String {
