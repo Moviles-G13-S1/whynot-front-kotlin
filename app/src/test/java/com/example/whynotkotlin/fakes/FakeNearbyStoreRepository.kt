@@ -6,7 +6,7 @@ import com.example.whynotkotlin.model.repositories.NearbyStoreRepository
 /**
  * FAKE SOLO PARA PRUEBAS.
  *
- * Permite validar la lógica de NearbyStoreViewModel sin depender de Firebase.
+ * Permite validar la lógica de NearbyStoreController sin depender de Firebase.
  *
  * La implementación real de acceso a tiendas es
  * FirebaseNearbyStoreRepository, ubicada en src/main.

@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 /**
  * FAKE SOLO PARA PRUEBAS.
  *
- * Permite probar AdminViewModel sin depender de Firestore
+ * Permite probar los controladores de admin sin depender de Firestore
  * ni de un usuario con admin=true.
  *
  * NO usar en src/main.

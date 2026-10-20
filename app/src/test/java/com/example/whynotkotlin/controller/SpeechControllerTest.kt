@@ -1,21 +1,20 @@
 package com.example.whynotkotlin.controller
 
-import com.example.whynotkotlin.model.repositories.SpeechRecognitionRepository
 import com.example.whynotkotlin.model.SpeechPermissionDeniedException
+import com.example.whynotkotlin.model.SpeechUnavailableException
+import com.example.whynotkotlin.model.repositories.SpeechRecognitionRepository
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.*
-import org.junit.After
-import org.junit.Before
+import kotlinx.coroutines.async
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Test
-import org.junit.Assert.*
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class SpeechViewModelTest {
-    private val dispatcher = StandardTestDispatcher()
-    @Before fun setup() { Dispatchers.setMain(dispatcher) }
-    @After fun teardown() { Dispatchers.resetMain() }
+class SpeechControllerTest {
 
     private class FakeSpeech : SpeechRecognitionRepository {
         var available = true
@@ -32,49 +31,47 @@ class SpeechViewModelTest {
         }
     }
 
-    @Test fun `one request exposes listening then transcription`() = runTest(dispatcher) {
+    @Test fun `listen returns the transcription in the requested language`() = runTest {
         val repository = FakeSpeech()
-        val vm = SpeechViewModel(repository)
-        assertEquals(SpeechUiState.Idle, vm.state.value)
-        vm.startListening("es-CO")
-        vm.startListening("en-US")
+        val controller = SpeechController(repository)
+        val heard = async { controller.listen("es-CO") }
         runCurrent()
-        assertEquals(SpeechUiState.Listening, vm.state.value)
         assertEquals(1, repository.calls)
         assertEquals("es-CO", repository.language)
         repository.result.complete("Zapatos")
-        advanceUntilIdle()
-        assertEquals(SpeechUiState.Result("Zapatos"), vm.state.value)
+        assertEquals("Zapatos", heard.await())
     }
 
-    @Test fun `cancellation releases request and resets state`() = runTest(dispatcher) {
+    @Test fun `cancellation releases the microphone request`() = runTest {
         val repository = FakeSpeech()
-        val vm = SpeechViewModel(repository)
-        vm.startListening()
+        val controller = SpeechController(repository)
+        val heard = async { controller.listen() }
         runCurrent()
-        vm.cancelListening()
-        advanceUntilIdle()
+        heard.cancel()
+        runCurrent()
         assertTrue(repository.cancelled)
-        assertEquals(SpeechUiState.Idle, vm.state.value)
     }
 
-    @Test fun `missing service does not start recognition`() = runTest(dispatcher) {
+    @Test fun `missing service does not start recognition`() = runTest {
         val repository = FakeSpeech().apply { available = false }
-        val vm = SpeechViewModel(repository)
-        vm.startListening()
-        advanceUntilIdle()
-        assertTrue(vm.state.value is SpeechUiState.Error)
-        assertEquals(0, repository.calls)
+        val controller = SpeechController(repository)
+        try {
+            controller.listen()
+            fail("Expected SpeechUnavailableException")
+        } catch (expected: SpeechUnavailableException) {
+            assertEquals(0, repository.calls)
+        }
     }
 
-    @Test fun `permission failure is actionable and can be reset`() = runTest(dispatcher) {
+    @Test fun `permission failure reaches the caller with its message`() = runTest {
         val repository = FakeSpeech()
-        val vm = SpeechViewModel(repository)
-        vm.startListening()
+        val controller = SpeechController(repository)
         repository.result.completeExceptionally(SpeechPermissionDeniedException())
-        advanceUntilIdle()
-        assertEquals(SpeechUiState.Error(SpeechPermissionDeniedException().message!!), vm.state.value)
-        vm.reset()
-        assertEquals(SpeechUiState.Idle, vm.state.value)
+        try {
+            controller.listen()
+            fail("Expected SpeechPermissionDeniedException")
+        } catch (expected: SpeechPermissionDeniedException) {
+            assertEquals(SpeechPermissionDeniedException().message, expected.message)
+        }
     }
 }

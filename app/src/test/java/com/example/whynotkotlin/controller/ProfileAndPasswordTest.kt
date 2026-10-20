@@ -1,6 +1,5 @@
 package com.example.whynotkotlin.controller
 
-import com.example.whynotkotlin.controller.AuthViewModel
 import com.example.whynotkotlin.model.*
 import com.example.whynotkotlin.model.repositories.*
 import kotlinx.coroutines.Dispatchers
@@ -60,63 +59,73 @@ class ProfileAndPasswordTest {
         override suspend fun createWishlist(ownerId: String, draft: WishlistDraft) = "unused"
     }
 
-    @Test fun `profile saves real uid and selected category before navigating`() = runTest(dispatcher) {
+    @Test fun `profile saves real uid and selected category`() = runTest(dispatcher) {
         val users = Users()
-        val vm = ProfileViewModel(Auth(), users, Lists())
-        advanceUntilIdle()
-        assertEquals(users.profile, vm.state.value.profile)
-        var success = false
-        vm.updateProfile("Test User", "Male", "23", "beauty") { success = true }
-        assertFalse(success)
-        advanceUntilIdle()
+        val controller = ProfileController(Auth(), users, Lists(), backgroundScope)
+        val profile = watch(controller.profile)
+        runCurrent()
+        assertEquals(users.profile, profile.value?.getOrNull())
+        controller.updateProfile(profile.value?.getOrNull()?.uid, "Test User", "Male", "23", "beauty")
         assertEquals("uid", users.uid)
         assertEquals("beauty", users.update?.preferredCategoryId)
         assertEquals(23, users.update?.age)
-        assertTrue(success)
-        assertFalse(vm.state.value.saving)
     }
 
-    @Test fun `failed profile save stays on form with error`() = runTest(dispatcher) {
+    @Test fun `failed profile save reaches the form with a readable error`() = runTest(dispatcher) {
         val users = Users()
-        val vm = ProfileViewModel(Auth(), users, Lists())
-        advanceUntilIdle()
+        val controller = ProfileController(Auth(), users, Lists(), backgroundScope)
         users.failure = IllegalStateException("No connection")
-        var success = false
-        vm.updateProfile("Test User", "Male", "23", "tech") { success = true }
-        advanceUntilIdle()
-        assertFalse(success)
-        assertFalse(vm.state.value.saving)
-        assertNotNull(vm.state.value.errorMessage)
+        val error = runCatching {
+            controller.updateProfile("uid", "Test User", "Male", "23", "tech")
+        }.exceptionOrNull()
+        assertNotNull(error)
+        assertNull(users.update)
+        assertEquals("No connection", error!!.readableMessage())
+    }
+
+    @Test fun `invalid age is rejected before reaching the backend`() = runTest(dispatcher) {
+        val users = Users()
+        val controller = ProfileController(Auth(), users, Lists(), backgroundScope)
+        val error = runCatching {
+            controller.updateProfile("uid", "Test User", "Male", "7", "tech")
+        }.exceptionOrNull()
+        assertTrue(error is ValidationException)
+        assertNull(users.update)
     }
 
     @Test fun `profile read failure finishes loading with error`() = runTest(dispatcher) {
         val users = Users().apply { failure = IllegalStateException("Offline") }
-        val vm = ProfileViewModel(Auth(), users, Lists())
-        advanceUntilIdle()
-        assertFalse(vm.state.value.loading)
-        assertNull(vm.state.value.profile)
-        assertNotNull(vm.state.value.errorMessage)
+        val controller = ProfileController(Auth(), users, Lists(), backgroundScope)
+        val profile = watch(controller.profile)
+        runCurrent()
+        assertNotNull(profile.value)
+        assertNull(profile.value?.getOrNull())
+        assertNotNull(profile.value?.exceptionOrNull())
     }
 
-    @Test fun `password change passes credentials and only succeeds after backend`() = runTest(dispatcher) {
+    @Test fun `password change passes credentials to the backend`() = runTest(dispatcher) {
         val auth = Auth()
-        val vm = AuthViewModel(auth, Users())
-        var success = false
-        vm.changePassword("old-password", "new-password", "new-password") { success = true }
-        assertFalse(success)
-        advanceUntilIdle()
+        val controller = AuthController(auth, Users(), backgroundScope)
+        controller.changePassword("old-password", "new-password", "new-password")
         assertEquals("old-password" to "new-password", auth.changed)
-        assertTrue(success)
+    }
+
+    @Test fun `mismatched new passwords are rejected before the backend`() = runTest(dispatcher) {
+        val auth = Auth()
+        val controller = AuthController(auth, Users(), backgroundScope)
+        val error = runCatching {
+            controller.changePassword("old-password", "new-password", "other-password")
+        }.exceptionOrNull()
+        assertTrue(error is ValidationException)
+        assertNull(auth.changed)
     }
 
     @Test fun `wrong password response keeps form open`() = runTest(dispatcher) {
         val auth = Auth().apply { failure = IllegalArgumentException("credential is incorrect") }
-        val vm = AuthViewModel(auth, Users())
-        var success = false
-        vm.changePassword("wrong", "new-password", "new-password") { success = true }
-        advanceUntilIdle()
-        assertFalse(success)
-        assertFalse(vm.state.value.submitting)
-        assertNotNull(vm.state.value.errorMessage)
+        val controller = AuthController(auth, Users(), backgroundScope)
+        val error = runCatching {
+            controller.changePassword("wrong", "new-password", "new-password")
+        }.exceptionOrNull()
+        assertEquals("Wrong email or password", error?.readableMessage())
     }
 }

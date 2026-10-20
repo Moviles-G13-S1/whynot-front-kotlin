@@ -7,19 +7,19 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
-import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class AdminUserMetricsViewModelTest {
+class AdminUserMetricsControllerTest {
 
     private lateinit var dispatcher: TestDispatcher
 
@@ -51,15 +51,16 @@ class AdminUserMetricsViewModelTest {
                 )
             )
 
-            val viewModel =
-                AdminUserMetricsViewModel(repository)
+            val metrics =
+                watch(AdminUserMetricsController(repository, backgroundScope).metrics)
 
-            advanceUntilIdle()
+            runCurrent()
 
-            val state = viewModel.state.value
+            val result = metrics.value
+            val state = result!!.getOrThrow()
 
-            assertFalse(state.loading)
-            assertNull(state.errorMessage)
+            assertNotNull(result)
+            assertTrue(result.isSuccess)
 
             assertEquals(3, state.totalUsers)
             assertEquals(2, state.activeUsers)

@@ -1,143 +1,68 @@
 package com.example.whynotkotlin.controller
 
+import com.example.whynotkotlin.fakes.FakeRecommendationRepository
 import com.example.whynotkotlin.model.ProductRecommendation
 import com.example.whynotkotlin.model.RecommendationSaveResult
-import com.example.whynotkotlin.fakes.FakeRecommendationRepository
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.TestDispatcher
-import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
-import org.junit.Before
+import org.junit.Assert.fail
 import org.junit.Test
 
-@OptIn(ExperimentalCoroutinesApi::class)
-class RecommendationViewModelTest {
-
-    private lateinit var dispatcher: TestDispatcher
-
-    @Before
-    fun setUp() {
-        dispatcher = StandardTestDispatcher()
-        Dispatchers.setMain(dispatcher)
-    }
-
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
-    }
+class RecommendationControllerTest {
 
     @Test
-    fun `loadRecommendation exposes recommendation in UI state`() =
-        runTest(dispatcher) {
+    fun `loadRecommendation returns the repository recommendation`() =
+        runTest {
 
             val expectedRecommendation =
-                ProductRecommendation(
-                    recommendationEventId =
-                        "event-123",
-                    name = "Headphones",
-                    brand = "Test Brand",
-                    price = 120.0,
-                    imageUrl = "",
-                    productUrl =
-                        "https://example.com/product",
-                    categoryId = "tech",
-                    reason =
-                        "Recommended from similar users"
+                recommendation(eventId = "event-123")
+
+            val controller =
+                RecommendationController(
+                    FakeRecommendationRepository(
+                        recommendation = expectedRecommendation
+                    )
                 )
-
-            val repository =
-                FakeRecommendationRepository(
-                    recommendation =
-                        expectedRecommendation
-                )
-
-            val viewModel =
-                RecommendationViewModel(
-                    repository
-                )
-
-            viewModel.loadRecommendation()
-
-            advanceUntilIdle()
-
-            val state = viewModel.state.value
-
-            assertFalse(state.loading)
-            assertFalse(state.saving)
-            assertFalse(state.saved)
-            assertNull(state.errorMessage)
 
             assertEquals(
                 expectedRecommendation,
-                state.recommendation
+                controller.loadRecommendation()
             )
         }
 
     @Test
     fun `saveRecommendation sends recommendation event and wishlist to repository`() =
-        runTest(dispatcher) {
+        runTest {
 
             val recommendation =
-                ProductRecommendation(
-                    recommendationEventId =
-                        "event-456",
-                    name = "Keyboard",
-                    brand = "Test Brand",
-                    price = 200.0,
-                    imageUrl = "",
-                    productUrl =
-                        "https://example.com/keyboard",
-                    categoryId = "tech",
-                    reason =
-                        "A similar user saved this product"
-                )
+                recommendation(eventId = "event-456")
 
             val repository =
                 FakeRecommendationRepository(
-                    recommendation =
-                        recommendation,
+                    recommendation = recommendation,
                     saveResult =
                         RecommendationSaveResult(
                             saved = true,
                             alreadySaved = false,
-                            productId =
-                                "product-456"
+                            productId = "product-456"
                         )
                 )
 
-            val viewModel =
-                RecommendationViewModel(
-                    repository
+            val controller =
+                RecommendationController(repository)
+
+            assertTrue(
+                controller.saveRecommendation(
+                    recommendation,
+                    wishlistId = "wishlist-123"
                 )
-
-            viewModel.loadRecommendation()
-            advanceUntilIdle()
-
-            viewModel.saveRecommendation(
-                wishlistId = "wishlist-123"
             )
-
-            advanceUntilIdle()
-
-            val state = viewModel.state.value
-
-            assertFalse(state.saving)
-            assertTrue(state.saved)
-            assertNull(state.errorMessage)
 
             assertEquals(
                 "event-456",
-                repository
-                    .lastRecommendationEventId
+                repository.lastRecommendationEventId
             )
 
             assertEquals(
@@ -148,84 +73,88 @@ class RecommendationViewModelTest {
 
     @Test
     fun `already saved recommendation is considered saved`() =
-        runTest(dispatcher) {
+        runTest {
 
             val recommendation =
-                ProductRecommendation(
-                    recommendationEventId =
-                        "event-idempotent",
-                    name = "Mouse",
-                    brand = "Test Brand",
-                    price = 80.0,
-                    imageUrl = "",
-                    productUrl =
-                        "https://example.com/mouse",
-                    categoryId = "tech",
-                    reason =
-                        "Recommended"
+                recommendation(eventId = "event-idempotent")
+
+            val controller =
+                RecommendationController(
+                    FakeRecommendationRepository(
+                        recommendation = recommendation,
+                        saveResult =
+                            RecommendationSaveResult(
+                                saved = false,
+                                alreadySaved = true,
+                                productId = "existing-product"
+                            )
+                    )
                 )
-
-            val repository =
-                FakeRecommendationRepository(
-                    recommendation =
-                        recommendation,
-                    saveResult =
-                        RecommendationSaveResult(
-                            saved = true,
-                            alreadySaved = true,
-                            productId =
-                                "existing-product"
-                        )
-                )
-
-            val viewModel =
-                RecommendationViewModel(
-                    repository
-                )
-
-            viewModel.loadRecommendation()
-            advanceUntilIdle()
-
-            viewModel.saveRecommendation(
-                "wishlist-1"
-            )
-
-            advanceUntilIdle()
 
             assertTrue(
-                viewModel.state.value.saved
+                controller.saveRecommendation(recommendation, "wishlist-1")
             )
         }
 
     @Test
-    fun `recommendation loading error is exposed in UI state`() =
-        runTest(dispatcher) {
+    fun `a save the backend did not perform is not considered saved`() =
+        runTest {
 
-            val repository =
-                FakeRecommendationRepository(
-                    loadError =
-                        IllegalStateException(
-                            "Recommendation unavailable"
-                        )
+            val recommendation =
+                recommendation(eventId = "event-rejected")
+
+            val controller =
+                RecommendationController(
+                    FakeRecommendationRepository(
+                        recommendation = recommendation,
+                        saveResult =
+                            RecommendationSaveResult(
+                                saved = false,
+                                alreadySaved = false,
+                                productId = null
+                            )
+                    )
                 )
 
-            val viewModel =
-                RecommendationViewModel(
-                    repository
-                )
-
-            viewModel.loadRecommendation()
-
-            advanceUntilIdle()
-
-            val state = viewModel.state.value
-
-            assertFalse(state.loading)
-            assertNull(state.recommendation)
-
-            assertEquals(
-                "Recommendation unavailable",
-                state.errorMessage
+            assertFalse(
+                controller.saveRecommendation(recommendation, "wishlist-1")
             )
         }
+
+    @Test
+    fun `recommendation loading error reaches the caller`() =
+        runTest {
+
+            val controller =
+                RecommendationController(
+                    FakeRecommendationRepository(
+                        loadError =
+                            IllegalStateException(
+                                "Recommendation unavailable"
+                            )
+                    )
+                )
+
+            try {
+                controller.loadRecommendation()
+                fail("Expected the loading error")
+            } catch (error: IllegalStateException) {
+                assertEquals(
+                    "Recommendation unavailable",
+                    error.message
+                )
+            }
+        }
+
+    private fun recommendation(eventId: String) =
+        ProductRecommendation(
+            recommendationEventId = eventId,
+            name = "Headphones",
+            brand = "Test Brand",
+            price = 120.0,
+            imageUrl = "",
+            productUrl = "https://example.com/product",
+            categoryId = "tech",
+            reason = "Recommended from similar users"
+        )
 }

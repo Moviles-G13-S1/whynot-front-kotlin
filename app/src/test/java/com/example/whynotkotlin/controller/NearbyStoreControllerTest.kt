@@ -1,44 +1,21 @@
 package com.example.whynotkotlin.controller
 
-import com.example.whynotkotlin.model.DeviceLocation
-import com.example.whynotkotlin.model.NearbyStore
 import com.example.whynotkotlin.fakes.FakeLocationRepository
 import com.example.whynotkotlin.fakes.FakeNearbyStoreRepository
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.TestDispatcher
-import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
+import com.example.whynotkotlin.model.DeviceLocation
+import com.example.whynotkotlin.model.NearbyStore
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
-import org.junit.Before
+import org.junit.Assert.fail
 import org.junit.Test
 
-@OptIn(ExperimentalCoroutinesApi::class)
-class NearbyStoreViewModelTest {
-
-    private lateinit var dispatcher: TestDispatcher
-
-    @Before
-    fun setUp() {
-        dispatcher = StandardTestDispatcher()
-        Dispatchers.setMain(dispatcher)
-    }
-
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
-    }
+class NearbyStoreControllerTest {
 
     @Test
     fun `loadNearestStore uses device location and loads nearest store`() =
-        runTest(dispatcher) {
+        runTest {
 
             val location = DeviceLocation(
                 latitude = 4.7110,
@@ -57,34 +34,21 @@ class NearbyStoreViewModelTest {
                 distanceKm = 0.8
             )
 
-            val locationRepository =
-                FakeLocationRepository(
-                    location = location
-                )
-
             val nearbyRepository =
                 FakeNearbyStoreRepository(
                     store = expectedStore
                 )
 
-            val viewModel = NearbyStoreViewModel(
+            val controller = NearbyStoreController(
                 locationRepository =
-                    locationRepository,
+                    FakeLocationRepository(location = location),
                 nearbyStoreRepository =
                     nearbyRepository
             )
 
-            viewModel.loadNearestStore()
-
-            advanceUntilIdle()
-
-            val state = viewModel.state.value
-
-            assertFalse(state.loading)
-            assertNull(state.errorMessage)
             assertEquals(
                 expectedStore,
-                state.store
+                controller.loadNearestStore()
             )
 
             assertEquals(
@@ -100,32 +64,21 @@ class NearbyStoreViewModelTest {
 
     @Test
     fun `loadNearestStore allows a successful response with no store`() =
-        runTest(dispatcher) {
-
-            val locationRepository =
-                FakeLocationRepository()
+        runTest {
 
             val nearbyRepository =
                 FakeNearbyStoreRepository(
                     store = null
                 )
 
-            val viewModel = NearbyStoreViewModel(
+            val controller = NearbyStoreController(
                 locationRepository =
-                    locationRepository,
+                    FakeLocationRepository(),
                 nearbyStoreRepository =
                     nearbyRepository
             )
 
-            viewModel.loadNearestStore()
-
-            advanceUntilIdle()
-
-            val state = viewModel.state.value
-
-            assertFalse(state.loading)
-            assertNull(state.store)
-            assertNull(state.errorMessage)
+            assertNull(controller.loadNearestStore())
 
             assertTrue(
                 nearbyRepository.lastLatitude != null
@@ -137,39 +90,32 @@ class NearbyStoreViewModelTest {
         }
 
     @Test
-    fun `location error is exposed in UI state and store repository is not called`() =
-        runTest(dispatcher) {
-
-            val locationRepository =
-                FakeLocationRepository(
-                    error = IllegalStateException(
-                        "GPS unavailable"
-                    )
-                )
+    fun `location error is reported and store repository is not called`() =
+        runTest {
 
             val nearbyRepository =
                 FakeNearbyStoreRepository()
 
-            val viewModel = NearbyStoreViewModel(
+            val controller = NearbyStoreController(
                 locationRepository =
-                    locationRepository,
+                    FakeLocationRepository(
+                        error = IllegalStateException(
+                            "GPS unavailable"
+                        )
+                    ),
                 nearbyStoreRepository =
                     nearbyRepository
             )
 
-            viewModel.loadNearestStore()
-
-            advanceUntilIdle()
-
-            val state = viewModel.state.value
-
-            assertFalse(state.loading)
-            assertNull(state.store)
-
-            assertEquals(
-                "GPS unavailable",
-                state.errorMessage
-            )
+            try {
+                controller.loadNearestStore()
+                fail("Expected the location error")
+            } catch (error: IllegalStateException) {
+                assertEquals(
+                    "GPS unavailable",
+                    error.message
+                )
+            }
 
             assertNull(
                 nearbyRepository.lastLatitude

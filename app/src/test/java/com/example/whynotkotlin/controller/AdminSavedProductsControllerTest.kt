@@ -6,19 +6,19 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
-import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class AdminViewModelTest {
+class AdminSavedProductsControllerTest {
 
     private lateinit var dispatcher: TestDispatcher
 
@@ -83,17 +83,18 @@ class AdminViewModelTest {
                         12L
                 )
 
-            val viewModel =
-                AdminViewModel(repository)
+            val overview =
+                watch(AdminSavedProductsController(repository, backgroundScope).overview)
 
-            advanceUntilIdle()
+            runCurrent()
 
-            val state = viewModel.state.value
+            val result = overview.value
+            val state = result!!.getOrThrow()
             val stats =
                 state.savedProductsStats
 
-            assertFalse(state.loading)
-            assertNull(state.errorMessage)
+            assertNotNull(result)
+            assertTrue(result.isSuccess)
 
             assertEquals(
                 175,
@@ -190,16 +191,17 @@ class AdminViewModelTest {
             val repository =
                 FakeAdminRepository()
 
-            val viewModel =
-                AdminViewModel(repository)
+            val overview =
+                watch(AdminSavedProductsController(repository, backgroundScope).overview)
 
-            advanceUntilIdle()
+            runCurrent()
 
-            val state = viewModel.state.value
+            val result = overview.value
+            val state = result!!.getOrThrow()
             val stats =
                 state.savedProductsStats
 
-            assertFalse(state.loading)
+            assertNotNull(result)
 
             assertEquals(
                 0,
@@ -236,16 +238,16 @@ class AdminViewModelTest {
         }
 
     @Test
-    fun `AdminViewModel reacts to live product and BQ3 metric changes`() =
+    fun `AdminSavedProductsController reacts to live product and BQ3 metric changes`() =
         runTest(dispatcher) {
 
             val repository =
                 FakeAdminRepository()
 
-            val viewModel =
-                AdminViewModel(repository)
+            val overview =
+                watch(AdminSavedProductsController(repository, backgroundScope).overview)
 
-            advanceUntilIdle()
+            runCurrent()
 
             repository.products.value =
                 listOf(
@@ -263,9 +265,10 @@ class AdminViewModelTest {
                 .recommendedProductSaves
                 .value = 7L
 
-            advanceUntilIdle()
+            runCurrent()
 
-            val state = viewModel.state.value
+            val result = overview.value
+            val state = result!!.getOrThrow()
 
             assertEquals(
                 2,
