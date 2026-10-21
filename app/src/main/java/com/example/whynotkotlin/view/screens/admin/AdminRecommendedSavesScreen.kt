@@ -16,12 +16,8 @@ import com.example.whynotkotlin.view.theme.WhyNotGray
  * BQ3:
  * How many recommended products have been saved?
  *
- * The displayed value comes from:
- *
- * adminMetrics/recommendedProductSaves.total
- *
- * The backend increments the metric when a recommendation is
- * successfully saved. This screen does not calculate the value locally.
+ * Counts successful saves in productEvents. A displayed recommendation
+ * contributes only after its event has savedAt and savedProductId.
  */
 @Composable
 fun AdminRecommendedSavesScreen(

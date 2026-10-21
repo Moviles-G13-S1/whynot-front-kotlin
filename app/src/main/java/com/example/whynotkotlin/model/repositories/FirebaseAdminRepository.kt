@@ -11,8 +11,8 @@ import kotlinx.coroutines.flow.callbackFlow
 
 private const val PRODUCTS = "products"
 private const val USERS = "users"
-private const val ADMIN_METRICS = "adminMetrics"
-private const val RECOMMENDED_PRODUCT_SAVES = "recommendedProductSaves"
+private const val PRODUCT_EVENTS = "productEvents"
+private const val RECOMMENDATION_SHOWN = "recommendation_shown"
 
 /**
  * Real Firestore implementation of the shared Admin repository.
@@ -77,8 +77,8 @@ class FirebaseAdminRepository(
     override fun observeRecommendedProductSaves(): Flow<Long> = callbackFlow {
 
         val registration = firestore
-            .collection(ADMIN_METRICS)
-            .document(RECOMMENDED_PRODUCT_SAVES)
+            .collection(PRODUCT_EVENTS)
+            .whereEqualTo("eventType", RECOMMENDATION_SHOWN)
             .addSnapshotListener { snapshot, error ->
 
                 if (error != null) {
@@ -86,9 +86,9 @@ class FirebaseAdminRepository(
                     return@addSnapshotListener
                 }
 
-                val total = snapshot
-                    ?.getLong("total")
-                    ?: 0L
+                val total = countSavedRecommendationEvents(
+                    snapshot?.documents?.mapNotNull { it.data }.orEmpty()
+                )
 
                 trySend(total)
             }
@@ -98,6 +98,14 @@ class FirebaseAdminRepository(
         }
     }
 }
+
+internal fun countSavedRecommendationEvents(
+    events: List<Map<String, Any>>
+): Long = events.count { event ->
+    event["eventType"] == RECOMMENDATION_SHOWN &&
+        event["savedAt"] != null &&
+        (event["savedProductId"] as? String)?.isNotEmpty() == true
+}.toLong()
 
 private fun DocumentSnapshot.toAdminProduct(): Product? {
 
