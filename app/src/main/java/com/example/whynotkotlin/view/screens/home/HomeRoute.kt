@@ -87,7 +87,8 @@ fun HomeRoute(navigator: WhyNotNavigator) {
         }
     }
 
-    fun saveRecommendation(wishlistId: String) {
+    /** Saves to [wishlistId], or to a new wishlist in its category when null. */
+    fun saveRecommendation(wishlistId: String?) {
         val current = recommendation ?: return
         if (recommendationSaving) return
         recommendationSaving = true
@@ -95,8 +96,14 @@ fun HomeRoute(navigator: WhyNotNavigator) {
 
         scope.launch {
             try {
+                val targetWishlistId = wishlistId
+                    ?: dependencies.wishlistController.createWishlist(
+                        categoryId = current.categoryId,
+                        imageUrl = ""
+                    )
+
                 recommendationSaved =
-                    recommendationController.saveRecommendation(current, wishlistId)
+                    recommendationController.saveRecommendation(current, targetWishlistId)
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
@@ -126,6 +133,7 @@ fun HomeRoute(navigator: WhyNotNavigator) {
         onHomeClick = {},
         onWishlistsClick = navigator::toWishlists,
         onWishlistClick = navigator::toWishlistDetail,
+        onNewWishlistClick = navigator::toNewWishlist,
         onAddClick = navigator::toAdd,
         onPurchasesClick = navigator::toPurchases,
         onProfileClick = navigator::toProfile

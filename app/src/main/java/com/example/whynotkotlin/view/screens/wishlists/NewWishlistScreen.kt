@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import com.example.whynotkotlin.model.Category
 import com.example.whynotkotlin.view.components.ProductPictureField
 import com.example.whynotkotlin.view.components.WhyNotBottomBar
+import com.example.whynotkotlin.view.components.WhyNotTab
 import com.example.whynotkotlin.view.components.WhyNotDropdownField
 import com.example.whynotkotlin.view.components.WhyNotErrorBanner
 import com.example.whynotkotlin.view.theme.WhyNotCream
@@ -128,6 +129,7 @@ fun NewWishlistScreen(
         }
 
         WhyNotBottomBar(
+            selectedTab = WhyNotTab.WISHLISTS,
             onHomeClick = onHomeClick,
             onWishlistsClick = onWishlistsClick,
             onAddClick = onAddClick,

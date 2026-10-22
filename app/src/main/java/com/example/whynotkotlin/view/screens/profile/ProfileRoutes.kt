@@ -27,6 +27,7 @@ fun ProfileRoute(navigator: WhyNotNavigator) {
                 profile,
                 categoriesResult?.getOrNull().orEmpty()
             ),
+        cityName = profileController.cityName(profile),
         loading = profileResult == null,
         errorMessage = profileResult?.exceptionOrNull()?.readableMessage()
             ?: categoriesResult?.exceptionOrNull()?.readableMessage(),

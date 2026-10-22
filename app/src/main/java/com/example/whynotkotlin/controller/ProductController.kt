@@ -3,6 +3,7 @@ package com.example.whynotkotlin.controller
 import com.example.whynotkotlin.model.Product
 import com.example.whynotkotlin.model.ProductDraft
 import com.example.whynotkotlin.model.ProductSaveFailure
+import com.example.whynotkotlin.model.ProductUpdate
 import com.example.whynotkotlin.model.ValidationException
 import com.example.whynotkotlin.model.repositories.AuthRepository
 import com.example.whynotkotlin.model.repositories.ProductRepository
@@ -122,6 +123,39 @@ class ProductController(
     suspend fun markPurchased(product: Product) {
         if (product.purchased) return
         productRepository.markPurchased(product.id)
+    }
+
+    /** Validates and saves the edits to an existing product. */
+    suspend fun updateProduct(
+        productId: String,
+        wishlistId: String,
+        name: String,
+        brand: String,
+        price: String,
+        imageUrl: String,
+        productUrl: String
+    ) {
+        val parsedPrice = price.trim().replace(",", ".").toDoubleOrNull()
+
+        when {
+            name.isBlank() -> throw ValidationException("Enter a product name")
+            brand.isBlank() -> throw ValidationException("Enter a brand")
+            parsedPrice == null -> throw ValidationException("Enter a valid price")
+            parsedPrice < 0 -> throw ValidationException("The price cannot be negative")
+            wishlistId.isBlank() -> throw ValidationException("Choose a wishlist")
+        }
+
+        productRepository.updateProduct(
+            productId,
+            ProductUpdate(
+                wishlistId = wishlistId,
+                name = name,
+                brand = brand,
+                price = parsedPrice,
+                imageUrl = imageUrl,
+                productUrl = productUrl
+            )
+        )
     }
 
     suspend fun deleteProduct(productId: String) {

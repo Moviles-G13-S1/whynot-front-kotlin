@@ -74,7 +74,7 @@ fun WishlistDetailRoute(
                 wishlistId
             ),
         errorMessage = productsResult?.exceptionOrNull()?.readableMessage(),
-        onProductClick = navigator::toProductDetail,
+        onProductClick = { productId -> navigator.toProductDetail(productId) },
         onAddItemClick = { navigator.toNewProduct() },
         onHomeClick = navigator::toHome,
         onWishlistsClick = navigator::toWishlists,

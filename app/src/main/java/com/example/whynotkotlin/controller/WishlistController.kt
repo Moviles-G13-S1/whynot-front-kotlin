@@ -58,13 +58,14 @@ class WishlistController(
             }
             .shareIn(scope)
 
-    suspend fun createWishlist(categoryId: String, imageUrl: String) {
+    /** Creates a wishlist and returns its id. */
+    suspend fun createWishlist(categoryId: String, imageUrl: String): String {
         val uid = authRepository.currentUser()?.uid
             ?: throw ValidationException("You are not signed in")
 
         if (categoryId.isBlank()) throw ValidationException("Select a category")
 
-        wishlistRepository.createWishlist(
+        return wishlistRepository.createWishlist(
             ownerId = uid,
             draft = WishlistDraft(categoryId = categoryId, imageUrl = imageUrl)
         )

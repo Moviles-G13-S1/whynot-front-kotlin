@@ -1,6 +1,7 @@
 package com.example.whynotkotlin.view.theme
 
 import androidx.compose.material3.Typography
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -17,6 +18,10 @@ val FrankRuhlLibre = FontFamily(
 
 val Poppins = FontFamily(
     Font(
+        resId = R.font.poppins_light,
+        weight = FontWeight.Light
+    ),
+    Font(
         resId = R.font.poppins_regular,
         weight = FontWeight.Normal
     ),
@@ -29,6 +34,26 @@ val Poppins = FontFamily(
         weight = FontWeight.SemiBold
     )
 )
+
+/** Editorial style used by headings and field labels, as on iOS. */
+fun whyNotSerif(size: Int, color: Color = Color.Black): TextStyle =
+    TextStyle(
+        fontFamily = FrankRuhlLibre,
+        fontWeight = FontWeight.Normal,
+        fontSize = size.sp,
+        lineHeight = size.sp,
+        color = color
+    )
+
+/** Light Poppins style used by secondary text, as on iOS. */
+fun whyNotMuted(size: Int, color: Color = WhyNotGray): TextStyle =
+    TextStyle(
+        fontFamily = Poppins,
+        fontWeight = FontWeight.Light,
+        fontSize = size.sp,
+        lineHeight = (size * 1.15f).sp,
+        color = color
+    )
 
 val WhyNotTypography = Typography(
 
