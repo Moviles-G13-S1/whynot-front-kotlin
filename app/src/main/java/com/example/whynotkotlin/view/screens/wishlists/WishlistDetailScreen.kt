@@ -32,6 +32,7 @@ import com.example.whynotkotlin.model.Product
 import com.example.whynotkotlin.view.components.CategoryChip
 import com.example.whynotkotlin.view.components.ProductCard
 import com.example.whynotkotlin.view.components.WhyNotBottomBar
+import com.example.whynotkotlin.view.components.WhyNotTab
 import com.example.whynotkotlin.view.components.WhyNotEmptyState
 import com.example.whynotkotlin.view.components.WhyNotErrorBanner
 import com.example.whynotkotlin.view.theme.WhyNotBorder
@@ -169,6 +170,7 @@ fun WishlistDetailScreen(
         }
 
         WhyNotBottomBar(
+            selectedTab = WhyNotTab.WISHLISTS,
             onHomeClick = onHomeClick,
             onWishlistsClick = onWishlistsClick,
             onAddClick = onAddClick,

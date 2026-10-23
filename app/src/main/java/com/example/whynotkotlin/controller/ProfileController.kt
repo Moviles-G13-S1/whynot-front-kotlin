@@ -1,6 +1,7 @@
 package com.example.whynotkotlin.controller
 
 import com.example.whynotkotlin.model.AgeRange
+import com.example.whynotkotlin.model.CanonicalCities
 import com.example.whynotkotlin.model.Category
 import com.example.whynotkotlin.model.UserProfile
 import com.example.whynotkotlin.model.UserProfileUpdate
@@ -101,4 +102,13 @@ class ProfileController(
     fun preferredCategoryName(profile: UserProfile?, categories: List<Category>): String =
         categories.firstOrNull { it.id == profile?.preferredCategoryId }?.name
             ?: profile?.preferredCategoryId.orEmpty()
+
+    /** The display name of the profile's city, as the iOS profile shows it. */
+    fun cityName(profile: UserProfile?): String {
+        val cityId = profile?.cityId.orEmpty()
+        if (cityId.isBlank()) return "Not selected"
+
+        return CanonicalCities.all.firstOrNull { it.id == cityId }?.name
+            ?: "City unavailable"
+    }
 }

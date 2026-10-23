@@ -6,23 +6,28 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Storefront
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -35,16 +40,26 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.example.whynotkotlin.model.NearbyStore
 import com.example.whynotkotlin.model.ProductRecommendation
 import com.example.whynotkotlin.model.WishlistSummary
-import com.example.whynotkotlin.view.components.WhyNotButton
-import com.example.whynotkotlin.view.components.WhyNotErrorBanner
+import com.example.whynotkotlin.view.components.WhyNotPillButton
 import com.example.whynotkotlin.view.theme.WhyNotBeige
 import com.example.whynotkotlin.view.theme.WhyNotGray
+import com.example.whynotkotlin.view.theme.WhyNotWhite
+import com.example.whynotkotlin.view.theme.whyNotMuted
+import com.example.whynotkotlin.view.theme.whyNotSerif
+import java.util.Locale
 
+/**
+ * The nearby store and the personalized recommendation, laid out as on iOS.
+ *
+ * [onSaveRecommendation] receives the chosen wishlist, or null to create a
+ * wishlist in the recommendation's category first.
+ */
 @Composable
 fun HomeSmartSections(
     nearbyStore: NearbyStore?,
@@ -58,8 +73,7 @@ fun HomeSmartSections(
     wishlistSummaries: List<WishlistSummary>,
     onLoadNearby: () -> Unit,
     onLoadRecommendation: () -> Unit,
-    onSaveRecommendation: (String) -> Unit,
-    onOpenWishlists: () -> Unit
+    onSaveRecommendation: (String?) -> Unit
 ) {
     val context = LocalContext.current
 
@@ -99,35 +113,61 @@ fun HomeSmartSections(
         }
     }
 
-    NearbySection(
-        store = nearbyStore,
-        loading = nearbyLoading,
-        errorMessage = nearbyErrorMessage,
-        permissionGranted = locationPermissionGranted,
-        onRequestPermission = {
-            locationPermissionLauncher.launch(
-                arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
+    Text(text = "Near you", style = whyNotMuted(13))
+
+    Spacer(modifier = Modifier.height(20.dp))
+
+    Text(text = "Nearby recommendations", style = whyNotSerif(23))
+
+    Spacer(modifier = Modifier.height(12.dp))
+
+    Text(text = "A nearby store based on your preferences.", style = whyNotMuted(13))
+
+    Spacer(modifier = Modifier.height(16.dp))
+
+    Box(modifier = Modifier.padding(end = 30.dp)) {
+        NearbySection(
+            store = nearbyStore,
+            loading = nearbyLoading,
+            errorMessage = nearbyErrorMessage,
+            permissionGranted = locationPermissionGranted,
+            onRequestPermission = {
+                locationPermissionLauncher.launch(
+                    arrayOf(
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                    )
                 )
-            )
-        },
-        onRetry = onLoadNearby
+            },
+            onRetry = onLoadNearby
+        )
+    }
+
+    Spacer(modifier = Modifier.height(54.dp))
+
+    Text(text = "Top pick for you", style = whyNotSerif(23))
+
+    Spacer(modifier = Modifier.height(10.dp))
+
+    Text(
+        text = "A personalized recommendation based on users like you.",
+        style = whyNotMuted(13)
     )
 
-    Spacer(modifier = Modifier.height(26.dp))
+    Spacer(modifier = Modifier.height(17.dp))
 
-    RecommendationSection(
-        recommendation = recommendation,
-        loading = recommendationLoading,
-        saving = recommendationSaving,
-        saved = recommendationSaved,
-        errorMessage = recommendationErrorMessage,
-        wishlistSummaries = wishlistSummaries,
-        onRetry = onLoadRecommendation,
-        onSave = onSaveRecommendation,
-        onOpenWishlists = onOpenWishlists
-    )
+    Box(modifier = Modifier.padding(end = 35.dp)) {
+        RecommendationSection(
+            recommendation = recommendation,
+            loading = recommendationLoading,
+            saving = recommendationSaving,
+            saved = recommendationSaved,
+            errorMessage = recommendationErrorMessage,
+            wishlistSummaries = wishlistSummaries,
+            onRetry = onLoadRecommendation,
+            onSave = onSaveRecommendation
+        )
+    }
 }
 
 @Composable
@@ -139,125 +179,78 @@ private fun NearbySection(
     onRequestPermission: () -> Unit,
     onRetry: () -> Unit
 ) {
-    Text(
-        text = "Near you",
-        style = MaterialTheme.typography.bodySmall,
-        color = WhyNotGray
-    )
-
-    Spacer(modifier = Modifier.height(6.dp))
+    val isLocationError = errorMessage?.lowercase()?.let {
+        "location" in it || "permission" in it
+    } == true
 
     when {
-        !permissionGranted -> {
-            Text(
-                text = "Find stores close to you",
-                style = MaterialTheme.typography.titleLarge
-            )
+        !permissionGranted || isLocationError -> MessageCard(
+            icon = Icons.Outlined.LocationOn,
+            title = "We need your location",
+            message = "Allow location access so WhyNot can find something nearby for you.",
+            actionLabel = "Try again",
+            onAction = if (permissionGranted) onRetry else onRequestPermission
+        )
 
-            Spacer(modifier = Modifier.height(4.dp))
+        loading -> LoadingCard()
 
-            Text(
-                text = "Location permission is needed to find the nearest store.",
-                style = MaterialTheme.typography.bodySmall,
-                color = WhyNotGray
-            )
+        errorMessage != null -> MessageCard(
+            icon = Icons.Outlined.LocationOn,
+            title = "We could not load nearby stores",
+            message = "Something went wrong while finding a nearby store. Please try again.",
+            actionLabel = "Try again",
+            onAction = onRetry
+        )
 
-            Spacer(modifier = Modifier.height(10.dp))
+        store != null -> FeatureCard {
+            Row(verticalAlignment = Alignment.Top) {
+                ImageFallback(icon = Icons.Outlined.Storefront, iconSize = 29)
 
-            WhyNotButton(
-                text = "Enable location",
-                onClick = onRequestPermission
-            )
-        }
+                Spacer(modifier = Modifier.width(16.dp))
 
-        loading -> {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp)
-                )
+                Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                    Text(
+                        text = store.name,
+                        style = whyNotSerif(20),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
 
-                Text(
-                    text = "Finding the nearest store...",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = WhyNotGray
-                )
+                    Spacer(modifier = Modifier.height(7.dp))
+
+                    Text(
+                        text = store.address,
+                        style = whyNotMuted(11),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Outlined.LocationOn,
+                            contentDescription = null,
+                            tint = WhyNotGray,
+                            modifier = Modifier.size(15.dp)
+                        )
+
+                        Spacer(modifier = Modifier.width(4.dp))
+
+                        Text(
+                            text = formatDistance(store.distanceKm),
+                            style = whyNotMuted(12)
+                        )
+                    }
+                }
             }
         }
 
-        errorMessage != null -> {
-            WhyNotErrorBanner(
-                message = errorMessage
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            WhyNotButton(
-                text = "Try again",
-                onClick = onRetry
-            )
-        }
-
-        store == null -> {
-            Text(
-                text = "No nearby store found",
-                style = MaterialTheme.typography.titleLarge
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = "Try again in a moment.",
-                style = MaterialTheme.typography.bodySmall,
-                color = WhyNotGray
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            WhyNotButton(
-                text = "Try again",
-                onClick = onRetry
-            )
-        }
-
-        else -> {
-            if (store == null) return
-
-            Text(
-                text = "You are close to ${store.name}",
-                style = MaterialTheme.typography.titleLarge
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Outlined.LocationOn,
-                    contentDescription = null,
-                    tint = WhyNotGray,
-                    modifier = Modifier.size(15.dp)
-                )
-
-                Text(
-                    text = "${String.format("%.2f", store.distanceKm)} km away · ${store.address}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = WhyNotGray,
-                    modifier = Modifier.padding(start = 4.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            FeatureImagePlaceholder(
-                icon = Icons.Outlined.Storefront,
-                label = store.name,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(116.dp)
-            )
-        }
+        else -> MessageCard(
+            icon = Icons.Outlined.Storefront,
+            title = "Nothing nearby just yet.",
+            message = "We could not find a nearby store that fits your preferences right now."
+        )
     }
 }
 
@@ -270,197 +263,290 @@ private fun RecommendationSection(
     errorMessage: String?,
     wishlistSummaries: List<WishlistSummary>,
     onRetry: () -> Unit,
-    onSave: (String) -> Unit,
-    onOpenWishlists: () -> Unit
+    onSave: (String?) -> Unit
 ) {
-    Text(
-        text = "Top pick for you",
-        style = MaterialTheme.typography.titleLarge
-    )
-
-    Spacer(modifier = Modifier.height(12.dp))
-
-    if (loading) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(24.dp)
-            )
-
-            Text(
-                text = "Looking for a recommendation...",
-                style = MaterialTheme.typography.bodySmall,
-                color = WhyNotGray
-            )
-        }
-        return
-    }
-
-    if (recommendation == null) {
-        if (errorMessage != null) {
-            WhyNotErrorBanner(
-                message = errorMessage
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-        } else {
-            Text(
-                text = "No recommendation available right now.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = WhyNotGray
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-        }
-
-        WhyNotButton(
-            text = "Try again",
-            onClick = onRetry
-        )
-        return
-    }
-
-    val matchingWishlist = wishlistSummaries.firstOrNull {
-        it.wishlist.categoryId == recommendation.categoryId
-    }
-
-    FeatureImagePlaceholder(
-        icon = Icons.Outlined.AutoAwesome,
-        label = recommendation.name,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(122.dp)
-    )
-
-    Spacer(modifier = Modifier.height(10.dp))
-
-    Text(
-        text = recommendation.name,
-        style = MaterialTheme.typography.titleLarge
-    )
-
-    if (recommendation.brand.isNotBlank()) {
-        Text(
-            text = recommendation.brand,
-            style = MaterialTheme.typography.bodySmall,
-            color = WhyNotGray
-        )
-    }
-
-    Spacer(modifier = Modifier.height(4.dp))
-
-    Text(
-        text = String.format("$%.2f", recommendation.price),
-        style = MaterialTheme.typography.bodyMedium
-    )
-
-    if (recommendation.reason.isNotBlank()) {
-        Spacer(modifier = Modifier.height(6.dp))
-
-        Text(
-            text = recommendation.reason,
-            style = MaterialTheme.typography.bodySmall,
-            color = WhyNotGray
-        )
-    }
-
-    if (errorMessage != null) {
-        Spacer(modifier = Modifier.height(10.dp))
-
-        WhyNotErrorBanner(
-            message = errorMessage
-        )
-    }
-
-    Spacer(modifier = Modifier.height(12.dp))
+    var choosingWishlist by remember { mutableStateOf(false) }
 
     when {
-        saved -> {
-            WhyNotButton(
-                text = "Saved",
-                onClick = {},
-                enabled = false,
-                filled = true
-            )
-        }
+        loading -> LoadingCard()
 
-        matchingWishlist == null -> {
-            Text(
-                text =
-                    "Create a wishlist for this category before saving " +
-                            "the recommendation.",
-                style = MaterialTheme.typography.bodySmall,
-                color = WhyNotGray,
-                textAlign = TextAlign.Start
-            )
+        recommendation != null -> FeatureCard {
+            Row(verticalAlignment = Alignment.Top) {
+                ImageFallback(icon = Icons.Outlined.Image, iconSize = 28)
 
-            Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.width(16.dp))
 
-            WhyNotButton(
-                text = "Open wishlists",
-                onClick = onOpenWishlists
-            )
-        }
-
-        else -> {
-            WhyNotButton(
-                text =
-                    if (saving) {
-                        "Saving..."
-                    } else {
-                        "Save to ${matchingWishlist.categoryName}"
-                    },
-                onClick = {
-                    onSave(
-                        matchingWishlist.wishlist.id
+                Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                    Text(
+                        text = recommendation.name,
+                        style = whyNotSerif(20),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
                     )
-                },
-                enabled = !saving,
-                filled = true
+
+                    if (recommendation.brand.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        Text(
+                            text = recommendation.brand,
+                            style = whyNotMuted(12),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        text = formatRecommendationPrice(recommendation.price),
+                        style = whyNotSerif(18)
+                    )
+
+                    if (recommendation.reason.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        Text(
+                            text = recommendation.reason,
+                            style = whyNotMuted(11),
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                WhyNotPillButton(
+                    text = when {
+                        saved -> "Saved"
+                        saving -> "Saving..."
+                        else -> "Save this product"
+                    },
+                    onClick = { choosingWishlist = true },
+                    enabled = !saving && !saved
+                )
+            }
+
+            if (errorMessage != null) {
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Text(
+                    text = "Could not save the recommendation. Please try again.",
+                    style = whyNotMuted(11),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+
+        errorMessage != null -> MessageCard(
+            icon = Icons.Outlined.AutoAwesome,
+            message = "We could not load your recommendation.",
+            actionLabel = "Try again",
+            onAction = onRetry
+        )
+
+        else -> Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(121.dp)
+                .clip(RoundedCornerShape(18.dp))
+                .background(WhyNotBeige)
+                .padding(horizontal = 24.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.AutoAwesome,
+                contentDescription = null,
+                tint = WhyNotGray.copy(alpha = 0.65f),
+                modifier = Modifier.size(22.dp)
+            )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Text(
+                text = "No recommendation available yet.",
+                style = whyNotMuted(12),
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+
+    if (choosingWishlist && recommendation != null) {
+        SaveToWishlistDialog(
+            matching = wishlistSummaries.filter {
+                it.wishlist.categoryId == recommendation.categoryId
+            },
+            onDismiss = { choosingWishlist = false },
+            onChoose = { wishlistId ->
+                choosingWishlist = false
+                onSave(wishlistId)
+            }
+        )
+    }
+}
+
+/** Lets the user pick a matching wishlist, or create one, as on iOS. */
+@Composable
+private fun SaveToWishlistDialog(
+    matching: List<WishlistSummary>,
+    onDismiss: () -> Unit,
+    onChoose: (String?) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Save to wishlist") },
+        text = {
+            Column {
+                if (matching.isEmpty()) {
+                    Text("You need a wishlist in this category first.")
+                }
+
+                matching.forEach { summary ->
+                    Text(
+                        text = summary.categoryName,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onChoose(summary.wishlist.id) }
+                            .padding(vertical = 16.dp, horizontal = 8.dp)
+                    )
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        },
+        confirmButton = {
+            if (matching.isEmpty()) {
+                TextButton(onClick = { onChoose(null) }) {
+                    Text("Create wishlist and save")
+                }
+            }
+        }
+    )
+}
+
+@Composable
+private fun FeatureCard(
+    content: @Composable () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(WhyNotBeige)
+            .padding(14.dp)
+    ) {
+        content()
+    }
+}
+
+@Composable
+private fun LoadingCard() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(153.dp)
+            .clip(RoundedCornerShape(18.dp))
+            .background(WhyNotBeige),
+        contentAlignment = Alignment.Center
+    ) {
+        CircularProgressIndicator(
+            strokeWidth = 2.dp,
+            modifier = Modifier.size(22.dp)
+        )
+    }
+}
+
+/** Card used for the empty and error states of both sections. */
+@Composable
+private fun MessageCard(
+    icon: ImageVector,
+    message: String,
+    title: String? = null,
+    actionLabel: String? = null,
+    onAction: () -> Unit = {}
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(WhyNotBeige)
+            .padding(horizontal = 24.dp, vertical = 22.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = WhyNotGray.copy(alpha = 0.65f),
+            modifier = Modifier.size(24.dp)
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        if (title != null) {
+            Text(text = title, style = whyNotSerif(18), textAlign = TextAlign.Center)
+
+            Spacer(modifier = Modifier.height(7.dp))
+        }
+
+        Text(
+            text = message,
+            style = whyNotMuted(if (title != null) 11 else 12),
+            textAlign = TextAlign.Center
+        )
+
+        if (actionLabel != null) {
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Text(
+                text = actionLabel,
+                style = whyNotMuted(15),
+                modifier = Modifier.clickable { onAction() }
             )
         }
     }
 }
 
-/**
- * Stands in for a picture the backend does not provide yet. The icons match
- * the Flutter app: a storefront for the nearby store and sparkles for the
- * recommendation.
- */
+/** White tile standing in for a picture the backend does not provide yet. */
 @Composable
-private fun FeatureImagePlaceholder(
-    icon: ImageVector,
-    label: String,
-    modifier: Modifier = Modifier
-) {
+private fun ImageFallback(icon: ImageVector, iconSize: Int) {
     Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(15.dp))
-            .background(WhyNotBeige),
+        modifier = Modifier
+            .size(width = 105.dp, height = 125.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(WhyNotWhite),
         contentAlignment = Alignment.Center
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(12.dp)
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = WhyNotGray,
-                modifier = Modifier.size(24.dp)
-            )
-
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodySmall,
-                color = WhyNotGray,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(start = 10.dp)
-            )
-        }
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = WhyNotGray.copy(alpha = 0.65f),
+            modifier = Modifier.size(iconSize.dp)
+        )
     }
+}
+
+private fun formatDistance(distanceKm: Double): String =
+    if (distanceKm < 1) {
+        "${Math.round(distanceKm * 1000)} m away"
+    } else {
+        String.format(Locale.US, "%.1f km away", distanceKm)
+    }
+
+/** Whole pesos with dots between thousands, such as $126.500. */
+private fun formatRecommendationPrice(price: Double): String {
+    val digits = Math.round(price).toString()
+    val grouped = digits.reversed().chunked(3).joinToString(".").reversed()
+    return "$$grouped"
 }
 
 private fun hasLocationPermission(

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Exported from the shared Figma design (same asset as the iOS app). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="16dp"
+    android:height="16dp"
+    android:viewportWidth="19.4842"
+    android:viewportHeight="19.0361">
+    <path
+        android:pathData="M8.35036 10.8778H0V8.15833H8.35036V0H11.1338V8.15833H19.4842V10.8778H11.1338V19.0361H8.35036V10.8778Z"
+        android:fillColor="#FFFFFF" />
+</vector>

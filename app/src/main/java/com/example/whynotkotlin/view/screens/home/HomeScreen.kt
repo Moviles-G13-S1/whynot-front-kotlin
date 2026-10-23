@@ -1,37 +1,39 @@
 package com.example.whynotkotlin.view.screens.home
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.whynotkotlin.model.ProductRecommendation
 import com.example.whynotkotlin.model.NearbyStore
+import com.example.whynotkotlin.model.ProductRecommendation
 import com.example.whynotkotlin.model.WishlistSummary
 import com.example.whynotkotlin.view.components.WhyNotBottomBar
-import com.example.whynotkotlin.view.theme.WhyNotBeige
-import com.example.whynotkotlin.view.theme.WhyNotBorder
+import com.example.whynotkotlin.view.components.WhyNotPillButton
+import com.example.whynotkotlin.view.components.WhyNotTab
+import com.example.whynotkotlin.view.components.WishlistCard
+import com.example.whynotkotlin.view.theme.Poppins
 import com.example.whynotkotlin.view.theme.WhyNotGray
+import com.example.whynotkotlin.view.theme.whyNotMuted
+import com.example.whynotkotlin.view.theme.whyNotSerif
 
 @Composable
 fun HomeScreen(
@@ -47,10 +49,11 @@ fun HomeScreen(
     wishlistSummaries: List<WishlistSummary>,
     onLoadNearby: () -> Unit,
     onLoadRecommendation: () -> Unit,
-    onSaveRecommendation: (String) -> Unit,
+    onSaveRecommendation: (String?) -> Unit,
     onHomeClick: () -> Unit = {},
     onWishlistsClick: () -> Unit,
     onWishlistClick: (String) -> Unit,
+    onNewWishlistClick: () -> Unit,
     onAddClick: () -> Unit,
     onPurchasesClick: () -> Unit,
     onProfileClick: () -> Unit
@@ -61,94 +64,73 @@ fun HomeScreen(
         LazyColumn(
             modifier = Modifier
                 .weight(1f)
-                .fillMaxWidth(),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                start = 22.dp,
-                end = 22.dp,
-                top = 34.dp,
-                bottom = 26.dp
+                .fillMaxWidth()
+                .statusBarsPadding(),
+            contentPadding = PaddingValues(
+                start = 18.dp,
+                top = 42.dp,
+                bottom = 40.dp
             )
         ) {
             item {
                 Text(
-                    text = "W H Y N O T",
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        letterSpacing = 2.sp
-                    ),
-                    color = WhyNotGray
+                    text = "WHYNOT",
+                    style = TextStyle(
+                        fontFamily = Poppins,
+                        fontSize = 16.sp,
+                        letterSpacing = 4.sp,
+                        color = WhyNotGray
+                    )
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(46.dp))
+
+                val firstName = userName?.trim()?.split(" ")?.firstOrNull().orEmpty()
 
                 Text(
-                    text = userName?.trim()?.takeIf { it.isNotEmpty() }
-                        ?.let { "Good Morning, $it" }
-                        ?: "Good Morning",
-                    style = MaterialTheme.typography.headlineMedium
+                    text = if (firstName.isEmpty()) "Good Morning" else "Good Morning, $firstName",
+                    style = whyNotSerif(27)
                 )
+
+                Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
                     text = "What are we saving today?",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = WhyNotGray
+                    style = whyNotMuted(13)
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                SearchBar()
-
-                Spacer(modifier = Modifier.height(18.dp))
+                Spacer(modifier = Modifier.height(38.dp))
 
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(end = 18.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         text = "Your Wishlists",
-                        style = MaterialTheme.typography.titleLarge
+                        style = whyNotSerif(23),
+                        modifier = Modifier.weight(1f)
                     )
 
                     Text(
                         text = "View all",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = WhyNotGray,
-                        modifier = Modifier.clickable {
-                            onWishlistsClick()
-                        }
+                        style = whyNotMuted(13),
+                        modifier = Modifier
+                            .clickable { onWishlistsClick() }
+                            .padding(horizontal = 4.dp)
                     )
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(29.dp))
 
-                if (wishlistSummaries.isEmpty()) {
-                    Text(
-                        text = "You do not have any wishlists yet.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = WhyNotGray
-                    )
-                } else {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        wishlistSummaries
-                            .take(3)
-                            .forEach { summary ->
-                                WishlistPreview(
-                                    label = summary.categoryName,
-                                    onClick = {
-                                        onWishlistClick(
-                                            summary.wishlist.id
-                                        )
-                                    },
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
-                    }
-                }
+                WishlistRail(
+                    summaries = wishlistSummaries,
+                    onWishlistClick = onWishlistClick,
+                    onNewWishlistClick = onNewWishlistClick
+                )
 
-                Spacer(modifier = Modifier.height(26.dp))
+                Spacer(modifier = Modifier.height(44.dp))
 
                 HomeSmartSections(
                     nearbyStore = nearbyStore,
@@ -162,13 +144,13 @@ fun HomeScreen(
                     wishlistSummaries = wishlistSummaries,
                     onLoadNearby = onLoadNearby,
                     onLoadRecommendation = onLoadRecommendation,
-                    onSaveRecommendation = onSaveRecommendation,
-                    onOpenWishlists = onWishlistsClick
+                    onSaveRecommendation = onSaveRecommendation
                 )
             }
         }
 
         WhyNotBottomBar(
+            selectedTab = WhyNotTab.HOME,
             onHomeClick = onHomeClick,
             onWishlistsClick = onWishlistsClick,
             onAddClick = onAddClick,
@@ -178,70 +160,52 @@ fun HomeScreen(
     }
 }
 
+/** Horizontally scrolling preview of the user's wishlists. */
 @Composable
-private fun SearchBar() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(38.dp)
-            .clip(RoundedCornerShape(18.dp))
-            .background(
-                WhyNotBorder.copy(alpha = 0.42f)
-            )
-            .padding(horizontal = 11.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = Icons.Outlined.Search,
-            contentDescription = "Search",
-            tint = WhyNotGray,
-            modifier = Modifier.size(18.dp)
-        )
-
-        Text(
-            text = "Search",
-            style = MaterialTheme.typography.bodySmall,
-            color = WhyNotGray,
-            modifier = Modifier
-                .weight(1f)
-                .padding(start = 7.dp)
-        )
-    }
-}
-
-@Composable
-private fun WishlistPreview(
-    label: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
+private fun WishlistRail(
+    summaries: List<WishlistSummary>,
+    onWishlistClick: (String) -> Unit,
+    onNewWishlistClick: () -> Unit
 ) {
-    Column(
-        modifier = modifier
-            .clickable { onClick() },
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        PlaceholderImage(
+    if (summaries.isEmpty()) {
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(112.dp)
-        )
+                .height(230.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = "Create your first wishlist.",
+                    style = whyNotMuted(13)
+                )
 
-        Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium
-        )
+                WhyNotPillButton(
+                    text = "Create a wishlist",
+                    onClick = onNewWishlistClick
+                )
+            }
+        }
+        return
     }
-}
 
-@Composable
-private fun PlaceholderImage(
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(15.dp))
-            .background(WhyNotBeige)
-    )
+    LazyRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(230.dp),
+        contentPadding = PaddingValues(end = 18.dp),
+        horizontalArrangement = Arrangement.spacedBy(17.dp)
+    ) {
+        items(summaries, key = { it.wishlist.id }) { summary ->
+            WishlistCard(
+                name = summary.categoryName,
+                itemCount = summary.productCount,
+                onClick = { onWishlistClick(summary.wishlist.id) },
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.width(131.dp)
+            )
+        }
+    }
 }

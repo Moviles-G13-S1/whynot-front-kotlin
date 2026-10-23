@@ -30,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.whynotkotlin.view.components.WhyNotBottomBar
+import com.example.whynotkotlin.view.components.WhyNotTab
 import com.example.whynotkotlin.view.components.WhyNotButton
 import com.example.whynotkotlin.view.components.WhyNotTextField
 import com.example.whynotkotlin.view.theme.WhyNotBeige
@@ -194,6 +195,7 @@ fun EditProfileScreen(
         }
 
         WhyNotBottomBar(
+            selectedTab = WhyNotTab.PROFILE,
             onHomeClick = onHomeClick,
             onWishlistsClick = onWishlistsClick,
             onAddClick = onAddClick,

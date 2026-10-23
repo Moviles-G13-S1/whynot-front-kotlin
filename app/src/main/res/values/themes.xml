@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.Whynotkotlin" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.Whynotkotlin" parent="android:Theme.Material.Light.NoActionBar">
+        <!-- Same background as the iOS app behind every screen. -->
+        <item name="android:windowBackground">@color/whynot_background</item>
+    </style>
 </resources>
