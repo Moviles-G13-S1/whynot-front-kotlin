@@ -47,8 +47,11 @@ class AppDependencies(
     locationRepository: LocationRepository,
     nearbyStoreRepository: NearbyStoreRepository,
     recommendationRepository: RecommendationRepository,
-    scope: CoroutineScope
+    scope: CoroutineScope,
+    uxEventRepository: com.example.whynotkotlin.model.repositories.UxEventRepository
 ) {
+
+    val homeUxController = com.example.whynotkotlin.controller.HomeUxController(uxEventRepository, scope)
 
     val authController =
         AuthController(authRepository, userRepository, onboardingRepository, scope)
@@ -112,6 +115,9 @@ class AppDependencies(
 
                 recommendationRepository =
                     FirebaseRecommendationRepository(functions),
+
+                uxEventRepository =
+                    com.example.whynotkotlin.model.repositories.FirebaseUxEventRepository(firestore),
 
                 scope =
                     CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)

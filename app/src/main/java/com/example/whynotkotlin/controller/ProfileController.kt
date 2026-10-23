@@ -1,11 +1,8 @@
 package com.example.whynotkotlin.controller
 
-import com.example.whynotkotlin.model.AgeRange
 import com.example.whynotkotlin.model.CanonicalCities
 import com.example.whynotkotlin.model.Category
 import com.example.whynotkotlin.model.UserProfile
-import com.example.whynotkotlin.model.UserProfileUpdate
-import com.example.whynotkotlin.model.ValidationException
 import com.example.whynotkotlin.model.repositories.AuthRepository
 import com.example.whynotkotlin.model.repositories.UserRepository
 import com.example.whynotkotlin.model.repositories.WishlistRepository
@@ -25,6 +22,7 @@ class ProfileController(
     private val wishlistRepository: WishlistRepository,
     scope: CoroutineScope
 ) {
+    private val profileUpdate = ProfileUpdateFacade(authRepository, userRepository)
 
     /**
      * The signed-in user's profile, or a success holding null while signed out.
@@ -70,32 +68,7 @@ class ProfileController(
         age: String,
         preferredCategoryId: String
     ) {
-        if (uid == null) throw ValidationException("No profile loaded yet")
-
-        val parsedAge = age.trim().toIntOrNull()
-
-        val validationError = when {
-            name.isBlank() -> "Enter your name"
-            gender.isBlank() -> "Select a gender"
-            parsedAge == null -> "Enter a valid age"
-            parsedAge < AgeRange.MIN || parsedAge > AgeRange.MAX ->
-                "Age must be between ${AgeRange.MIN} and ${AgeRange.MAX}"
-
-            preferredCategoryId.isBlank() -> "Select a preferred category"
-            else -> null
-        }
-
-        validationError?.let { throw ValidationException(it) }
-
-        userRepository.updateProfile(
-            uid = uid,
-            update = UserProfileUpdate(
-                name = name,
-                gender = gender,
-                age = parsedAge,
-                preferredCategoryId = preferredCategoryId
-            )
-        )
+        profileUpdate.save(uid, name, gender, age, preferredCategoryId)
     }
 
     /** The display name of the profile's preferred category, or its raw id. */

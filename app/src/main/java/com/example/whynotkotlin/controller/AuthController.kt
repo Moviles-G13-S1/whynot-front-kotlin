@@ -13,6 +13,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -38,6 +39,7 @@ class AuthController(
     val session: StateFlow<Result<AuthUser?>?> =
         authRepository.observeSession()
             .map { Result.success(it) }
+            .catch { emit(Result.failure(it)) }
             .stateIn(scope, SharingStarted.Eagerly, null)
 
     suspend fun signIn(email: String, password: String) {

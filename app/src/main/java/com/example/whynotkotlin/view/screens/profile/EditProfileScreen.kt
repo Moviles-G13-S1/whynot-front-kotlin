@@ -120,7 +120,7 @@ fun EditProfileScreen(
                     )
                     .padding(14.dp)
             ) {
-                WhyNotTextField(name, { name = it }, "Name")
+                WhyNotTextField(name, { if (!saving) name = it }, "Name")
 
                 Spacer(modifier = Modifier.height(10.dp))
 
@@ -138,7 +138,7 @@ fun EditProfileScreen(
                 ) {
                     WhyNotTextField(
                         value = age,
-                        onValueChange = { age = it },
+                        onValueChange = { if (!saving) age = it },
                         label = "Age",
                         modifier = Modifier.weight(0.42f)
                     )

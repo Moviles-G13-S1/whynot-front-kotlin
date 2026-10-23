@@ -1,9 +1,13 @@
 package com.example.whynotkotlin.view.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.compose.material3.Text
+import com.example.whynotkotlin.model.readableMessage
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavType
@@ -52,6 +56,19 @@ fun WhyNotNavigation() {
     if (resolvedSession == null) {
         WhyNotLoading()
         return
+    }
+
+    if (resolvedSession.isFailure) {
+        Text(resolvedSession.exceptionOrNull()!!.readableMessage())
+        return
+    }
+    val entry by navController.currentBackStackEntryAsState()
+    LaunchedEffect(resolvedSession.getOrNull()?.uid, entry?.destination?.route) {
+        val route = entry?.destination?.route
+        if (resolvedSession.getOrNull() == null && route != null &&
+            route != WhyNotRoutes.LOGIN && route != WhyNotRoutes.REGISTER) {
+            navigator.toLoginAfterSignOut()
+        }
     }
 
     val startDestination =
