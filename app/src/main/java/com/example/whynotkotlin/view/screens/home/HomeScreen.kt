@@ -37,6 +37,8 @@ import com.example.whynotkotlin.view.theme.whyNotSerif
 
 @Composable
 fun HomeScreen(
+    showActivation: Boolean,
+    onActivate: () -> Unit,
     userName: String?,
     nearbyStore: NearbyStore?,
     nearbyLoading: Boolean,
@@ -99,6 +101,10 @@ fun HomeScreen(
                     style = whyNotMuted(13)
                 )
 
+                if (showActivation && wishlistSummaries.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    WhyNotPillButton(text = "Add your first product", onClick = onActivate)
+                }
                 Spacer(modifier = Modifier.height(38.dp))
 
                 Row(

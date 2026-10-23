@@ -1,5 +1,16 @@
 package com.example.whynotkotlin.view.screens.home
 
+import android.app.Activity
+import android.content.ContextWrapper
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
+import androidx.core.app.ActivityCompat
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
@@ -77,10 +88,25 @@ fun HomeSmartSections(
 ) {
     val context = LocalContext.current
 
+    var permissionRequested by rememberSaveable { mutableStateOf(false) }
+    var permissionBlocked by rememberSaveable { mutableStateOf(false) }
+    var detail by rememberSaveable { mutableStateOf<String?>(null) }
     var locationPermissionGranted by remember {
         mutableStateOf(
             hasLocationPermission(context)
         )
+    }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, context) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                locationPermissionGranted = hasLocationPermission(context)
+                if (locationPermissionGranted) permissionBlocked = false
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     val locationPermissionLauncher =
@@ -90,6 +116,10 @@ fun HomeSmartSections(
             locationPermissionGranted =
                 permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
                         permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+            val activity = context.findActivity()
+            permissionBlocked = !locationPermissionGranted && activity != null &&
+                !ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.ACCESS_FINE_LOCATION) &&
+                !ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.ACCESS_COARSE_LOCATION)
         }
 
     LaunchedEffect(locationPermissionGranted) {
@@ -113,6 +143,24 @@ fun HomeSmartSections(
         }
     }
 
+    val requestLocation: () -> Unit = {
+        if (permissionBlocked) {
+            context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                Uri.parse("package:${context.packageName}")))
+        } else {
+            permissionRequested = true
+            locationPermissionLauncher.launch(arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ))
+        }
+    }
+    val retryLocation: () -> Unit = {
+        locationPermissionGranted = hasLocationPermission(context)
+        if (locationPermissionGranted) onLoadNearby() else requestLocation()
+    }
+
+
     Text(text = "Near you", style = whyNotMuted(13))
 
     Spacer(modifier = Modifier.height(20.dp))
@@ -131,17 +179,21 @@ fun HomeSmartSections(
             loading = nearbyLoading,
             errorMessage = nearbyErrorMessage,
             permissionGranted = locationPermissionGranted,
-            onRequestPermission = {
-                locationPermissionLauncher.launch(
-                    arrayOf(
-                        Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.ACCESS_COARSE_LOCATION
-                    )
-                )
-            },
-            onRetry = onLoadNearby
+            onRequestPermission = requestLocation,
+            onRetry = retryLocation
         )
     }
+
+    if (!locationPermissionGranted && permissionRequested) {
+        Text(if (permissionBlocked) "Enable Location in app settings to continue."
+            else "Location was not allowed. The rest of the app is still available.", style = whyNotMuted(13))
+    }
+    if (nearbyErrorMessage != null && locationPermissionGranted) {
+        TextButton(onClick = { context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)) }) {
+            Text("Open location settings")
+        }
+    }
+    TextButton(onClick = { detail = "store" }) { Text("View store details") }
 
     Spacer(modifier = Modifier.height(54.dp))
 
@@ -168,6 +220,39 @@ fun HomeSmartSections(
             onSave = onSaveRecommendation
         )
     }
+    TextButton(onClick = { detail = "recommendation" }) { Text("View recommendation") }
+    if (detail != null) {
+        SmartDetailDialog(if (detail == "store") "Nearby store" else "Recommendation", { detail = null }) {
+            if (detail == "store") {
+                NearbySection(nearbyStore, nearbyLoading, nearbyErrorMessage,
+                    locationPermissionGranted, requestLocation, retryLocation)
+                nearbyStore?.takeIf { locationPermissionGranted && !nearbyLoading && nearbyErrorMessage == null }?.let {
+                    Text(it.name, style = whyNotSerif(23))
+                    Text(it.address)
+                    Text("Categories: ${it.categoryIds.joinToString()}")
+                    ExternalWebsiteButton(it.websiteUrl, "Store website")
+                }
+                TextButton(onClick = retryLocation) { Text("Refresh nearby store") }
+                TextButton(onClick = { context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)) }) {
+                    Text("Open location settings")
+                }
+            } else {
+                RecommendationSection(recommendation, recommendationLoading, recommendationSaving,
+                    recommendationSaved, recommendationErrorMessage, wishlistSummaries,
+                    onLoadRecommendation, onSaveRecommendation)
+                recommendation?.takeIf { !recommendationLoading }?.let {
+                    Text(it.name, style = whyNotSerif(23))
+                    Text(it.reason)
+                    Text("Category: ${it.categoryId}")
+                    ExternalWebsiteButton(it.productUrl, "Product website")
+                }
+                TextButton(onClick = onLoadRecommendation, enabled = !recommendationSaving && !recommendationLoading) {
+                    Text("Refresh recommendation")
+                }
+            }
+        }
+    }
+
 }
 
 @Composable
@@ -179,12 +264,8 @@ private fun NearbySection(
     onRequestPermission: () -> Unit,
     onRetry: () -> Unit
 ) {
-    val isLocationError = errorMessage?.lowercase()?.let {
-        "location" in it || "permission" in it
-    } == true
-
     when {
-        !permissionGranted || isLocationError -> MessageCard(
+        !permissionGranted -> MessageCard(
             icon = Icons.Outlined.LocationOn,
             title = "We need your location",
             message = "Allow location access so WhyNot can find something nearby for you.",
@@ -197,7 +278,7 @@ private fun NearbySection(
         errorMessage != null -> MessageCard(
             icon = Icons.Outlined.LocationOn,
             title = "We could not load nearby stores",
-            message = "Something went wrong while finding a nearby store. Please try again.",
+            message = errorMessage,
             actionLabel = "Try again",
             onAction = onRetry
         )
@@ -325,7 +406,7 @@ private fun RecommendationSection(
                     text = when {
                         saved -> "Saved"
                         saving -> "Saving..."
-                        else -> "Save this product"
+                        else -> "Save This Product"
                     },
                     onClick = { choosingWishlist = true },
                     enabled = !saving && !saved
@@ -336,7 +417,7 @@ private fun RecommendationSection(
                 Spacer(modifier = Modifier.height(10.dp))
 
                 Text(
-                    text = "Could not save the recommendation. Please try again.",
+                    text = errorMessage,
                     style = whyNotMuted(11),
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
@@ -346,7 +427,7 @@ private fun RecommendationSection(
 
         errorMessage != null -> MessageCard(
             icon = Icons.Outlined.AutoAwesome,
-            message = "We could not load your recommendation.",
+            message = errorMessage,
             actionLabel = "Try again",
             onAction = onRetry
         )
@@ -565,4 +646,10 @@ private fun hasLocationPermission(
         ) == PackageManager.PERMISSION_GRANTED
 
     return fineGranted || coarseGranted
+}
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
 }

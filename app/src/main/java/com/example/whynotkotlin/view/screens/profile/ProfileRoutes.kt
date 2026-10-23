@@ -28,7 +28,7 @@ fun ProfileRoute(navigator: WhyNotNavigator) {
             ),
         cityName = profileController.cityName(profile),
         loading = profileResult == null,
-        errorMessage = profileResult?.exceptionOrNull()?.readableMessage()
+        errorMessage = signOut.errorMessage ?: profileResult?.exceptionOrNull()?.readableMessage()
             ?: categoriesResult?.exceptionOrNull()?.readableMessage(),
         onEditProfileClick = navigator::toEditProfile,
         onChangePasswordClick = navigator::toChangePassword,

@@ -1,6 +1,8 @@
 package com.example.whynotkotlin.view.screens.home
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import com.example.whynotkotlin.model.readableMessage
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,19 +36,32 @@ fun HomeRoute(navigator: WhyNotNavigator) {
     val profileResult by dependencies.profileController.profile.collectAsStateWithLifecycle()
     val catalogResult by dependencies.wishlistController.catalog.collectAsStateWithLifecycle()
 
-    var nearbyStore by rememberSaveable(stateSaver = NearbyStoreSaver) {
+    val productsResult by dependencies.productController.products.collectAsStateWithLifecycle()
+    val uid = session?.getOrNull()?.uid
+    val emptyProducts = uid != null && profileResult?.getOrNull()?.uid == uid &&
+        productsResult?.getOrNull()?.isEmpty() == true
+    val catalogReady = catalogResult?.isSuccess == true
+    var emptyTracked by rememberSaveable(uid) { mutableStateOf(false) }
+    LaunchedEffect(uid, emptyProducts, catalogReady) {
+        if (uid != null && emptyProducts && catalogReady && !emptyTracked) {
+            dependencies.homeUxController.track(uid, "home_empty_state_viewed", "home_empty_state")
+            emptyTracked = true
+        }
+    }
+
+    var nearbyStore by rememberSaveable(uid, stateSaver = NearbyStoreSaver) {
         mutableStateOf<NearbyStore?>(null)
     }
     var nearbyLoading by remember { mutableStateOf(false) }
-    var nearbyErrorMessage by rememberSaveable { mutableStateOf<String?>(null) }
+    var nearbyErrorMessage by rememberSaveable(uid) { mutableStateOf<String?>(null) }
 
-    var recommendation by rememberSaveable(stateSaver = RecommendationSaver) {
+    var recommendation by rememberSaveable(uid, stateSaver = RecommendationSaver) {
         mutableStateOf<ProductRecommendation?>(null)
     }
     var recommendationLoading by remember { mutableStateOf(false) }
     var recommendationSaving by remember { mutableStateOf(false) }
-    var recommendationSaved by rememberSaveable { mutableStateOf(false) }
-    var recommendationErrorMessage by rememberSaveable { mutableStateOf<String?>(null) }
+    var recommendationSaved by rememberSaveable(uid) { mutableStateOf(false) }
+    var recommendationErrorMessage by rememberSaveable(uid) { mutableStateOf<String?>(null) }
 
     fun loadNearby() {
         if (nearbyLoading) return
@@ -61,7 +76,7 @@ fun HomeRoute(navigator: WhyNotNavigator) {
                 throw cancelled
             } catch (error: Exception) {
                 nearbyStore = null
-                nearbyErrorMessage = error.message ?: "Could not load nearby stores."
+                nearbyErrorMessage = error.readableMessage()
             } finally {
                 nearbyLoading = false
             }
@@ -80,7 +95,7 @@ fun HomeRoute(navigator: WhyNotNavigator) {
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
-                recommendationErrorMessage = error.message ?: "Unable to load recommendation."
+                recommendationErrorMessage = error.readableMessage()
             } finally {
                 recommendationLoading = false
             }
@@ -90,7 +105,7 @@ fun HomeRoute(navigator: WhyNotNavigator) {
     /** Saves to [wishlistId], or to a new wishlist in its category when null. */
     fun saveRecommendation(wishlistId: String?) {
         val current = recommendation ?: return
-        if (recommendationSaving) return
+        if (recommendationSaving || recommendationSaved) return
         recommendationSaving = true
         recommendationErrorMessage = null
 
@@ -104,10 +119,11 @@ fun HomeRoute(navigator: WhyNotNavigator) {
 
                 recommendationSaved =
                     recommendationController.saveRecommendation(current, targetWishlistId)
+                if (!recommendationSaved) recommendationErrorMessage = "The product was not saved. Try again."
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
-                recommendationErrorMessage = error.message ?: "Unable to save recommendation."
+                recommendationErrorMessage = error.readableMessage()
             } finally {
                 recommendationSaving = false
             }
@@ -115,6 +131,15 @@ fun HomeRoute(navigator: WhyNotNavigator) {
     }
 
     HomeScreen(
+        showActivation = emptyProducts && catalogReady,
+        onActivate = {
+            uid?.let { dependencies.homeUxController.track(it, "home_empty_state_clicked", "home_empty_state") }
+            if (catalogResult?.getOrNull()?.summaries.isNullOrEmpty()) navigator.toNewWishlist()
+            else {
+                uid?.let { dependencies.homeUxController.track(it, "add_product_navigation", "home_empty_state") }
+                navigator.toAdd()
+            }
+        },
         userName = profileResult?.getOrNull()?.takeIf {
             it.uid == session?.getOrNull()?.uid
         }?.name,
@@ -133,8 +158,16 @@ fun HomeRoute(navigator: WhyNotNavigator) {
         onHomeClick = {},
         onWishlistsClick = navigator::toWishlists,
         onWishlistClick = navigator::toWishlistDetail,
-        onNewWishlistClick = navigator::toNewWishlist,
-        onAddClick = navigator::toAdd,
+        onNewWishlistClick = {
+            if (emptyProducts && catalogReady) uid?.let {
+                dependencies.homeUxController.track(it, "home_empty_state_clicked", "home_empty_state")
+            }
+            navigator.toNewWishlist()
+        },
+        onAddClick = {
+            uid?.let { dependencies.homeUxController.track(it, "add_product_navigation", "home_bottom_bar") }
+            navigator.toAdd()
+        },
         onPurchasesClick = navigator::toPurchases,
         onProfileClick = navigator::toProfile
     )
