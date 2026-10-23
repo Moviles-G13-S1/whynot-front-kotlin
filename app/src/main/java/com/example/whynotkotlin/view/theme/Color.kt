@@ -17,13 +17,3 @@ val WhyNotField = Color(0xFFFFFEFE)
 val WhyNotDanger = Color(0xFFFF5252)
 val WhyNotDisabled = Color(0xFFB9B5B0)
 val WhyNotOverlay = Color(0x80171513)
-
-// Admin dashboard chart colors
-val ChartTeal = Color(0xFF6F9F98)
-val ChartBlue = Color(0xFF748FA3)
-val ChartPurple = Color(0xFF9C88A8)
-val ChartRose = Color(0xFFC47F88)
-val ChartGold = Color(0xFFC9A163)
-val ChartCoral = Color(0xFFC98267)
-val ChartGreen = Color(0xFF7E9F87)
-val ChartTaupe = Color(0xFF9A938A)

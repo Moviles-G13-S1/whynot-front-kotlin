@@ -1,15 +1,20 @@
 package com.example.whynotkotlin.controller
 
 import com.example.whynotkotlin.model.AuthUser
+import com.example.whynotkotlin.model.OnboardingStep
+import com.example.whynotkotlin.model.PasswordPolicy
 import com.example.whynotkotlin.model.UserProfileDraft
 import com.example.whynotkotlin.model.ValidationException
 import com.example.whynotkotlin.model.repositories.AuthRepository
+import com.example.whynotkotlin.model.repositories.OnboardingRepository
 import com.example.whynotkotlin.model.repositories.UserRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 /**
  * Session and credential intents.
@@ -21,7 +26,8 @@ import kotlinx.coroutines.flow.stateIn
 class AuthController(
     private val authRepository: AuthRepository,
     private val userRepository: UserRepository,
-    scope: CoroutineScope
+    private val onboardingRepository: OnboardingRepository,
+    private val scope: CoroutineScope
 ) {
 
     /**
@@ -61,8 +67,10 @@ class AuthController(
 
         validateSignUp(email, password, draft)?.let { throw ValidationException(it) }
 
-        val user = authRepository.signUp(email, password)
+        val user = authRepository.signUp(email.trim(), password)
         userRepository.createProfile(user.uid, user.email, draft)
+
+        recordOnboardingStep(user.uid, OnboardingStep.SIGN_UP_COMPLETED)
     }
 
     suspend fun signOut() {
@@ -76,11 +84,14 @@ class AuthController(
     ) {
         val validationError = when {
             currentPassword.isBlank() -> "Enter your current password"
-            newPassword.length < MIN_PASSWORD_LENGTH ->
-                "The new password needs at least $MIN_PASSWORD_LENGTH characters"
+            else -> PasswordPolicy.firstError(newPassword)?.replace("The password", "The new password")
+                ?: when {
+                    newPassword == currentPassword ->
+                        "The new password must be different from the current one"
 
-            newPassword != confirmPassword -> "The new passwords do not match"
-            else -> null
+                    newPassword != confirmPassword -> "The new passwords do not match"
+                    else -> null
+                }
         }
 
         validationError?.let { throw ValidationException(it) }
@@ -95,17 +106,33 @@ class AuthController(
     ): String? = when {
         draft.name.isBlank() -> "Enter your name"
         email.isBlank() -> "Enter your email"
-        password.length < MIN_PASSWORD_LENGTH ->
-            "The password needs at least $MIN_PASSWORD_LENGTH characters"
+        !EMAIL_PATTERN.matches(email.trim()) -> "Enter a valid email, such as name@example.com"
+        else -> PasswordPolicy.firstError(password) ?: when {
+            draft.gender.isBlank() -> "Select a gender"
+            draft.age <= 0 -> "Enter a valid age"
+            draft.preferredCategoryId.isBlank() -> "Select a preferred category"
+            draft.cityId.isBlank() -> "Select a city"
+            else -> null
+        }
+    }
 
-        draft.gender.isBlank() -> "Select a gender"
-        draft.age <= 0 -> "Enter a valid age"
-        draft.preferredCategoryId.isBlank() -> "Select a preferred category"
-        draft.cityId.isBlank() -> "Select a city"
-        else -> null
+    /**
+     * Records the step in the background. It is analytics only, so it never
+     * delays sign-up and a failure to record it is ignored.
+     */
+    private fun recordOnboardingStep(userId: String, step: OnboardingStep) {
+        scope.launch {
+            try {
+                onboardingRepository.recordStep(userId, step)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                // Losing one analytics event must not surface as a sign-up error.
+            }
+        }
     }
 
     private companion object {
-        const val MIN_PASSWORD_LENGTH = 6
+        val EMAIL_PATTERN = Regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")
     }
 }

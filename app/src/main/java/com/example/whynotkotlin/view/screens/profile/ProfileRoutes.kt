@@ -13,7 +13,6 @@ fun ProfileRoute(navigator: WhyNotNavigator) {
     val dependencies = LocalAppDependencies.current
     val profileController = dependencies.profileController
     val authController = dependencies.authController
-    val session by authController.session.collectAsStateWithLifecycle()
     val profileResult by profileController.profile.collectAsStateWithLifecycle()
     val categoriesResult by profileController.categories.collectAsStateWithLifecycle()
     val signOut = rememberSubmission()
@@ -31,8 +30,6 @@ fun ProfileRoute(navigator: WhyNotNavigator) {
         loading = profileResult == null,
         errorMessage = profileResult?.exceptionOrNull()?.readableMessage()
             ?: categoriesResult?.exceptionOrNull()?.readableMessage(),
-        isAdmin = session?.getOrNull()?.isAdmin == true,
-        onAdminClick = navigator::toAdmin,
         onEditProfileClick = navigator::toEditProfile,
         onChangePasswordClick = navigator::toChangePassword,
         onLogoutClick = {

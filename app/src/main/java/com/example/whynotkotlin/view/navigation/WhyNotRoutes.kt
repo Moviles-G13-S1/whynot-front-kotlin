@@ -42,27 +42,6 @@ object WhyNotRoutes {
     const val EDIT_PRODUCT =
         "edit_product/{$ARG_PRODUCT_ID}?$ARG_SOURCE_TAB={$ARG_SOURCE_TAB}"
 
-    const val ADMIN_ROOT =
-        "admin"
-
-    const val ADMIN_SAVED_PRODUCTS =
-        "admin_saved_products"
-
-    const val ADMIN_REPEAT_SAVERS =
-        "admin_repeat_savers"
-
-    const val ADMIN_RECOMMENDED_SAVES =
-        "admin_recommended_saves"
-
-    const val ADMIN_PURCHASES_BY_CATEGORY =
-        "admin_purchases_by_category"
-
-    const val ADMIN_ZERO_PRODUCTS =
-        "admin_zero_products"
-
-    const val ADMIN_DEMOGRAPHIC_PROFILE =
-        "admin_demographic_profile"
-
     fun wishlistDetail(wishlistId: String): String =
         "wishlist_detail/${Uri.encode(wishlistId)}"
 

@@ -22,6 +22,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.example.whynotkotlin.model.PasswordPolicy
+import com.example.whynotkotlin.view.components.PasswordRequirements
 import com.example.whynotkotlin.view.components.WhyNotBottomBar
 import com.example.whynotkotlin.view.components.WhyNotTab
 import com.example.whynotkotlin.view.components.WhyNotButton
@@ -47,7 +49,7 @@ fun ChangePasswordScreen(
 
     val canUpdate =
         currentPassword.isNotBlank() &&
-                newPassword.length >= 6 &&
+                PasswordPolicy.isValid(newPassword) &&
                 newPassword == confirmPassword
 
     Column(
@@ -105,6 +107,11 @@ fun ChangePasswordScreen(
                     visualTransformation = PasswordVisualTransformation()
                 )
 
+                PasswordRequirements(
+                    password = newPassword,
+                    modifier = Modifier.padding(top = 10.dp)
+                )
+
                 Spacer(modifier = Modifier.height(20.dp))
 
                 WhyNotTextField(
@@ -115,12 +122,14 @@ fun ChangePasswordScreen(
                     visualTransformation = PasswordVisualTransformation()
                 )
 
-                Text(
-                    text = "Use at least 6 characters.",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = WhyNotGray,
-                    modifier = Modifier.padding(top = 22.dp)
-                )
+                if (confirmPassword.isNotEmpty() && confirmPassword != newPassword) {
+                    Text(
+                        text = "The new passwords do not match.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = WhyNotGray,
+                        modifier = Modifier.padding(top = 10.dp)
+                    )
+                }
             }
 
             Text(
