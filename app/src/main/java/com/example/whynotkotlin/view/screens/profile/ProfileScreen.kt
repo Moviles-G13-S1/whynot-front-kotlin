@@ -49,15 +49,6 @@ fun ProfileScreen(
     onChangePasswordClick: () -> Unit,
     onLogoutClick: () -> Unit,
 
-    /*
-     * Admin access.
-     *
-     * The button is only displayed when Firebase Authentication
-     * confirms that the current ID token contains admin=true.
-     */
-    isAdmin: Boolean = false,
-    onAdminClick: () -> Unit = {},
-
     onHomeClick: () -> Unit = {},
     onWishlistsClick: () -> Unit = {},
     onAddClick: () -> Unit = {},
@@ -137,16 +128,6 @@ fun ProfileScreen(
                     }
 
                     Spacer(modifier = Modifier.height(38.dp))
-
-                    // Only admins see this entry; it is not part of the iOS app.
-                    if (isAdmin) {
-                        WhyNotPillButton(
-                            text = "Admin panel",
-                            onClick = onAdminClick
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-                    }
 
                     WhyNotPillButton(
                         text = "Log Out",

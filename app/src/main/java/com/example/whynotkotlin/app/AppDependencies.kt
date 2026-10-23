@@ -2,27 +2,24 @@ package com.example.whynotkotlin.app
 
 import android.content.Context
 import androidx.compose.runtime.staticCompositionLocalOf
-import com.example.whynotkotlin.controller.AdminInsightsController
-import com.example.whynotkotlin.controller.AdminSavedProductsController
-import com.example.whynotkotlin.controller.AdminUserMetricsController
 import com.example.whynotkotlin.controller.AuthController
 import com.example.whynotkotlin.controller.NearbyStoreController
 import com.example.whynotkotlin.controller.ProductController
 import com.example.whynotkotlin.controller.ProfileController
 import com.example.whynotkotlin.controller.RecommendationController
 import com.example.whynotkotlin.controller.WishlistController
-import com.example.whynotkotlin.model.repositories.AdminRepository
 import com.example.whynotkotlin.model.repositories.AndroidLocationRepository
 import com.example.whynotkotlin.model.repositories.AuthRepository
-import com.example.whynotkotlin.model.repositories.FirebaseAdminRepository
 import com.example.whynotkotlin.model.repositories.FirebaseAuthRepository
 import com.example.whynotkotlin.model.repositories.FirebaseNearbyStoreRepository
+import com.example.whynotkotlin.model.repositories.FirebaseOnboardingRepository
 import com.example.whynotkotlin.model.repositories.FirebaseProductRepository
 import com.example.whynotkotlin.model.repositories.FirebaseRecommendationRepository
 import com.example.whynotkotlin.model.repositories.FirebaseUserRepository
 import com.example.whynotkotlin.model.repositories.FirebaseWishlistRepository
 import com.example.whynotkotlin.model.repositories.LocationRepository
 import com.example.whynotkotlin.model.repositories.NearbyStoreRepository
+import com.example.whynotkotlin.model.repositories.OnboardingRepository
 import com.example.whynotkotlin.model.repositories.ProductRepository
 import com.example.whynotkotlin.model.repositories.RecommendationRepository
 import com.example.whynotkotlin.model.repositories.UserRepository
@@ -46,7 +43,7 @@ class AppDependencies(
     userRepository: UserRepository,
     wishlistRepository: WishlistRepository,
     productRepository: ProductRepository,
-    adminRepository: AdminRepository,
+    onboardingRepository: OnboardingRepository,
     locationRepository: LocationRepository,
     nearbyStoreRepository: NearbyStoreRepository,
     recommendationRepository: RecommendationRepository,
@@ -54,13 +51,19 @@ class AppDependencies(
 ) {
 
     val authController =
-        AuthController(authRepository, userRepository, scope)
+        AuthController(authRepository, userRepository, onboardingRepository, scope)
 
     val profileController =
         ProfileController(authRepository, userRepository, wishlistRepository, scope)
 
     val wishlistController =
-        WishlistController(authRepository, wishlistRepository, productRepository, scope)
+        WishlistController(
+            authRepository,
+            wishlistRepository,
+            productRepository,
+            onboardingRepository,
+            scope
+        )
 
     val productController =
         ProductController(authRepository, productRepository, scope)
@@ -70,15 +73,6 @@ class AppDependencies(
 
     val recommendationController =
         RecommendationController(recommendationRepository)
-
-    val adminSavedProductsController =
-        AdminSavedProductsController(adminRepository, scope)
-
-    val adminUserMetricsController =
-        AdminUserMetricsController(adminRepository, scope)
-
-    val adminInsightsController =
-        AdminInsightsController(adminRepository, scope)
 
     companion object {
 
@@ -107,8 +101,8 @@ class AppDependencies(
                 productRepository =
                     FirebaseProductRepository(firestore),
 
-                adminRepository =
-                    FirebaseAdminRepository(firestore),
+                onboardingRepository =
+                    FirebaseOnboardingRepository(firestore),
 
                 locationRepository =
                     AndroidLocationRepository(context),

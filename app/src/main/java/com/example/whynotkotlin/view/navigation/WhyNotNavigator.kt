@@ -1,7 +1,6 @@
 package com.example.whynotkotlin.view.navigation
 
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.lifecycle.SavedStateHandle
 import androidx.navigation.NavHostController
 import com.example.whynotkotlin.view.components.WhyNotTab
 
@@ -82,58 +81,9 @@ class WhyNotNavigator(
         navController.navigate(WhyNotRoutes.CHANGE_PASSWORD)
     }
 
-    fun toAdmin() {
-        navController.navigate(WhyNotRoutes.ADMIN_ROOT) {
-            launchSingleTop = true
-        }
-    }
-
-    fun toAdminSavedProducts() = navigateAdmin(WhyNotRoutes.ADMIN_SAVED_PRODUCTS)
-
-    fun toAdminRepeatSavers() = navigateAdmin(WhyNotRoutes.ADMIN_REPEAT_SAVERS)
-
-    fun toAdminRecommendedSaves() = navigateAdmin(WhyNotRoutes.ADMIN_RECOMMENDED_SAVES)
-
-    fun toAdminPurchasesByCategory() = navigateAdmin(WhyNotRoutes.ADMIN_PURCHASES_BY_CATEGORY)
-
-    fun toAdminZeroProducts() = navigateAdmin(WhyNotRoutes.ADMIN_ZERO_PRODUCTS)
-
-    fun toAdminDemographicProfile() = navigateAdmin(WhyNotRoutes.ADMIN_DEMOGRAPHIC_PROFILE)
-
-    /** Sends a user who is not an admin out of the admin graph. */
-    fun leaveAdmin(isSignedIn: Boolean) {
-        val destination =
-            if (isSignedIn) WhyNotRoutes.HOME else WhyNotRoutes.LOGIN
-
-        navController.navigate(destination) {
-            popUpTo(WhyNotRoutes.ADMIN_ROOT) {
-                inclusive = true
-            }
-
-            launchSingleTop = true
-        }
-    }
-
-    /**
-     * State shared by every admin screen while the admin graph is open, such
-     * as the selected months window.
-     */
-    fun adminGraphState(): SavedStateHandle =
-        navController.getBackStackEntry(WhyNotRoutes.ADMIN_ROOT).savedStateHandle
-
     private fun navigateMain(route: String) {
         navController.navigate(route) {
             popUpTo(WhyNotRoutes.HOME) {
-                inclusive = false
-            }
-
-            launchSingleTop = true
-        }
-    }
-
-    private fun navigateAdmin(route: String) {
-        navController.navigate(route) {
-            popUpTo(WhyNotRoutes.ADMIN_SAVED_PRODUCTS) {
                 inclusive = false
             }
 

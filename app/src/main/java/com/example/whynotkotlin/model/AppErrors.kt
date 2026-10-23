@@ -28,6 +28,10 @@ fun Throwable.readableMessage(): String {
         raw.contains("email address is already in use", ignoreCase = true) ->
             "That email already has an account"
 
+        raw.contains("WEAK_PASSWORD", ignoreCase = true) ||
+            raw.contains("at least 6 characters", ignoreCase = true) ->
+            "That password is too weak. Follow the password requirements"
+
         raw.contains("badly formatted", ignoreCase = true) ->
             "That email address is not valid"
 

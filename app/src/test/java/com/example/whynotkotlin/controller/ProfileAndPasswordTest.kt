@@ -59,6 +59,10 @@ class ProfileAndPasswordTest {
         override suspend fun createWishlist(ownerId: String, draft: WishlistDraft) = "unused"
     }
 
+    private class NoOnboarding : OnboardingRepository {
+        override suspend fun recordStep(userId: String, step: OnboardingStep) = Unit
+    }
+
     @Test fun `profile saves real uid and selected category`() = runTest(dispatcher) {
         val users = Users()
         val controller = ProfileController(Auth(), users, Lists(), backgroundScope)
@@ -105,26 +109,46 @@ class ProfileAndPasswordTest {
 
     @Test fun `password change passes credentials to the backend`() = runTest(dispatcher) {
         val auth = Auth()
-        val controller = AuthController(auth, Users(), backgroundScope)
-        controller.changePassword("old-password", "new-password", "new-password")
-        assertEquals("old-password" to "new-password", auth.changed)
+        val controller = AuthController(auth, Users(), NoOnboarding(), backgroundScope)
+        controller.changePassword("old-password", "NewPassword1", "NewPassword1")
+        assertEquals("old-password" to "NewPassword1", auth.changed)
     }
 
     @Test fun `mismatched new passwords are rejected before the backend`() = runTest(dispatcher) {
         val auth = Auth()
-        val controller = AuthController(auth, Users(), backgroundScope)
+        val controller = AuthController(auth, Users(), NoOnboarding(), backgroundScope)
         val error = runCatching {
-            controller.changePassword("old-password", "new-password", "other-password")
+            controller.changePassword("old-password", "NewPassword1", "OtherPassword1")
         }.exceptionOrNull()
         assertTrue(error is ValidationException)
         assertNull(auth.changed)
     }
 
+    @Test fun `weak new password is rejected with the missing requirement`() = runTest(dispatcher) {
+        val auth = Auth()
+        val controller = AuthController(auth, Users(), NoOnboarding(), backgroundScope)
+        val error = runCatching {
+            controller.changePassword("old-password", "newpassword1", "newpassword1")
+        }.exceptionOrNull()
+        assertEquals("The new password needs at least one uppercase letter", error?.message)
+        assertNull(auth.changed)
+    }
+
+    @Test fun `new password equal to the current one is rejected`() = runTest(dispatcher) {
+        val auth = Auth()
+        val controller = AuthController(auth, Users(), NoOnboarding(), backgroundScope)
+        val error = runCatching {
+            controller.changePassword("SamePassword1", "SamePassword1", "SamePassword1")
+        }.exceptionOrNull()
+        assertEquals("The new password must be different from the current one", error?.message)
+        assertNull(auth.changed)
+    }
+
     @Test fun `wrong password response keeps form open`() = runTest(dispatcher) {
         val auth = Auth().apply { failure = IllegalArgumentException("credential is incorrect") }
-        val controller = AuthController(auth, Users(), backgroundScope)
+        val controller = AuthController(auth, Users(), NoOnboarding(), backgroundScope)
         val error = runCatching {
-            controller.changePassword("wrong", "new-password", "new-password")
+            controller.changePassword("wrong", "NewPassword1", "NewPassword1")
         }.exceptionOrNull()
         assertEquals("Wrong email or password", error?.readableMessage())
     }

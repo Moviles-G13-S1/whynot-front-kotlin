@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import com.example.whynotkotlin.model.CanonicalCities
 import com.example.whynotkotlin.model.Genders
 import com.example.whynotkotlin.model.CanonicalCategories
+import com.example.whynotkotlin.view.components.PasswordRequirements
 import com.example.whynotkotlin.view.components.WhyNotButton
 import com.example.whynotkotlin.view.components.WhyNotDropdownField
 import com.example.whynotkotlin.view.components.WhyNotErrorBanner
@@ -117,6 +118,8 @@ fun RegisterScreen(
                 label = "Password",
                 visualTransformation = PasswordVisualTransformation()
             )
+
+            PasswordRequirements(password = password)
 
             WhyNotDropdownField(
                 label = "Preferred Category",
