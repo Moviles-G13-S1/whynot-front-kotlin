@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.whynotkotlin.app.LocalAppDependencies
 import com.example.whynotkotlin.model.readableMessage
+import com.example.whynotkotlin.view.components.rememberIsOnline
 import com.example.whynotkotlin.view.components.rememberSubmission
 import com.example.whynotkotlin.view.navigation.WhyNotNavigator
 
@@ -20,6 +21,7 @@ fun ProfileRoute(navigator: WhyNotNavigator) {
     val profile = profileResult?.getOrNull()
 
     ProfileScreen(
+        isOnline = rememberIsOnline(),
         profile = profile,
         preferredCategoryName =
             profileController.preferredCategoryName(

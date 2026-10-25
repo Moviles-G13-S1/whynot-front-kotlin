@@ -30,6 +30,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.example.whynotkotlin.R
 import com.example.whynotkotlin.model.UserProfile
+import com.example.whynotkotlin.view.components.OfflineBanner
 import com.example.whynotkotlin.view.components.WhyNotBottomBar
 import com.example.whynotkotlin.view.components.WhyNotPillButton
 import com.example.whynotkotlin.view.components.WhyNotTab
@@ -53,7 +54,8 @@ fun ProfileScreen(
     onWishlistsClick: () -> Unit = {},
     onAddClick: () -> Unit = {},
     onPurchasesClick: () -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    isOnline: Boolean = true
 ) {
     Column(
         modifier = Modifier.fillMaxSize()
@@ -76,6 +78,11 @@ fun ProfileScreen(
                         .padding(start = 24.dp, end = 24.dp, top = 39.dp, bottom = 40.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    OfflineBanner(
+                        isOnline = isOnline,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+
                     Box(
                         modifier = Modifier
                             .size(100.dp)

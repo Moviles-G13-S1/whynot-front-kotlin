@@ -40,6 +40,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.whynotkotlin.model.Product
+import com.example.whynotkotlin.view.components.ProductImage
 import com.example.whynotkotlin.view.components.WhyNotBottomBar
 import com.example.whynotkotlin.view.components.WhyNotTab
 import com.example.whynotkotlin.view.screens.wishlists.asPriceLabel
@@ -234,12 +235,10 @@ private fun PurchaseCard(
             .clip(RoundedCornerShape(18.dp))
             .clickable { onClick() }
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(0.68f)
-                .clip(RoundedCornerShape(18.dp))
-                .background(WhyNotBeige)
+        ProductImage(
+            imageUrl = purchase.imageUrl,
+            ratio = 0.68f,
+            cornerRadius = 18
         )
 
         Spacer(modifier = Modifier.height(12.dp))

@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -57,6 +58,7 @@ import androidx.core.content.ContextCompat
 import com.example.whynotkotlin.model.NearbyStore
 import com.example.whynotkotlin.model.ProductRecommendation
 import com.example.whynotkotlin.model.WishlistSummary
+import com.example.whynotkotlin.view.components.RemoteImage
 import com.example.whynotkotlin.view.components.WhyNotPillButton
 import com.example.whynotkotlin.view.theme.WhyNotBeige
 import com.example.whynotkotlin.view.theme.WhyNotGray
@@ -285,7 +287,7 @@ private fun NearbySection(
 
         store != null -> FeatureCard {
             Row(verticalAlignment = Alignment.Top) {
-                ImageFallback(icon = Icons.Outlined.Storefront, iconSize = 29)
+                ImageFallback(icon = Icons.Outlined.Storefront, iconSize = 29, imageUrl = store.imageUrl)
 
                 Spacer(modifier = Modifier.width(16.dp))
 
@@ -353,7 +355,7 @@ private fun RecommendationSection(
 
         recommendation != null -> FeatureCard {
             Row(verticalAlignment = Alignment.Top) {
-                ImageFallback(icon = Icons.Outlined.Image, iconSize = 28)
+                ImageFallback(icon = Icons.Outlined.Image, iconSize = 28, imageUrl = recommendation.imageUrl)
 
                 Spacer(modifier = Modifier.width(16.dp))
 
@@ -597,9 +599,9 @@ private fun MessageCard(
     }
 }
 
-/** White tile standing in for a picture the backend does not provide yet. */
+/** The store or product picture, or a white tile with [icon] when there is none. */
 @Composable
-private fun ImageFallback(icon: ImageVector, iconSize: Int) {
+private fun ImageFallback(icon: ImageVector, iconSize: Int, imageUrl: String = "") {
     Box(
         modifier = Modifier
             .size(width = 105.dp, height = 125.dp)
@@ -607,12 +609,18 @@ private fun ImageFallback(icon: ImageVector, iconSize: Int) {
             .background(WhyNotWhite),
         contentAlignment = Alignment.Center
     ) {
-        Icon(
-            imageVector = icon,
+        RemoteImage(
+            url = imageUrl,
             contentDescription = null,
-            tint = WhyNotGray.copy(alpha = 0.65f),
-            modifier = Modifier.size(iconSize.dp)
-        )
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = WhyNotGray.copy(alpha = 0.65f),
+                modifier = Modifier.size(iconSize.dp)
+            )
+        }
     }
 }
 

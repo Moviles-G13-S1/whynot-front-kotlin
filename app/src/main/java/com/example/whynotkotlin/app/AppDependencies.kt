@@ -8,8 +8,10 @@ import com.example.whynotkotlin.controller.ProductController
 import com.example.whynotkotlin.controller.ProfileController
 import com.example.whynotkotlin.controller.RecommendationController
 import com.example.whynotkotlin.controller.WishlistController
+import com.example.whynotkotlin.model.repositories.AndroidConnectivityRepository
 import com.example.whynotkotlin.model.repositories.AndroidLocationRepository
 import com.example.whynotkotlin.model.repositories.AuthRepository
+import com.example.whynotkotlin.model.repositories.ConnectivityRepository
 import com.example.whynotkotlin.model.repositories.FirebaseAuthRepository
 import com.example.whynotkotlin.model.repositories.FirebaseNearbyStoreRepository
 import com.example.whynotkotlin.model.repositories.FirebaseOnboardingRepository
@@ -48,7 +50,10 @@ class AppDependencies(
     nearbyStoreRepository: NearbyStoreRepository,
     recommendationRepository: RecommendationRepository,
     scope: CoroutineScope,
-    uxEventRepository: com.example.whynotkotlin.model.repositories.UxEventRepository
+    uxEventRepository: com.example.whynotkotlin.model.repositories.UxEventRepository,
+
+    /** Shared online/offline state, read by any screen through LocalAppDependencies. */
+    val connectivity: ConnectivityRepository
 ) {
 
     val homeUxController = com.example.whynotkotlin.controller.HomeUxController(uxEventRepository, scope)
@@ -82,14 +87,15 @@ class AppDependencies(
         /**
          * Wires the real Firebase implementations.
          *
-         * [context] is only used by the location repository, to reach Play
-         * Services and to check its runtime permission.
+         * [context] is only used by the device repositories: location, to reach
+         * Play Services and check its runtime permission, and connectivity.
          */
         fun firebase(context: Context): AppDependencies {
 
             val auth = FirebaseAuth.getInstance()
             val firestore = FirebaseFirestore.getInstance()
             val functions = FirebaseFunctions.getInstance("us-central1")
+            val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
             return AppDependencies(
                 authRepository =
@@ -120,7 +126,10 @@ class AppDependencies(
                     com.example.whynotkotlin.model.repositories.FirebaseUxEventRepository(firestore),
 
                 scope =
-                    CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+                    scope,
+
+                connectivity =
+                    AndroidConnectivityRepository(context, scope)
             )
         }
     }

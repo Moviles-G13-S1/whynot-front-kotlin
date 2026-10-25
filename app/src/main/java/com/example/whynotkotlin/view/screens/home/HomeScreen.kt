@@ -208,6 +208,7 @@ private fun WishlistRail(
             WishlistCard(
                 name = summary.categoryName,
                 itemCount = summary.productCount,
+                imageUrl = summary.wishlist.imageUrl,
                 onClick = { onWishlistClick(summary.wishlist.id) },
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.width(131.dp)

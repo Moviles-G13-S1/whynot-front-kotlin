@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import com.example.whynotkotlin.model.CanonicalCities
 import com.example.whynotkotlin.model.Genders
 import com.example.whynotkotlin.model.CanonicalCategories
+import com.example.whynotkotlin.view.components.OfflineBanner
 import com.example.whynotkotlin.view.components.PasswordRequirements
 import com.example.whynotkotlin.view.components.WhyNotButton
 import com.example.whynotkotlin.view.components.WhyNotDropdownField
@@ -54,7 +55,8 @@ fun RegisterScreen(
         preferredCategoryId: String,
         cityId: String
     ) -> Unit,
-    onBackToLoginClick: () -> Unit
+    onBackToLoginClick: () -> Unit,
+    isOnline: Boolean = true
 ) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -71,6 +73,12 @@ fun RegisterScreen(
             .padding(horizontal = 28.dp, vertical = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        OfflineBanner(
+            isOnline = isOnline,
+            message = "You are offline. Creating an account needs internet; your answers are kept.",
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+
         Text(
             text = "W H Y N O T",
             style = MaterialTheme.typography.bodyLarge.copy(

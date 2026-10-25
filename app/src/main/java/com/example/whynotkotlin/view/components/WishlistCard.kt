@@ -24,6 +24,7 @@ import com.example.whynotkotlin.view.theme.whyNotSerif
 fun WishlistCard(
     name: String,
     itemCount: Int,
+    imageUrl: String = "",
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     horizontalAlignment: Alignment.Horizontal = Alignment.Start
@@ -34,12 +35,10 @@ fun WishlistCard(
             .clickable { onClick() },
         horizontalAlignment = horizontalAlignment
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(131f / 170f)
-                .clip(RoundedCornerShape(18.dp))
-                .background(WhyNotBeige)
+        ProductImage(
+            imageUrl = imageUrl,
+            ratio = 131f / 170f,
+            cornerRadius = 18
         )
 
         Spacer(modifier = Modifier.height(12.dp))
