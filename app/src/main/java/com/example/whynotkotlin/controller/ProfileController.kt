@@ -20,7 +20,8 @@ class ProfileController(
     authRepository: AuthRepository,
     private val userRepository: UserRepository,
     private val wishlistRepository: WishlistRepository,
-    scope: CoroutineScope
+    scope: CoroutineScope,
+    private val onProfileUpdated: (uid: String) -> Unit = {}
 ) {
     private val profileUpdate = ProfileUpdateFacade(authRepository, userRepository)
 
@@ -69,6 +70,7 @@ class ProfileController(
         preferredCategoryId: String
     ) {
         profileUpdate.save(uid, name, gender, age, preferredCategoryId)
+        uid?.let(onProfileUpdated)
     }
 
     /** The display name of the profile's preferred category, or its raw id. */

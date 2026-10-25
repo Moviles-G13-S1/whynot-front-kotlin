@@ -8,6 +8,7 @@ import com.example.whynotkotlin.controller.ProductController
 import com.example.whynotkotlin.controller.ProfileController
 import com.example.whynotkotlin.controller.RecommendationController
 import com.example.whynotkotlin.controller.WishlistController
+import com.example.whynotkotlin.model.RecommendationCache
 import com.example.whynotkotlin.model.repositories.AndroidConnectivityRepository
 import com.example.whynotkotlin.model.repositories.AndroidLocationRepository
 import com.example.whynotkotlin.model.repositories.AuthRepository
@@ -59,10 +60,14 @@ class AppDependencies(
     val homeUxController = com.example.whynotkotlin.controller.HomeUxController(uxEventRepository, scope)
 
     val authController =
-        AuthController(authRepository, userRepository, onboardingRepository, scope)
+        AuthController(authRepository, userRepository, onboardingRepository, scope) {
+            recommendationController.onSignedOut()
+        }
 
     val profileController =
-        ProfileController(authRepository, userRepository, wishlistRepository, scope)
+        ProfileController(authRepository, userRepository, wishlistRepository, scope) { uid ->
+            recommendationController.onProfileUpdated(uid)
+        }
 
     val wishlistController =
         WishlistController(
@@ -80,7 +85,12 @@ class AppDependencies(
         NearbyStoreController(locationRepository, nearbyStoreRepository)
 
     val recommendationController =
-        RecommendationController(recommendationRepository)
+        RecommendationController(
+            repository = recommendationRepository,
+            cache = RecommendationCache(),
+            connectivity = connectivity,
+            currentUid = { authRepository.currentUser()?.uid }
+        )
 
     companion object {
 

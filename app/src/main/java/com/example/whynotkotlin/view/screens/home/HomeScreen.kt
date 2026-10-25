@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import com.example.whynotkotlin.model.NearbyStore
 import com.example.whynotkotlin.model.ProductRecommendation
 import com.example.whynotkotlin.model.WishlistSummary
+import com.example.whynotkotlin.view.components.OfflineBanner
 import com.example.whynotkotlin.view.components.WhyNotBottomBar
 import com.example.whynotkotlin.view.components.WhyNotPillButton
 import com.example.whynotkotlin.view.components.WhyNotTab
@@ -58,7 +59,10 @@ fun HomeScreen(
     onNewWishlistClick: () -> Unit,
     onAddClick: () -> Unit,
     onPurchasesClick: () -> Unit,
-    onProfileClick: () -> Unit
+    onProfileClick: () -> Unit,
+    onRefreshRecommendation: () -> Unit = onLoadRecommendation,
+    recommendationStale: Boolean = false,
+    isOnline: Boolean = true
 ) {
     Column(
         modifier = Modifier.fillMaxSize()
@@ -75,6 +79,12 @@ fun HomeScreen(
             )
         ) {
             item {
+                OfflineBanner(
+                    isOnline = isOnline,
+                    onRetry = onRefreshRecommendation,
+                    modifier = Modifier.padding(end = 18.dp, bottom = 16.dp)
+                )
+
                 Text(
                     text = "WHYNOT",
                     style = TextStyle(
@@ -150,6 +160,8 @@ fun HomeScreen(
                     wishlistSummaries = wishlistSummaries,
                     onLoadNearby = onLoadNearby,
                     onLoadRecommendation = onLoadRecommendation,
+                    onRefreshRecommendation = onRefreshRecommendation,
+                    recommendationStale = recommendationStale,
                     onSaveRecommendation = onSaveRecommendation
                 )
             }

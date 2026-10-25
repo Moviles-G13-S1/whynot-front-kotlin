@@ -28,7 +28,8 @@ class AuthController(
     private val authRepository: AuthRepository,
     private val userRepository: UserRepository,
     private val onboardingRepository: OnboardingRepository,
-    private val scope: CoroutineScope
+    private val scope: CoroutineScope,
+    private val onSignedOut: () -> Unit = {}
 ) {
 
     /**
@@ -77,6 +78,7 @@ class AuthController(
 
     suspend fun signOut() {
         authRepository.signOut()
+        onSignedOut()
     }
 
     suspend fun changePassword(

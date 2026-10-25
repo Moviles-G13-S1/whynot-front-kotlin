@@ -14,6 +14,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.whynotkotlin.app.LocalAppDependencies
 import com.example.whynotkotlin.model.NearbyStore
 import com.example.whynotkotlin.model.ProductRecommendation
+import com.example.whynotkotlin.view.components.rememberIsOnline
 import com.example.whynotkotlin.view.navigation.WhyNotNavigator
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -21,9 +22,10 @@ import kotlinx.coroutines.launch
 /**
  * The home screen and its two smart sections.
  *
- * The nearest store and the recommendation are kept with rememberSaveable, so
- * they stay while Home is on the back stack and the user moves between tabs,
- * instead of being requested again every time Home is shown.
+ * The nearest store is kept with rememberSaveable, so it stays while Home is on
+ * the back stack. The recommendation comes from RecommendationController's
+ * cache instead, so returning to Home reuses it without calling the backend,
+ * and offline it shows the last one marked as stale.
  */
 @Composable
 fun HomeRoute(navigator: WhyNotNavigator) {
@@ -55,13 +57,15 @@ fun HomeRoute(navigator: WhyNotNavigator) {
     var nearbyLoading by remember { mutableStateOf(false) }
     var nearbyErrorMessage by rememberSaveable(uid) { mutableStateOf<String?>(null) }
 
-    var recommendation by rememberSaveable(uid, stateSaver = RecommendationSaver) {
-        mutableStateOf<ProductRecommendation?>(null)
-    }
+    var recommendation by remember(uid) { mutableStateOf<ProductRecommendation?>(null) }
+    var recommendationStale by remember(uid) { mutableStateOf(false) }
     var recommendationLoading by remember { mutableStateOf(false) }
     var recommendationSaving by remember { mutableStateOf(false) }
     var recommendationSaved by rememberSaveable(uid) { mutableStateOf(false) }
     var recommendationErrorMessage by rememberSaveable(uid) { mutableStateOf<String?>(null) }
+
+    val isOnline = rememberIsOnline()
+    var wasOffline by remember { mutableStateOf(!isOnline) }
 
     fun loadNearby() {
         if (nearbyLoading) return
@@ -83,14 +87,16 @@ fun HomeRoute(navigator: WhyNotNavigator) {
         }
     }
 
-    fun loadRecommendation() {
+    fun loadRecommendation(forceRefresh: Boolean = false) {
         if (recommendationLoading) return
         recommendationLoading = true
         recommendationErrorMessage = null
 
         scope.launch {
             try {
-                recommendation = recommendationController.loadRecommendation()
+                val load = recommendationController.loadRecommendation(forceRefresh)
+                recommendation = load.recommendation
+                recommendationStale = load.isStale
                 recommendationSaved = false
             } catch (cancelled: CancellationException) {
                 throw cancelled
@@ -100,6 +106,12 @@ fun HomeRoute(navigator: WhyNotNavigator) {
                 recommendationLoading = false
             }
         }
+    }
+
+    // Back online after being offline: replace a stale recommendation.
+    LaunchedEffect(isOnline) {
+        if (isOnline && wasOffline) loadRecommendation(forceRefresh = true)
+        wasOffline = !isOnline
     }
 
     /** Saves to [wishlistId], or to a new wishlist in its category when null. */
@@ -153,7 +165,10 @@ fun HomeRoute(navigator: WhyNotNavigator) {
         recommendationErrorMessage = recommendationErrorMessage,
         wishlistSummaries = catalogResult?.getOrNull()?.summaries.orEmpty(),
         onLoadNearby = ::loadNearby,
-        onLoadRecommendation = ::loadRecommendation,
+        onLoadRecommendation = { loadRecommendation() },
+        onRefreshRecommendation = { loadRecommendation(forceRefresh = true) },
+        recommendationStale = recommendationStale,
+        isOnline = isOnline,
         onSaveRecommendation = ::saveRecommendation,
         onHomeClick = {},
         onWishlistsClick = navigator::toWishlists,
@@ -201,35 +216,6 @@ private val NearbyStoreSaver = Saver<NearbyStore?, ArrayList<Any>>(
             websiteUrl = saved[6] as String,
             imageUrl = saved[7] as String,
             distanceKm = saved[8] as Double
-        )
-    }
-)
-
-private val RecommendationSaver = Saver<ProductRecommendation?, ArrayList<Any>>(
-    save = { recommendation ->
-        recommendation?.let {
-            arrayListOf(
-                it.recommendationEventId,
-                it.name,
-                it.brand,
-                it.price,
-                it.imageUrl,
-                it.productUrl,
-                it.categoryId,
-                it.reason
-            )
-        }
-    },
-    restore = { saved ->
-        ProductRecommendation(
-            recommendationEventId = saved[0] as String,
-            name = saved[1] as String,
-            brand = saved[2] as String,
-            price = saved[3] as Double,
-            imageUrl = saved[4] as String,
-            productUrl = saved[5] as String,
-            categoryId = saved[6] as String,
-            reason = saved[7] as String
         )
     }
 )

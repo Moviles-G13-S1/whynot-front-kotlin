@@ -1,6 +1,8 @@
 package com.example.whynotkotlin.controller
 
+import com.example.whynotkotlin.fakes.FakeConnectivityRepository
 import com.example.whynotkotlin.fakes.FakeRecommendationRepository
+import com.example.whynotkotlin.model.RecommendationCache
 import com.example.whynotkotlin.model.ProductRecommendation
 import com.example.whynotkotlin.model.RecommendationSaveResult
 import kotlinx.coroutines.test.runTest
@@ -12,6 +14,14 @@ import org.junit.Test
 
 class RecommendationControllerTest {
 
+    private fun controllerFor(repository: FakeRecommendationRepository) =
+        RecommendationController(
+            repository = repository,
+            cache = RecommendationCache(logger = {}),
+            connectivity = FakeConnectivityRepository(),
+            currentUid = { null }
+        )
+
     @Test
     fun `loadRecommendation returns the repository recommendation`() =
         runTest {
@@ -20,7 +30,7 @@ class RecommendationControllerTest {
                 recommendation(eventId = "event-123")
 
             val controller =
-                RecommendationController(
+                controllerFor(
                     FakeRecommendationRepository(
                         recommendation = expectedRecommendation
                     )
@@ -28,7 +38,7 @@ class RecommendationControllerTest {
 
             assertEquals(
                 expectedRecommendation,
-                controller.loadRecommendation()
+                controller.loadRecommendation().recommendation
             )
         }
 
@@ -51,7 +61,7 @@ class RecommendationControllerTest {
                 )
 
             val controller =
-                RecommendationController(repository)
+                controllerFor(repository)
 
             assertTrue(
                 controller.saveRecommendation(
@@ -79,7 +89,7 @@ class RecommendationControllerTest {
                 recommendation(eventId = "event-idempotent")
 
             val controller =
-                RecommendationController(
+                controllerFor(
                     FakeRecommendationRepository(
                         recommendation = recommendation,
                         saveResult =
@@ -104,7 +114,7 @@ class RecommendationControllerTest {
                 recommendation(eventId = "event-rejected")
 
             val controller =
-                RecommendationController(
+                controllerFor(
                     FakeRecommendationRepository(
                         recommendation = recommendation,
                         saveResult =
@@ -126,7 +136,7 @@ class RecommendationControllerTest {
         runTest {
 
             val controller =
-                RecommendationController(
+                controllerFor(
                     FakeRecommendationRepository(
                         loadError =
                             IllegalStateException(

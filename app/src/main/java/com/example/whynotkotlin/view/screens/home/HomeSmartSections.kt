@@ -86,7 +86,9 @@ fun HomeSmartSections(
     wishlistSummaries: List<WishlistSummary>,
     onLoadNearby: () -> Unit,
     onLoadRecommendation: () -> Unit,
-    onSaveRecommendation: (String?) -> Unit
+    onSaveRecommendation: (String?) -> Unit,
+    onRefreshRecommendation: () -> Unit = onLoadRecommendation,
+    recommendationStale: Boolean = false
 ) {
     val context = LocalContext.current
 
@@ -218,8 +220,9 @@ fun HomeSmartSections(
             saved = recommendationSaved,
             errorMessage = recommendationErrorMessage,
             wishlistSummaries = wishlistSummaries,
-            onRetry = onLoadRecommendation,
-            onSave = onSaveRecommendation
+            onRetry = onRefreshRecommendation,
+            onSave = onSaveRecommendation,
+            stale = recommendationStale
         )
     }
     TextButton(onClick = { detail = "recommendation" }) { Text("View recommendation") }
@@ -241,14 +244,14 @@ fun HomeSmartSections(
             } else {
                 RecommendationSection(recommendation, recommendationLoading, recommendationSaving,
                     recommendationSaved, recommendationErrorMessage, wishlistSummaries,
-                    onLoadRecommendation, onSaveRecommendation)
+                    onRefreshRecommendation, onSaveRecommendation, recommendationStale)
                 recommendation?.takeIf { !recommendationLoading }?.let {
                     Text(it.name, style = whyNotSerif(23))
                     Text(it.reason)
                     Text("Category: ${it.categoryId}")
                     ExternalWebsiteButton(it.productUrl, "Product website")
                 }
-                TextButton(onClick = onLoadRecommendation, enabled = !recommendationSaving && !recommendationLoading) {
+                TextButton(onClick = onRefreshRecommendation, enabled = !recommendationSaving && !recommendationLoading) {
                     Text("Refresh recommendation")
                 }
             }
@@ -346,7 +349,8 @@ private fun RecommendationSection(
     errorMessage: String?,
     wishlistSummaries: List<WishlistSummary>,
     onRetry: () -> Unit,
-    onSave: (String?) -> Unit
+    onSave: (String?) -> Unit,
+    stale: Boolean = false
 ) {
     var choosingWishlist by remember { mutableStateOf(false) }
 
@@ -412,6 +416,19 @@ private fun RecommendationSection(
                     },
                     onClick = { choosingWishlist = true },
                     enabled = !saving && !saved
+                )
+            }
+
+            if (stale) {
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Text(
+                    text = "Saved recommendation, may be outdated. Retry",
+                    style = whyNotMuted(11),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onRetry() }
                 )
             }
 
