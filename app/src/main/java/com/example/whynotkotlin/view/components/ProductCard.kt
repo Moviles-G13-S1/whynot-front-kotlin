@@ -23,12 +23,13 @@ fun ProductCard(
     price: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    originalPrice: String = ""
+    originalPrice: String = "",
+    imageUrl: String = ""
 ) {
     Column(
         modifier = modifier.clickable { onClick() }
     ) {
-        ProductImage(ratio = 0.78f)
+        ProductImage(imageUrl = imageUrl, ratio = 0.78f)
 
         Spacer(modifier = Modifier.height(10.dp))
 

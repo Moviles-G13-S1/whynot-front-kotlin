@@ -93,6 +93,7 @@ fun WishlistsScreen(
                             WishlistCard(
                                 name = summary.categoryName,
                                 itemCount = summary.productCount,
+                                imageUrl = summary.wishlist.imageUrl,
                                 onClick = { onWishlistClick(summary.wishlist.id) }
                             )
                         }

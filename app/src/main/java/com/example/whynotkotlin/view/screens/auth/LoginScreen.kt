@@ -19,12 +19,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.whynotkotlin.view.components.OfflineBanner
 import com.example.whynotkotlin.view.components.WhyNotButton
 import com.example.whynotkotlin.view.components.WhyNotErrorBanner
 import com.example.whynotkotlin.view.components.WhyNotTextField
@@ -37,9 +39,12 @@ fun LoginScreen(
     submitting: Boolean,
     errorMessage: String?,
     onSubmit: (email: String, password: String) -> Unit,
-    onCreateAccountClick: () -> Unit
+    onCreateAccountClick: () -> Unit,
+    isOnline: Boolean = true
 ) {
-    var email by remember { mutableStateOf("") }
+    // The email survives rotation and process death; the password never
+    // leaves memory, so it is not written to the saved instance state.
+    var email by rememberSaveable { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
     Column(
@@ -49,7 +54,13 @@ fun LoginScreen(
             .padding(horizontal = 30.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(modifier = Modifier.height(150.dp))
+        OfflineBanner(
+            isOnline = isOnline,
+            message = "You are offline. Signing in needs internet; what you type is kept.",
+            modifier = Modifier.padding(top = 40.dp)
+        )
+
+        Spacer(modifier = Modifier.height(if (isOnline) 150.dp else 70.dp))
 
         Text(
             text = "W H Y N O T",

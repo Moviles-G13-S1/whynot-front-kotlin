@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import com.example.whynotkotlin.model.CanonicalCities
 import com.example.whynotkotlin.model.Genders
 import com.example.whynotkotlin.model.CanonicalCategories
+import com.example.whynotkotlin.view.components.OfflineBanner
 import com.example.whynotkotlin.view.components.PasswordRequirements
 import com.example.whynotkotlin.view.components.WhyNotButton
 import com.example.whynotkotlin.view.components.WhyNotDropdownField
@@ -54,15 +56,18 @@ fun RegisterScreen(
         preferredCategoryId: String,
         cityId: String
     ) -> Unit,
-    onBackToLoginClick: () -> Unit
+    onBackToLoginClick: () -> Unit,
+    isOnline: Boolean = true
 ) {
-    var name by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var gender by remember { mutableStateOf("") }
-    var age by remember { mutableStateOf("") }
+    // Answers survive rotation, process death and a failed offline submit;
+    // the password stays in memory only, never in the saved instance state.
+    var name by rememberSaveable { mutableStateOf("") }
+    var email by rememberSaveable { mutableStateOf("") }
+    var gender by rememberSaveable { mutableStateOf("") }
+    var age by rememberSaveable { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var categoryId by remember { mutableStateOf("") }
-    var cityId by remember { mutableStateOf("") }
+    var categoryId by rememberSaveable { mutableStateOf("") }
+    var cityId by rememberSaveable { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -71,6 +76,12 @@ fun RegisterScreen(
             .padding(horizontal = 28.dp, vertical = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        OfflineBanner(
+            isOnline = isOnline,
+            message = "You are offline. Creating an account needs internet; your answers are kept.",
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+
         Text(
             text = "W H Y N O T",
             style = MaterialTheme.typography.bodyLarge.copy(

@@ -2,6 +2,7 @@ package com.example.whynotkotlin.view.screens.auth
 
 import androidx.compose.runtime.Composable
 import com.example.whynotkotlin.app.LocalAppDependencies
+import com.example.whynotkotlin.view.components.rememberIsOnline
 import com.example.whynotkotlin.view.components.rememberSubmission
 import com.example.whynotkotlin.view.navigation.WhyNotNavigator
 
@@ -11,6 +12,7 @@ fun LoginRoute(navigator: WhyNotNavigator) {
     val submission = rememberSubmission()
 
     LoginScreen(
+        isOnline = rememberIsOnline(),
         submitting = submission.running,
         errorMessage = submission.errorMessage,
         onSubmit = { email, password ->
@@ -28,6 +30,7 @@ fun RegisterRoute(navigator: WhyNotNavigator) {
     val submission = rememberSubmission()
 
     RegisterScreen(
+        isOnline = rememberIsOnline(),
         submitting = submission.running,
         errorMessage = submission.errorMessage,
         onSubmit = { name, email, password, gender, age, categoryId, cityId ->

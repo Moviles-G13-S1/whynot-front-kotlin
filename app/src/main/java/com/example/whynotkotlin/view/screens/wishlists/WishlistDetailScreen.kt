@@ -162,6 +162,7 @@ fun WishlistDetailScreen(
                         ProductCard(
                             name = product.name,
                             price = product.price.asPriceLabel(),
+                            imageUrl = product.imageUrl,
                             onClick = { onProductClick(product.id) }
                         )
                     }

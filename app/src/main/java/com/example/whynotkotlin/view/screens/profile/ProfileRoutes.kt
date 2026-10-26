@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.whynotkotlin.app.LocalAppDependencies
 import com.example.whynotkotlin.model.readableMessage
+import com.example.whynotkotlin.view.components.rememberIsOnline
 import com.example.whynotkotlin.view.components.rememberSubmission
 import com.example.whynotkotlin.view.navigation.WhyNotNavigator
 
@@ -20,6 +21,7 @@ fun ProfileRoute(navigator: WhyNotNavigator) {
     val profile = profileResult?.getOrNull()
 
     ProfileScreen(
+        isOnline = rememberIsOnline(),
         profile = profile,
         preferredCategoryName =
             profileController.preferredCategoryName(
@@ -56,6 +58,7 @@ fun EditProfileRoute(navigator: WhyNotNavigator) {
     val categories = categoriesResult?.getOrNull().orEmpty()
 
     EditProfileScreen(
+        isOnline = rememberIsOnline(),
         profile = profile,
         categories = categories,
         preferredCategoryName = profileController.preferredCategoryName(profile, categories),
@@ -85,6 +88,7 @@ fun ChangePasswordRoute(navigator: WhyNotNavigator) {
     val submission = rememberSubmission()
 
     ChangePasswordScreen(
+        isOnline = rememberIsOnline(),
         submitting = submission.running,
         errorMessage = submission.errorMessage,
         onBackClick = navigator::back,

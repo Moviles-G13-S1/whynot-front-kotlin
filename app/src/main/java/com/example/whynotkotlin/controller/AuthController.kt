@@ -6,8 +6,10 @@ import com.example.whynotkotlin.model.PasswordPolicy
 import com.example.whynotkotlin.model.UserProfileDraft
 import com.example.whynotkotlin.model.ValidationException
 import com.example.whynotkotlin.model.repositories.AuthRepository
+import com.example.whynotkotlin.model.repositories.ConnectivityRepository
 import com.example.whynotkotlin.model.repositories.OnboardingRepository
 import com.example.whynotkotlin.model.repositories.UserRepository
+import com.example.whynotkotlin.model.repositories.requireOnline
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
@@ -28,7 +30,9 @@ class AuthController(
     private val authRepository: AuthRepository,
     private val userRepository: UserRepository,
     private val onboardingRepository: OnboardingRepository,
-    private val scope: CoroutineScope
+    private val scope: CoroutineScope,
+    private val connectivity: ConnectivityRepository? = null,
+    private val onSignedOut: () -> Unit = {}
 ) {
 
     /**
@@ -47,6 +51,7 @@ class AuthController(
             throw ValidationException("Enter your email and password")
         }
 
+        connectivity.requireOnline(SIGN_IN_OFFLINE)
         authRepository.signIn(email, password)
     }
 
@@ -68,6 +73,7 @@ class AuthController(
         )
 
         validateSignUp(email, password, draft)?.let { throw ValidationException(it) }
+        connectivity.requireOnline(SIGN_UP_OFFLINE)
 
         val user = authRepository.signUp(email.trim(), password)
         userRepository.createProfile(user.uid, user.email, draft)
@@ -77,6 +83,7 @@ class AuthController(
 
     suspend fun signOut() {
         authRepository.signOut()
+        onSignedOut()
     }
 
     suspend fun changePassword(
@@ -97,6 +104,7 @@ class AuthController(
         }
 
         validationError?.let { throw ValidationException(it) }
+        connectivity.requireOnline(CHANGE_PASSWORD_OFFLINE)
 
         authRepository.changePassword(currentPassword, newPassword)
     }
@@ -135,6 +143,12 @@ class AuthController(
     }
 
     private companion object {
+        const val SIGN_IN_OFFLINE =
+            "No connection. Signing in needs internet; your email is kept, try again when you are back online."
+        const val SIGN_UP_OFFLINE =
+            "No connection. Creating an account needs internet; your answers are kept, try again when you are back online."
+        const val CHANGE_PASSWORD_OFFLINE =
+            "No connection. Changing your password needs internet; try again when you are back online."
         val EMAIL_PATTERN = Regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")
     }
 }

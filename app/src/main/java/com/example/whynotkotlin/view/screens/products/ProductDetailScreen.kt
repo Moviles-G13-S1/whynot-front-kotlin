@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.example.whynotkotlin.model.Product
+import com.example.whynotkotlin.view.components.ProductImage
 import com.example.whynotkotlin.view.components.WhyNotBottomBar
 import com.example.whynotkotlin.view.components.WhyNotConfirmDialog
 import com.example.whynotkotlin.view.components.WhyNotTab
@@ -118,12 +119,11 @@ fun ProductDetailScreen(
 
                     Spacer(modifier = Modifier.height(32.dp))
 
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(360.dp)
-                            .clip(RoundedCornerShape(18.dp))
-                            .background(WhyNotBeige)
+                    ProductImage(
+                        imageUrl = product.imageUrl,
+                        ratio = null,
+                        cornerRadius = 18,
+                        modifier = Modifier.height(360.dp)
                     )
 
                     Spacer(modifier = Modifier.height(20.dp))

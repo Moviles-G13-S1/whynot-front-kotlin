@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -57,6 +58,7 @@ import androidx.core.content.ContextCompat
 import com.example.whynotkotlin.model.NearbyStore
 import com.example.whynotkotlin.model.ProductRecommendation
 import com.example.whynotkotlin.model.WishlistSummary
+import com.example.whynotkotlin.view.components.RemoteImage
 import com.example.whynotkotlin.view.components.WhyNotPillButton
 import com.example.whynotkotlin.view.theme.WhyNotBeige
 import com.example.whynotkotlin.view.theme.WhyNotGray
@@ -84,7 +86,9 @@ fun HomeSmartSections(
     wishlistSummaries: List<WishlistSummary>,
     onLoadNearby: () -> Unit,
     onLoadRecommendation: () -> Unit,
-    onSaveRecommendation: (String?) -> Unit
+    onSaveRecommendation: (String?) -> Unit,
+    onRefreshRecommendation: () -> Unit = onLoadRecommendation,
+    recommendationStale: Boolean = false
 ) {
     val context = LocalContext.current
 
@@ -216,8 +220,9 @@ fun HomeSmartSections(
             saved = recommendationSaved,
             errorMessage = recommendationErrorMessage,
             wishlistSummaries = wishlistSummaries,
-            onRetry = onLoadRecommendation,
-            onSave = onSaveRecommendation
+            onRetry = onRefreshRecommendation,
+            onSave = onSaveRecommendation,
+            stale = recommendationStale
         )
     }
     TextButton(onClick = { detail = "recommendation" }) { Text("View recommendation") }
@@ -239,14 +244,14 @@ fun HomeSmartSections(
             } else {
                 RecommendationSection(recommendation, recommendationLoading, recommendationSaving,
                     recommendationSaved, recommendationErrorMessage, wishlistSummaries,
-                    onLoadRecommendation, onSaveRecommendation)
+                    onRefreshRecommendation, onSaveRecommendation, recommendationStale)
                 recommendation?.takeIf { !recommendationLoading }?.let {
                     Text(it.name, style = whyNotSerif(23))
                     Text(it.reason)
                     Text("Category: ${it.categoryId}")
                     ExternalWebsiteButton(it.productUrl, "Product website")
                 }
-                TextButton(onClick = onLoadRecommendation, enabled = !recommendationSaving && !recommendationLoading) {
+                TextButton(onClick = onRefreshRecommendation, enabled = !recommendationSaving && !recommendationLoading) {
                     Text("Refresh recommendation")
                 }
             }
@@ -285,7 +290,7 @@ private fun NearbySection(
 
         store != null -> FeatureCard {
             Row(verticalAlignment = Alignment.Top) {
-                ImageFallback(icon = Icons.Outlined.Storefront, iconSize = 29)
+                ImageFallback(icon = Icons.Outlined.Storefront, iconSize = 29, imageUrl = store.imageUrl)
 
                 Spacer(modifier = Modifier.width(16.dp))
 
@@ -344,7 +349,8 @@ private fun RecommendationSection(
     errorMessage: String?,
     wishlistSummaries: List<WishlistSummary>,
     onRetry: () -> Unit,
-    onSave: (String?) -> Unit
+    onSave: (String?) -> Unit,
+    stale: Boolean = false
 ) {
     var choosingWishlist by remember { mutableStateOf(false) }
 
@@ -353,7 +359,7 @@ private fun RecommendationSection(
 
         recommendation != null -> FeatureCard {
             Row(verticalAlignment = Alignment.Top) {
-                ImageFallback(icon = Icons.Outlined.Image, iconSize = 28)
+                ImageFallback(icon = Icons.Outlined.Image, iconSize = 28, imageUrl = recommendation.imageUrl)
 
                 Spacer(modifier = Modifier.width(16.dp))
 
@@ -410,6 +416,19 @@ private fun RecommendationSection(
                     },
                     onClick = { choosingWishlist = true },
                     enabled = !saving && !saved
+                )
+            }
+
+            if (stale) {
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Text(
+                    text = "Saved recommendation, may be outdated. Retry",
+                    style = whyNotMuted(11),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onRetry() }
                 )
             }
 
@@ -597,9 +616,9 @@ private fun MessageCard(
     }
 }
 
-/** White tile standing in for a picture the backend does not provide yet. */
+/** The store or product picture, or a white tile with [icon] when there is none. */
 @Composable
-private fun ImageFallback(icon: ImageVector, iconSize: Int) {
+private fun ImageFallback(icon: ImageVector, iconSize: Int, imageUrl: String = "") {
     Box(
         modifier = Modifier
             .size(width = 105.dp, height = 125.dp)
@@ -607,12 +626,18 @@ private fun ImageFallback(icon: ImageVector, iconSize: Int) {
             .background(WhyNotWhite),
         contentAlignment = Alignment.Center
     ) {
-        Icon(
-            imageVector = icon,
+        RemoteImage(
+            url = imageUrl,
             contentDescription = null,
-            tint = WhyNotGray.copy(alpha = 0.65f),
-            modifier = Modifier.size(iconSize.dp)
-        )
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = WhyNotGray.copy(alpha = 0.65f),
+                modifier = Modifier.size(iconSize.dp)
+            )
+        }
     }
 }
 
