@@ -4,6 +4,8 @@ import com.example.whynotkotlin.model.CanonicalCities
 import com.example.whynotkotlin.model.Category
 import com.example.whynotkotlin.model.UserProfile
 import com.example.whynotkotlin.model.repositories.AuthRepository
+import com.example.whynotkotlin.model.repositories.ConnectivityRepository
+import com.example.whynotkotlin.model.repositories.requireOnline
 import com.example.whynotkotlin.model.repositories.UserRepository
 import com.example.whynotkotlin.model.repositories.WishlistRepository
 import kotlinx.coroutines.CancellationException
@@ -21,6 +23,7 @@ class ProfileController(
     private val userRepository: UserRepository,
     private val wishlistRepository: WishlistRepository,
     scope: CoroutineScope,
+    private val connectivity: ConnectivityRepository? = null,
     private val onProfileUpdated: (uid: String) -> Unit = {}
 ) {
     private val profileUpdate = ProfileUpdateFacade(authRepository, userRepository)
@@ -69,6 +72,11 @@ class ProfileController(
         age: String,
         preferredCategoryId: String
     ) {
+        // Blocked offline instead of queued, so the form keeps the changes
+        // and the user knows they are not saved yet.
+        connectivity.requireOnline(
+            "No connection. Your changes are kept; connect to the internet to save them."
+        )
         profileUpdate.save(uid, name, gender, age, preferredCategoryId)
         uid?.let(onProfileUpdated)
     }

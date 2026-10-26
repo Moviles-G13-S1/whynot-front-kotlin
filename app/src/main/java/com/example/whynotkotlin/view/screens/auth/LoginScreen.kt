@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,7 +42,9 @@ fun LoginScreen(
     onCreateAccountClick: () -> Unit,
     isOnline: Boolean = true
 ) {
-    var email by remember { mutableStateOf("") }
+    // The email survives rotation and process death; the password never
+    // leaves memory, so it is not written to the saved instance state.
+    var email by rememberSaveable { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
     Column(

@@ -60,12 +60,12 @@ class AppDependencies(
     val homeUxController = com.example.whynotkotlin.controller.HomeUxController(uxEventRepository, scope)
 
     val authController =
-        AuthController(authRepository, userRepository, onboardingRepository, scope) {
+        AuthController(authRepository, userRepository, onboardingRepository, scope, connectivity) {
             recommendationController.onSignedOut()
         }
 
     val profileController =
-        ProfileController(authRepository, userRepository, wishlistRepository, scope) { uid ->
+        ProfileController(authRepository, userRepository, wishlistRepository, scope, connectivity) { uid ->
             recommendationController.onProfileUpdated(uid)
         }
 

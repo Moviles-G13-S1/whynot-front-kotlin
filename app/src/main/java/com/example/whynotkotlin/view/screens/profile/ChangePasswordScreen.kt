@@ -24,6 +24,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.whynotkotlin.model.PasswordPolicy
 import com.example.whynotkotlin.view.components.PasswordRequirements
+import com.example.whynotkotlin.view.components.OfflineBanner
 import com.example.whynotkotlin.view.components.WhyNotBottomBar
 import com.example.whynotkotlin.view.components.WhyNotTab
 import com.example.whynotkotlin.view.components.WhyNotButton
@@ -41,7 +42,8 @@ fun ChangePasswordScreen(
     onWishlistsClick: () -> Unit = {},
     onAddClick: () -> Unit = {},
     onPurchasesClick: () -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    isOnline: Boolean = true
 ) {
     var currentPassword by remember { mutableStateOf("") }
     var newPassword by remember { mutableStateOf("") }
@@ -62,6 +64,12 @@ fun ChangePasswordScreen(
                 .padding(horizontal = 24.dp)
         ) {
             Spacer(modifier = Modifier.height(30.dp))
+
+            OfflineBanner(
+                isOnline = isOnline,
+                message = "You are offline. Changing your password needs internet.",
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
 
             Text(
                 text = "‹ Edit Profile",

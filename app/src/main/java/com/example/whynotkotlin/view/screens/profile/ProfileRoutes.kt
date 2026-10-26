@@ -58,6 +58,7 @@ fun EditProfileRoute(navigator: WhyNotNavigator) {
     val categories = categoriesResult?.getOrNull().orEmpty()
 
     EditProfileScreen(
+        isOnline = rememberIsOnline(),
         profile = profile,
         categories = categories,
         preferredCategoryName = profileController.preferredCategoryName(profile, categories),
@@ -87,6 +88,7 @@ fun ChangePasswordRoute(navigator: WhyNotNavigator) {
     val submission = rememberSubmission()
 
     ChangePasswordScreen(
+        isOnline = rememberIsOnline(),
         submitting = submission.running,
         errorMessage = submission.errorMessage,
         onBackClick = navigator::back,
