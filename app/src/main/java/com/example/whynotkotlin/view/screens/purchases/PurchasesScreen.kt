@@ -50,6 +50,7 @@ import com.example.whynotkotlin.view.theme.WhyNotGray
 import com.example.whynotkotlin.view.theme.WhyNotSearch
 import com.example.whynotkotlin.view.theme.whyNotMuted
 import com.example.whynotkotlin.view.theme.whyNotSerif
+import com.example.whynotkotlin.view.components.OfflineBanner
 
 private enum class PurchaseSort { NONE, LOW_TO_HIGH, HIGH_TO_LOW }
 
@@ -63,7 +64,8 @@ fun PurchasesScreen(
     onWishlistsClick: () -> Unit,
     onAddClick: () -> Unit,
     onPurchasesClick: () -> Unit = {},
-    onProfileClick: () -> Unit
+    onProfileClick: () -> Unit,
+    isOnline: Boolean = true
 ) {
     var sort by rememberSaveable { mutableStateOf(PurchaseSort.NONE) }
 
@@ -100,6 +102,12 @@ fun PurchasesScreen(
                         .padding(top = 47.dp, bottom = 40.dp)
                 ) {
                     Column(modifier = Modifier.padding(horizontal = 25.dp)) {
+                        OfflineBanner(
+                            isOnline = isOnline,
+                            message = "You're offline. Showing the purchases saved on this phone.",
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+
                         Text(text = "Purchases", style = whyNotSerif(30))
 
                         Spacer(modifier = Modifier.height(8.dp))
@@ -266,5 +274,16 @@ private fun PurchaseCard(
             style = whyNotMuted(12),
             modifier = Modifier.padding(start = 5.dp)
         )
+
+        // Marked offline and not confirmed by the backend yet.
+        if (purchase.pendingSync) {
+            Spacer(modifier = Modifier.height(3.dp))
+
+            Text(
+                text = "Pending sync",
+                style = whyNotMuted(11),
+                modifier = Modifier.padding(start = 5.dp)
+            )
+        }
     }
 }

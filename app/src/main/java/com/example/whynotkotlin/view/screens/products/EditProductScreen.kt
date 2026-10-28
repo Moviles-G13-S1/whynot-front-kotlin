@@ -53,6 +53,7 @@ import com.example.whynotkotlin.view.theme.WhyNotField
 import com.example.whynotkotlin.view.theme.WhyNotGray
 import com.example.whynotkotlin.view.theme.whyNotMuted
 import com.example.whynotkotlin.view.theme.whyNotSerif
+import com.example.whynotkotlin.view.components.OfflineBanner
 
 /** Form for changing a saved product, matching the iOS "Edit Item" screen. */
 @Composable
@@ -76,7 +77,8 @@ fun EditProductScreen(
     onWishlistsClick: () -> Unit = {},
     onAddClick: () -> Unit = {},
     onPurchasesClick: () -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    isOnline: Boolean = true
 ) {
     Column(
         modifier = Modifier.fillMaxSize()
@@ -93,6 +95,7 @@ fun EditProductScreen(
                 )
 
                 product != null -> EditProductForm(
+                    isOnline = isOnline,
                     product = product,
                     wishlists = wishlists,
                     saving = saving,
@@ -122,6 +125,7 @@ fun EditProductScreen(
 
 @Composable
 private fun EditProductForm(
+    isOnline: Boolean,
     product: Product,
     wishlists: List<WishlistSummary>,
     saving: Boolean,
@@ -155,6 +159,12 @@ private fun EditProductForm(
             .padding(start = 24.dp, end = 24.dp, top = 40.dp, bottom = 40.dp)
     ) {
         Text(text = "Edit Item", style = whyNotSerif(30))
+
+        OfflineBanner(
+            isOnline = isOnline,
+            message = "You're offline. Your changes stay here until you can save them.",
+            modifier = Modifier.padding(top = 16.dp)
+        )
 
         Spacer(modifier = Modifier.height(42.dp))
 

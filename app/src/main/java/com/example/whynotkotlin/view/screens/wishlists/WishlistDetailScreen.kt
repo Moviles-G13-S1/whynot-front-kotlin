@@ -37,6 +37,7 @@ import com.example.whynotkotlin.view.components.WhyNotEmptyState
 import com.example.whynotkotlin.view.components.WhyNotErrorBanner
 import com.example.whynotkotlin.view.theme.WhyNotBorder
 import com.example.whynotkotlin.view.theme.WhyNotGray
+import com.example.whynotkotlin.view.components.OfflineBanner
 
 /** The orderings the detail screen offers over an already-loaded list. */
 private enum class ProductSort { NEWEST, CHEAPEST, PENDING }
@@ -52,7 +53,8 @@ fun WishlistDetailScreen(
     onWishlistsClick: () -> Unit = {},
     onAddClick: () -> Unit = {},
     onPurchasesClick: () -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    isOnline: Boolean = true
 ) {
     var sort by remember { mutableStateOf(ProductSort.NEWEST) }
 
@@ -73,6 +75,12 @@ fun WishlistDetailScreen(
                 .statusBarsPadding()
         ) {
             Spacer(modifier = Modifier.height(20.dp))
+
+            OfflineBanner(
+                isOnline = isOnline,
+                message = "You're offline. Showing the items saved on this phone.",
+                modifier = Modifier.padding(start = 22.dp, end = 22.dp, bottom = 12.dp)
+            )
 
             Text(
                 text = wishlistName,
@@ -163,6 +171,7 @@ fun WishlistDetailScreen(
                             name = product.name,
                             price = product.price.asPriceLabel(),
                             imageUrl = product.imageUrl,
+                            pendingSync = product.pendingSync,
                             onClick = { onProductClick(product.id) }
                         )
                     }

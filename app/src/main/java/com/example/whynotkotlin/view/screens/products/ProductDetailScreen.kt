@@ -48,6 +48,8 @@ import com.example.whynotkotlin.view.theme.WhyNotDivider
 import com.example.whynotkotlin.view.theme.WhyNotGray
 import com.example.whynotkotlin.view.theme.whyNotMuted
 import com.example.whynotkotlin.view.theme.whyNotSerif
+import androidx.compose.material.icons.outlined.CloudUpload
+import com.example.whynotkotlin.view.components.OfflineBanner
 
 @Composable
 fun ProductDetailScreen(
@@ -55,16 +57,18 @@ fun ProductDetailScreen(
     loading: Boolean,
     errorMessage: String?,
     sourceTab: WhyNotTab,
-    onMarkPurchased: () -> Unit,
+    onMarkPurchased: (purchasePrice: String) -> Unit,
     onEditClick: () -> Unit,
     onDeleteConfirmed: () -> Unit,
     onHomeClick: () -> Unit = {},
     onWishlistsClick: () -> Unit = {},
     onAddClick: () -> Unit = {},
     onPurchasesClick: () -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    isOnline: Boolean = true
 ) {
     var confirmingDelete by remember { mutableStateOf(false) }
+    var askingPurchasePrice by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -88,6 +92,12 @@ fun ProductDetailScreen(
                         .verticalScroll(rememberScrollState())
                         .padding(start = 32.dp, end = 32.dp, top = 47.dp, bottom = 40.dp)
                 ) {
+                    OfflineBanner(
+                        isOnline = isOnline,
+                        message = "You're offline. Purchases you mark here sync when you're back online.",
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+
                     Text(
                         text = product.name.ifEmpty { "Product" },
                         style = whyNotSerif(30)
@@ -113,7 +123,23 @@ fun ProductDetailScreen(
                             label = if (product.purchased) "Purchased" else "Mark as purchased",
                             iconColor = if (product.purchased) Color.Black else WhyNotGray,
                             labelColor = if (product.purchased) Color(0xFFA9A7A7) else WhyNotGray,
-                            onClick = if (product.purchased) null else onMarkPurchased
+                            onClick = if (product.purchased) null else {
+                                { askingPurchasePrice = true }
+                            }
+                        )
+                    }
+
+                    // A change made offline (a purchase) waits in Firestore's
+                    // queue; this says so until the backend confirms it.
+                    if (product.pendingSync) {
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        IconLabel(
+                            icon = Icons.Outlined.CloudUpload,
+                            iconSize = 16,
+                            label = "Waiting for connection to sync",
+                            labelSize = 13,
+                            onClick = null
                         )
                     }
 
@@ -193,6 +219,17 @@ fun ProductDetailScreen(
             onAddClick = onAddClick,
             onPurchasesClick = onPurchasesClick,
             onProfileClick = onProfileClick
+        )
+    }
+
+    if (askingPurchasePrice && product != null) {
+        PurchasePriceDialog(
+            savedPrice = product.price,
+            onDismiss = { askingPurchasePrice = false },
+            onConfirm = { paid ->
+                askingPurchasePrice = false
+                onMarkPurchased(paid)
+            }
         )
     }
 

@@ -57,6 +57,8 @@ dependencies {
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
+    // Local storage: unsent product drafts survive closing the app.
+    implementation(libs.androidx.datastore.preferences)
     implementation(libs.kotlinx.coroutines.play.services)
     testImplementation(libs.junit)
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")

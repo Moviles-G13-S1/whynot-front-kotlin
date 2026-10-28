@@ -41,4 +41,10 @@ interface ProductRepository {
      * [failure] is null, otherwise the reason it failed.
      */
     suspend fun recordSaveAttempt(ownerId: String, failure: ProductSaveFailure?)
+
+    /**
+     * Records what [ownerId] actually paid for [product] when marking it as
+     * purchased, next to the price they had saved (Sprint 3 BQ: money saved).
+     */
+    suspend fun recordPurchase(ownerId: String, product: Product, purchasePrice: Double)
 }

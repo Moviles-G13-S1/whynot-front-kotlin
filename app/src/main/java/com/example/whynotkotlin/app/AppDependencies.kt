@@ -23,12 +23,16 @@ import com.example.whynotkotlin.model.repositories.FirebaseWishlistRepository
 import com.example.whynotkotlin.model.repositories.LocationRepository
 import com.example.whynotkotlin.model.repositories.NearbyStoreRepository
 import com.example.whynotkotlin.model.repositories.OnboardingRepository
+import com.example.whynotkotlin.model.repositories.DataStoreProductDraftRepository
+import com.example.whynotkotlin.model.repositories.ProductDraftRepository
 import com.example.whynotkotlin.model.repositories.ProductRepository
 import com.example.whynotkotlin.model.repositories.RecommendationRepository
 import com.example.whynotkotlin.model.repositories.UserRepository
 import com.example.whynotkotlin.model.repositories.WishlistRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreSettings
+import com.google.firebase.firestore.PersistentCacheSettings
 import com.google.firebase.functions.FirebaseFunctions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -46,6 +50,7 @@ class AppDependencies(
     userRepository: UserRepository,
     wishlistRepository: WishlistRepository,
     productRepository: ProductRepository,
+    productDraftRepository: ProductDraftRepository,
     onboardingRepository: OnboardingRepository,
     locationRepository: LocationRepository,
     nearbyStoreRepository: NearbyStoreRepository,
@@ -75,11 +80,18 @@ class AppDependencies(
             wishlistRepository,
             productRepository,
             onboardingRepository,
-            scope
+            scope,
+            connectivity
         )
 
     val productController =
-        ProductController(authRepository, productRepository, scope)
+        ProductController(
+            authRepository,
+            productRepository,
+            scope,
+            draftRepository = productDraftRepository,
+            connectivity = connectivity
+        )
 
     val nearbyStoreController =
         NearbyStoreController(locationRepository, nearbyStoreRepository)
@@ -98,12 +110,15 @@ class AppDependencies(
          * Wires the real Firebase implementations.
          *
          * [context] is only used by the device repositories: location, to reach
-         * Play Services and check its runtime permission, and connectivity.
+         * Play Services and check its runtime permission, connectivity, and the
+         * product drafts kept in DataStore.
          */
         fun firebase(context: Context): AppDependencies {
 
             val auth = FirebaseAuth.getInstance()
-            val firestore = FirebaseFirestore.getInstance()
+            val firestore = FirebaseFirestore.getInstance().apply {
+                firestoreSettings = offlineFirestoreSettings()
+            }
             val functions = FirebaseFunctions.getInstance("us-central1")
             val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
@@ -119,6 +134,9 @@ class AppDependencies(
 
                 productRepository =
                     FirebaseProductRepository(firestore),
+
+                productDraftRepository =
+                    DataStoreProductDraftRepository(context),
 
                 onboardingRepository =
                     FirebaseOnboardingRepository(firestore),
@@ -144,6 +162,25 @@ class AppDependencies(
         }
     }
 }
+
+/**
+ * Firestore's offline cache, set explicitly instead of relying on the default.
+ *
+ * With a persistent cache, wishlists and products already seen keep showing
+ * offline, writes queued offline (a purchase marked without connection)
+ * survive closing the app and are sent once the connection returns. 50 MB is
+ * far above what one user's wishlists and products take.
+ */
+private fun offlineFirestoreSettings(): FirebaseFirestoreSettings =
+    FirebaseFirestoreSettings.Builder()
+        .setLocalCacheSettings(
+            PersistentCacheSettings.newBuilder()
+                .setSizeBytes(FIRESTORE_CACHE_BYTES)
+                .build()
+        )
+        .build()
+
+private const val FIRESTORE_CACHE_BYTES = 50L * 1024 * 1024
 
 /**
  * Hands the controllers to every view below MainActivity, the way Flutter's

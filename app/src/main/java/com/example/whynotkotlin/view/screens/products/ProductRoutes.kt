@@ -8,6 +8,13 @@ import com.example.whynotkotlin.model.readableMessage
 import com.example.whynotkotlin.view.components.WhyNotTab
 import com.example.whynotkotlin.view.components.rememberSubmission
 import com.example.whynotkotlin.view.navigation.WhyNotNavigator
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.example.whynotkotlin.model.ProductFormDraft
+import com.example.whynotkotlin.view.components.WhyNotLoading
+import com.example.whynotkotlin.view.components.rememberIsOnline
 
 @Composable
 fun ProductDetailRoute(
@@ -23,14 +30,15 @@ fun ProductDetailRoute(
 
     ProductDetailScreen(
         product = product,
+        isOnline = rememberIsOnline(),
         loading = productsResult == null,
         errorMessage = submission.errorMessage
             ?: productsResult?.exceptionOrNull()?.readableMessage(),
         sourceTab = sourceTab,
-        onMarkPurchased = {
+        onMarkPurchased = { purchasePrice ->
             product?.let {
                 submission.run {
-                    productController.markPurchased(it)
+                    productController.markPurchased(it, purchasePrice)
                 }
             }
         },
@@ -63,6 +71,7 @@ fun EditProductRoute(
     val submission = rememberSubmission()
 
     EditProductScreen(
+        isOnline = rememberIsOnline(),
         product = productController.find(productsResult?.getOrNull().orEmpty(), productId),
         loading = productsResult == null || catalogResult == null,
         wishlists = catalogResult?.getOrNull()?.summaries.orEmpty(),
@@ -102,7 +111,26 @@ fun NewProductRoute(
     val productsResult by productController.products.collectAsStateWithLifecycle()
     val submission = rememberSubmission()
 
+    // The draft is read from local storage once, before the form is shown, so
+    // the fields start with what the user left instead of filling in later.
+    var draftLoaded by remember { mutableStateOf(false) }
+    var draft by remember { mutableStateOf<ProductFormDraft?>(null) }
+
+    LaunchedEffect(Unit) {
+        draft = productController.loadDraft()
+        draftLoaded = true
+    }
+
+    if (!draftLoaded) {
+        WhyNotLoading()
+        return
+    }
+
     NewProductScreen(
+        initialDraft = draft,
+        isOnline = rememberIsOnline(),
+        onDraftChange = productController::saveDraft,
+        onDiscardDraft = productController::discardDraft,
         wishlists = catalogResult?.getOrNull()?.summaries.orEmpty(),
         loadingWishlists = catalogResult == null,
         prefilledProductUrl = prefilledProductUrl,

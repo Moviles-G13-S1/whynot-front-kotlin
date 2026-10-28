@@ -33,6 +33,11 @@ import com.example.whynotkotlin.view.components.WhyNotErrorBanner
 import com.example.whynotkotlin.view.components.WhyNotTextField
 import com.example.whynotkotlin.view.theme.WhyNotCream
 import com.example.whynotkotlin.view.theme.WhyNotGray
+import androidx.compose.foundation.clickable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
+import com.example.whynotkotlin.model.ProductFormDraft
+import com.example.whynotkotlin.view.components.OfflineBanner
 
 /**
  * The manual product form.
@@ -42,6 +47,13 @@ import com.example.whynotkotlin.view.theme.WhyNotGray
  *
  * A product can only be saved into one of the user's wishlists. Without any,
  * the form points to creating one instead of offering a save that cannot work.
+ *
+ * Local storage: every change is reported through [onDraftChange], which keeps
+ * the form on this phone, and [initialDraft] brings it back when the user
+ * returns, even after closing the app or without a connection.
+ *
+ * Eventual connectivity: offline, the user can keep filling the form (it is
+ * kept as a draft) but Save waits until the connection returns.
  */
 @Composable
 fun NewProductScreen(
@@ -59,18 +71,44 @@ fun NewProductScreen(
         productUrl: String
     ) -> Unit,
     onCreateWishlistClick: () -> Unit = {},
+    initialDraft: ProductFormDraft? = null,
+    isOnline: Boolean = true,
+    onDraftChange: (ProductFormDraft) -> Unit = {},
+    onDiscardDraft: () -> Unit = {},
     onHomeClick: () -> Unit = {},
     onWishlistsClick: () -> Unit = {},
     onAddClick: () -> Unit = {},
     onPurchasesClick: () -> Unit = {},
     onProfileClick: () -> Unit = {}
 ) {
-    var name by remember { mutableStateOf("") }
-    var brand by remember { mutableStateOf("") }
-    var price by remember { mutableStateOf("") }
-    var imageUrl by remember { mutableStateOf("") }
-    var productUrl by remember { mutableStateOf(prefilledProductUrl) }
-    var selectedWishlistId by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf(initialDraft?.name.orEmpty()) }
+    var brand by remember { mutableStateOf(initialDraft?.brand.orEmpty()) }
+    var price by remember { mutableStateOf(initialDraft?.price.orEmpty()) }
+    var imageUrl by remember { mutableStateOf(initialDraft?.imageUrl.orEmpty()) }
+    var productUrl by remember {
+        mutableStateOf(prefilledProductUrl.ifBlank { initialDraft?.productUrl.orEmpty() })
+    }
+    var selectedWishlistId by remember { mutableStateOf(initialDraft?.wishlistId.orEmpty()) }
+    var showRestoredNote by remember { mutableStateOf(initialDraft != null) }
+
+    // A restored draft may point at a wishlist that no longer exists.
+    val wishlistId = selectedWishlistId.takeIf { id ->
+        wishlists.any { it.wishlist.id == id }
+    }.orEmpty()
+
+    // Every change goes to the controller, which debounces the disk write.
+    LaunchedEffect(name, brand, price, imageUrl, productUrl, selectedWishlistId) {
+        onDraftChange(
+            ProductFormDraft(
+                wishlistId = selectedWishlistId,
+                name = name,
+                brand = brand,
+                price = price,
+                imageUrl = imageUrl,
+                productUrl = productUrl
+            )
+        )
+    }
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -89,7 +127,46 @@ fun NewProductScreen(
                 style = MaterialTheme.typography.displaySmall
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OfflineBanner(
+                isOnline = isOnline,
+                message = "You're offline. What you type is kept on this phone as a draft.",
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+
+            if (showRestoredNote) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "We kept the product you were adding.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = WhyNotGray,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    Text(
+                        text = "Discard",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.clickable {
+                            name = ""
+                            brand = ""
+                            price = ""
+                            imageUrl = ""
+                            productUrl = prefilledProductUrl
+                            selectedWishlistId = ""
+                            showRestoredNote = false
+                            onDiscardDraft()
+                        }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             Column(
                 modifier = Modifier
@@ -183,7 +260,7 @@ fun NewProductScreen(
                     wishlists.forEach { summary ->
                         CategoryChip(
                             text = summary.categoryName,
-                            selected = selectedWishlistId == summary.wishlist.id,
+                            selected = wishlistId == summary.wishlist.id,
                             onClick = {
                                 selectedWishlistId =
                                     if (selectedWishlistId == summary.wishlist.id) {
@@ -204,16 +281,21 @@ fun NewProductScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             WhyNotButton(
-                text = if (saving) "Saving..." else "Save Item",
+                text = when {
+                    saving -> "Saving..."
+                    !isOnline -> "Save when back online"
+                    else -> "Save Item"
+                },
                 onClick = {
-                    onSave(selectedWishlistId, name, brand, price, imageUrl, productUrl)
+                    onSave(wishlistId, name, brand, price, imageUrl, productUrl)
                 },
                 filled = true,
                 enabled = !saving &&
+                    isOnline &&
                     name.isNotBlank() &&
                     brand.isNotBlank() &&
                     price.isNotBlank() &&
-                    selectedWishlistId.isNotBlank()
+                    wishlistId.isNotBlank()
             )
 
             Spacer(modifier = Modifier.height(24.dp))

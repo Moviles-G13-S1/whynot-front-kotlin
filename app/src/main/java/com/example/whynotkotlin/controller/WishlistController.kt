@@ -6,9 +6,11 @@ import com.example.whynotkotlin.model.WishlistCatalog
 import com.example.whynotkotlin.model.WishlistDraft
 import com.example.whynotkotlin.model.WishlistSummary
 import com.example.whynotkotlin.model.repositories.AuthRepository
+import com.example.whynotkotlin.model.repositories.ConnectivityRepository
 import com.example.whynotkotlin.model.repositories.OnboardingRepository
 import com.example.whynotkotlin.model.repositories.ProductRepository
 import com.example.whynotkotlin.model.repositories.WishlistRepository
+import com.example.whynotkotlin.model.repositories.requireOnline
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -31,7 +33,8 @@ class WishlistController(
     private val wishlistRepository: WishlistRepository,
     private val productRepository: ProductRepository,
     private val onboardingRepository: OnboardingRepository,
-    private val scope: CoroutineScope
+    private val scope: CoroutineScope,
+    private val connectivity: ConnectivityRepository? = null
 ) {
 
     val catalog: StateFlow<Result<WishlistCatalog>?> =
@@ -77,6 +80,11 @@ class WishlistController(
 
         if (categoryId.isBlank()) throw ValidationException("Select a category")
 
+        // Offline, the wishlists already loaded stay on screen from the local
+        // cache, but a new one is not sent: the write would wait silently
+        // until the connection returns while the form looked stuck.
+        connectivity.requireOnline(CREATE_OFFLINE)
+
         val pictureLink = imageUrl.trim()
         if (pictureLink.isNotEmpty() && !pictureLink.isWebLink()) {
             throw ValidationException("The picture link must start with http:// or https://")
@@ -117,6 +125,11 @@ class WishlistController(
                 // Losing one analytics event must not surface as a save error.
             }
         }
+    }
+
+    companion object {
+        const val CREATE_OFFLINE =
+            "You're offline. Connect to the internet to create a wishlist."
     }
 }
 
