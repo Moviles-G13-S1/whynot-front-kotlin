@@ -25,6 +25,7 @@ import com.example.whynotkotlin.view.components.WhyNotTab
 import com.example.whynotkotlin.view.components.WishlistCard
 import com.example.whynotkotlin.view.theme.whyNotMuted
 import com.example.whynotkotlin.view.theme.whyNotSerif
+import com.example.whynotkotlin.view.components.OfflineBanner
 
 @Composable
 fun WishlistsScreen(
@@ -37,7 +38,8 @@ fun WishlistsScreen(
     onWishlistsClick: () -> Unit = {},
     onAddClick: () -> Unit = {},
     onPurchasesClick: () -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    isOnline: Boolean = true
 ) {
     Column(
         modifier = Modifier.fillMaxSize()
@@ -48,6 +50,12 @@ fun WishlistsScreen(
                 .statusBarsPadding()
                 .padding(start = 25.dp, end = 25.dp, top = 47.dp, bottom = 23.dp)
         ) {
+            OfflineBanner(
+                isOnline = isOnline,
+                message = "You're offline. Showing the wishlists saved on this phone.",
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
             Text(
                 text = "My Wishlists",
                 style = whyNotSerif(30)

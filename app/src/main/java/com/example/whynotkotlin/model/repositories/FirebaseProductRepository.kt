@@ -10,6 +10,7 @@ import com.example.whynotkotlin.model.ProductUpdate
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -19,6 +20,7 @@ import kotlinx.coroutines.tasks.await
 private const val WISHLISTS = "wishlists"
 private const val PRODUCTS = "products"
 private const val PRODUCT_SAVE_EVENTS = "productSaveEvents"
+private const val PRODUCT_PURCHASE_EVENTS = "productPurchaseEvents"
 
 /** Tells Android save attempts apart from iOS ones in `productSaveEvents`. */
 private const val PLATFORM = "android"
@@ -45,7 +47,7 @@ class FirebaseProductRepository(
 
     override fun observeProduct(productId: String): Flow<Product?> = callbackFlow {
         val registration = firestore.collection(PRODUCTS).document(productId)
-            .addSnapshotListener { snapshot, error ->
+            .addSnapshotListener(MetadataChanges.INCLUDE) { snapshot, error ->
                 if (error != null) {
                     close(error)
                     return@addSnapshotListener
@@ -141,6 +143,24 @@ class FirebaseProductRepository(
         firestore.collection(PRODUCT_SAVE_EVENTS).add(data).await()
     }
 
+    override suspend fun recordPurchase(ownerId: String, product: Product, purchasePrice: Double) {
+        // One event per product, under the product's id: purchasing is one-way,
+        // so a repeated write is rejected by the rules instead of counting the
+        // same purchase twice. The rules also check the reference price and
+        // category against the product itself.
+        val data = hashMapOf(
+            "userId" to ownerId,
+            "productId" to product.id,
+            "categoryId" to product.categoryId,
+            "referencePrice" to product.price,
+            "purchasePrice" to purchasePrice,
+            "platform" to PLATFORM,
+            "createdAt" to FieldValue.serverTimestamp()
+        )
+
+        firestore.collection(PRODUCT_PURCHASE_EVENTS).document(product.id).set(data).await()
+    }
+
     private suspend fun requireWishlistCategory(wishlistId: String): String {
         val snapshot = firestore.collection(WISHLISTS).document(wishlistId).get().await()
 
@@ -151,8 +171,13 @@ class FirebaseProductRepository(
     }
 }
 
+/**
+ * Metadata changes are included so a list also updates when a write queued
+ * offline is confirmed by the backend: the data is the same, but the product
+ * stops being [Product.pendingSync].
+ */
 private fun Query.observeProductList(): Flow<List<Product>> = callbackFlow {
-    val registration = addSnapshotListener { snapshot, error ->
+    val registration = addSnapshotListener(MetadataChanges.INCLUDE) { snapshot, error ->
         if (error != null) {
             close(error)
             return@addSnapshotListener
@@ -185,6 +210,7 @@ private fun DocumentSnapshot.toProduct(): Product? {
         purchased = getBoolean("purchased") == true,
         purchasedAt = getTimestamp("purchasedAt")?.toDate(),
         createdAt = getTimestamp("createdAt")?.toDate(),
-        updatedAt = getTimestamp("updatedAt")?.toDate()
+        updatedAt = getTimestamp("updatedAt")?.toDate(),
+        pendingSync = metadata.hasPendingWrites()
     )
 }

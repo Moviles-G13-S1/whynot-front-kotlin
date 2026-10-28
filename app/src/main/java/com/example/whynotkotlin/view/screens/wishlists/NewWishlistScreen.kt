@@ -30,6 +30,7 @@ import com.example.whynotkotlin.view.components.WhyNotErrorBanner
 import com.example.whynotkotlin.view.theme.WhyNotCream
 import com.example.whynotkotlin.view.theme.WhyNotDisabled
 import com.example.whynotkotlin.view.theme.WhyNotGray
+import com.example.whynotkotlin.view.components.OfflineBanner
 
 @Composable
 fun NewWishlistScreen(
@@ -42,7 +43,8 @@ fun NewWishlistScreen(
     onWishlistsClick: () -> Unit = {},
     onAddClick: () -> Unit = {},
     onPurchasesClick: () -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    isOnline: Boolean = true
 ) {
     var categoryId by remember { mutableStateOf("") }
     var imageUrl by remember { mutableStateOf("") }
@@ -65,6 +67,12 @@ fun NewWishlistScreen(
             Text(
                 text = "New Wishlist",
                 style = MaterialTheme.typography.displaySmall
+            )
+
+            OfflineBanner(
+                isOnline = isOnline,
+                message = "You're offline. You can create a wishlist once you're back online.",
+                modifier = Modifier.padding(top = 12.dp)
             )
 
             Spacer(modifier = Modifier.height(24.dp))

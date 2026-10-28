@@ -24,7 +24,8 @@ fun ProductCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     originalPrice: String = "",
-    imageUrl: String = ""
+    imageUrl: String = "",
+    pendingSync: Boolean = false
 ) {
     Column(
         modifier = modifier.clickable { onClick() }
@@ -60,6 +61,16 @@ fun ProductCard(
                 text = price,
                 style = MaterialTheme.typography.bodyMedium,
                 color = WhyNotGray
+            )
+        }
+
+        // A change made offline that the backend has not confirmed yet.
+        if (pendingSync) {
+            Text(
+                text = "Pending sync",
+                style = MaterialTheme.typography.bodySmall,
+                color = WhyNotGray,
+                modifier = Modifier.padding(start = 4.dp, top = 2.dp)
             )
         }
     }

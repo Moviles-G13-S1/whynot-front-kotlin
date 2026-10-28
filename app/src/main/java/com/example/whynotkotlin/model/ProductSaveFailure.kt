@@ -13,5 +13,6 @@ enum class ProductSaveFailure(val code: String) {
     INVALID_PRICE("invalid_price"),
     NEGATIVE_PRICE("negative_price"),
     MISSING_WISHLIST("missing_wishlist"),
+    OFFLINE("offline"),
     BACKEND_ERROR("backend_error")
 }

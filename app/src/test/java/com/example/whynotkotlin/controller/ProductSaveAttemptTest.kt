@@ -50,6 +50,7 @@ class ProductSaveAttemptTest {
             recordFailure?.let { throw it }
             attempts += ownerId to failure
         }
+        override suspend fun recordPurchase(ownerId: String, product: Product, purchasePrice: Double) = Unit
     }
 
     private suspend fun ProductController.save(price: String = "120000", wishlistId: String = "w1") =

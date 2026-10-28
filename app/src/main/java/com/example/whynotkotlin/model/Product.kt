@@ -12,6 +12,10 @@ import java.util.Date
  * [purchasedAt] is null while the product is saved and holds the server time of
  * the purchase once it is marked. The rules tie the two fields together, so
  * they are never written apart.
+ *
+ * [pendingSync] is true while this phone holds a change to the product that the
+ * backend has not confirmed yet, for example a purchase marked offline.
+ * Firestore keeps that write queued and sends it when the connection returns.
  */
 data class Product(
     val id: String,
@@ -26,7 +30,8 @@ data class Product(
     val purchased: Boolean,
     val purchasedAt: Date?,
     val createdAt: Date?,
-    val updatedAt: Date?
+    val updatedAt: Date?,
+    val pendingSync: Boolean = false
 )
 
 /**

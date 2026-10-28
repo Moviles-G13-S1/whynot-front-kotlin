@@ -7,6 +7,7 @@ import com.example.whynotkotlin.app.LocalAppDependencies
 import com.example.whynotkotlin.model.readableMessage
 import com.example.whynotkotlin.view.components.rememberSubmission
 import com.example.whynotkotlin.view.navigation.WhyNotNavigator
+import com.example.whynotkotlin.view.components.rememberIsOnline
 
 @Composable
 fun WishlistsRoute(navigator: WhyNotNavigator) {
@@ -16,6 +17,7 @@ fun WishlistsRoute(navigator: WhyNotNavigator) {
         .collectAsStateWithLifecycle()
 
     WishlistsScreen(
+        isOnline = rememberIsOnline(),
         summaries = catalogResult?.getOrNull()?.summaries.orEmpty(),
         loading = catalogResult == null,
         errorMessage = catalogResult?.exceptionOrNull()?.readableMessage(),
@@ -36,6 +38,7 @@ fun NewWishlistRoute(navigator: WhyNotNavigator) {
     val submission = rememberSubmission()
 
     NewWishlistScreen(
+        isOnline = rememberIsOnline(),
         availableCategories = catalogResult?.getOrNull()?.availableCategories.orEmpty(),
         saving = submission.running,
         errorMessage = submission.errorMessage
@@ -65,6 +68,7 @@ fun WishlistDetailRoute(
     val productsResult by productController.products.collectAsStateWithLifecycle()
 
     WishlistDetailScreen(
+        isOnline = rememberIsOnline(),
         wishlistName =
             catalogResult?.getOrNull()?.find(wishlistId)?.categoryName
                 ?: "Wishlist",

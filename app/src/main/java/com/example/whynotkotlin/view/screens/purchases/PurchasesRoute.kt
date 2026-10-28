@@ -6,6 +6,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.whynotkotlin.app.LocalAppDependencies
 import com.example.whynotkotlin.view.components.WhyNotTab
 import com.example.whynotkotlin.view.navigation.WhyNotNavigator
+import com.example.whynotkotlin.view.components.rememberIsOnline
 
 @Composable
 fun PurchasesRoute(navigator: WhyNotNavigator) {
@@ -13,6 +14,7 @@ fun PurchasesRoute(navigator: WhyNotNavigator) {
     val productsResult by productController.products.collectAsStateWithLifecycle()
 
     PurchasesScreen(
+        isOnline = rememberIsOnline(),
         purchases = productController.purchased(productsResult?.getOrNull().orEmpty()),
         loading = productsResult == null,
         errorMessage = productsResult?.exceptionOrNull()?.let { "Could not load purchases." },

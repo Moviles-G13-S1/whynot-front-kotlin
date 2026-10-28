@@ -2,6 +2,7 @@ package com.example.whynotkotlin.controller
 
 import com.example.whynotkotlin.model.*
 import com.example.whynotkotlin.model.repositories.*
+import com.example.whynotkotlin.fakes.FakeConnectivityRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
@@ -74,6 +75,7 @@ class OnboardingAndWishlistTest {
         override suspend fun markPurchased(productId: String) = Unit
         override suspend fun deleteProduct(productId: String) = Unit
         override suspend fun recordSaveAttempt(ownerId: String, failure: ProductSaveFailure?) = Unit
+        override suspend fun recordPurchase(ownerId: String, product: Product, purchasePrice: Double) = Unit
     }
 
     private suspend fun AuthController.register(email: String = "new@example.com", password: String = "Wishlist2026") =
@@ -131,6 +133,20 @@ class OnboardingAndWishlistTest {
 
     private fun TestScope.wishlistController(lists: Lists, onboarding: Onboarding = Onboarding()) =
         WishlistController(Auth(), lists, Products(), onboarding, backgroundScope)
+
+    @Test fun `creating a wishlist offline is refused and nothing is sent`() = runTest(dispatcher) {
+        val lists = Lists()
+        val controller = WishlistController(
+            Auth(), lists, Products(), Onboarding(), backgroundScope,
+            FakeConnectivityRepository(initiallyOnline = false)
+        )
+
+        val error = runCatching { controller.createWishlist("tech", "") }.exceptionOrNull()
+
+        assertTrue(error is OfflineException)
+        assertEquals(WishlistController.CREATE_OFFLINE, error?.message)
+        assertTrue(lists.wishlists.isEmpty())
+    }
 
     @Test fun `the first wishlist records the onboarding step`() = runTest(dispatcher) {
         val onboarding = Onboarding()
