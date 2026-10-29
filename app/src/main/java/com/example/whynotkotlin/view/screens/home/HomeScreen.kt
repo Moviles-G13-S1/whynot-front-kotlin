@@ -62,7 +62,8 @@ fun HomeScreen(
     onProfileClick: () -> Unit,
     onRefreshRecommendation: () -> Unit = onLoadRecommendation,
     recommendationStale: Boolean = false,
-    isOnline: Boolean = true
+    isOnline: Boolean = true,
+    onLoadHome: suspend (Boolean, Boolean) -> Unit = { _, _ -> onLoadRecommendation() }
 ) {
     Column(
         modifier = Modifier.fillMaxSize()
@@ -81,6 +82,7 @@ fun HomeScreen(
             item {
                 OfflineBanner(
                     isOnline = isOnline,
+                    message = "Home is offline. Available wishlists remain accessible; nearby stores and new recommendations need internet.",
                     onRetry = onRefreshRecommendation,
                     modifier = Modifier.padding(end = 18.dp, bottom = 16.dp)
                 )
@@ -142,6 +144,7 @@ fun HomeScreen(
 
                 WishlistRail(
                     summaries = wishlistSummaries,
+                    isOnline = isOnline,
                     onWishlistClick = onWishlistClick,
                     onNewWishlistClick = onNewWishlistClick
                 )
@@ -150,6 +153,8 @@ fun HomeScreen(
 
                 HomeSmartSections(
                     nearbyStore = nearbyStore,
+                    isOnline = isOnline,
+                    onLoadHome = onLoadHome,
                     nearbyLoading = nearbyLoading,
                     nearbyErrorMessage = nearbyErrorMessage,
                     recommendation = recommendation,
@@ -182,6 +187,7 @@ fun HomeScreen(
 @Composable
 private fun WishlistRail(
     summaries: List<WishlistSummary>,
+    isOnline: Boolean,
     onWishlistClick: (String) -> Unit,
     onNewWishlistClick: () -> Unit
 ) {
@@ -194,7 +200,7 @@ private fun WishlistRail(
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = "Create your first wishlist.",
+                    text = if (isOnline) "Create your first wishlist." else "No wishlists available offline yet.",
                     style = whyNotMuted(13)
                 )
 
