@@ -18,6 +18,10 @@ import com.example.whynotkotlin.view.components.rememberIsOnline
 import com.example.whynotkotlin.view.navigation.WhyNotNavigator
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.withContext
 
 /**
  * The home screen and its two smart sections.
@@ -65,59 +69,70 @@ fun HomeRoute(navigator: WhyNotNavigator) {
     var recommendationErrorMessage by rememberSaveable(uid) { mutableStateOf<String?>(null) }
 
     val isOnline = rememberIsOnline()
-    var wasOffline by remember { mutableStateOf(!isOnline) }
 
-    fun loadNearby() {
+    suspend fun fetchNearby() {
         if (nearbyLoading) return
-        nearbyStore = null
+        if (!dependencies.connectivity.isOnline.value) {
+            nearbyErrorMessage = "Nearby stores need internet. Reconnect and retry."
+            return
+        }
         nearbyErrorMessage = null
         nearbyLoading = true
-
-        scope.launch {
-            try {
-                nearbyStore = nearbyStoreController.loadNearestStore()
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (error: Exception) {
-                nearbyStore = null
-                nearbyErrorMessage = error.readableMessage()
-            } finally {
-                nearbyLoading = false
+        try {
+            nearbyStore = withContext(Dispatchers.IO) {
+                nearbyStoreController.loadNearestStore()
             }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            nearbyErrorMessage = "Could not refresh nearby stores. ${error.readableMessage()}"
+        } finally {
+            nearbyLoading = false
         }
     }
 
-    fun loadRecommendation(forceRefresh: Boolean = false) {
+    suspend fun fetchRecommendation(forceRefresh: Boolean = false) {
         if (recommendationLoading) return
         recommendationLoading = true
         recommendationErrorMessage = null
-
-        scope.launch {
-            try {
-                val load = recommendationController.loadRecommendation(forceRefresh)
-                recommendation = load.recommendation
-                recommendationStale = load.isStale
-                recommendationSaved = false
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (error: Exception) {
-                recommendationErrorMessage = error.readableMessage()
-            } finally {
-                recommendationLoading = false
+        try {
+            val load = withContext(Dispatchers.IO) {
+                recommendationController.loadRecommendation(forceRefresh)
             }
+            recommendation = load.recommendation
+            recommendationStale = load.isStale
+            recommendationSaved = false
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            recommendationErrorMessage = error.readableMessage()
+        } finally {
+            recommendationLoading = false
         }
     }
 
-    // Back online after being offline: replace a stale recommendation.
-    LaunchedEffect(isOnline) {
-        if (isOnline && wasOffline) loadRecommendation(forceRefresh = true)
-        wasOffline = !isOnline
+    fun loadNearby() { scope.launch { fetchNearby() } }
+    fun loadRecommendation(forceRefresh: Boolean = false) {
+        scope.launch { fetchRecommendation(forceRefresh) }
+    }
+
+    suspend fun loadHome(includeNearby: Boolean, forceRefresh: Boolean) {
+        supervisorScope {
+            val nearby = async { if (includeNearby) fetchNearby() }
+            val recommended = async { fetchRecommendation(forceRefresh) }
+            nearby.await()
+            recommended.await()
+        }
     }
 
     /** Saves to [wishlistId], or to a new wishlist in its category when null. */
     fun saveRecommendation(wishlistId: String?) {
         val current = recommendation ?: return
         if (recommendationSaving || recommendationSaved) return
+        if (!dependencies.connectivity.isOnline.value) {
+            recommendationErrorMessage = "Saving this recommendation needs internet. Reconnect and try again."
+            return
+        }
         recommendationSaving = true
         recommendationErrorMessage = null
 
@@ -157,7 +172,8 @@ fun HomeRoute(navigator: WhyNotNavigator) {
         }?.name,
         nearbyStore = nearbyStore,
         nearbyLoading = nearbyLoading,
-        nearbyErrorMessage = nearbyErrorMessage,
+        nearbyErrorMessage = if (!isOnline) "Nearby stores cannot refresh offline. Reconnect and retry."
+            else nearbyErrorMessage,
         recommendation = recommendation,
         recommendationLoading = recommendationLoading,
         recommendationSaving = recommendationSaving,
@@ -165,9 +181,10 @@ fun HomeRoute(navigator: WhyNotNavigator) {
         recommendationErrorMessage = recommendationErrorMessage,
         wishlistSummaries = catalogResult?.getOrNull()?.summaries.orEmpty(),
         onLoadNearby = ::loadNearby,
+        onLoadHome = ::loadHome,
         onLoadRecommendation = { loadRecommendation() },
         onRefreshRecommendation = { loadRecommendation(forceRefresh = true) },
-        recommendationStale = recommendationStale,
+        recommendationStale = recommendationStale || !isOnline,
         isOnline = isOnline,
         onSaveRecommendation = ::saveRecommendation,
         onHomeClick = {},

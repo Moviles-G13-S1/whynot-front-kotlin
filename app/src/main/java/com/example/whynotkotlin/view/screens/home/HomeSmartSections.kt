@@ -88,7 +88,9 @@ fun HomeSmartSections(
     onLoadRecommendation: () -> Unit,
     onSaveRecommendation: (String?) -> Unit,
     onRefreshRecommendation: () -> Unit = onLoadRecommendation,
-    recommendationStale: Boolean = false
+    recommendationStale: Boolean = false,
+    isOnline: Boolean = true,
+    onLoadHome: suspend (Boolean, Boolean) -> Unit = { _, _ -> onLoadRecommendation() }
 ) {
     val context = LocalContext.current
 
@@ -126,25 +128,11 @@ fun HomeSmartSections(
                 !ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.ACCESS_COARSE_LOCATION)
         }
 
-    LaunchedEffect(locationPermissionGranted) {
-        if (
-            locationPermissionGranted &&
-            nearbyStore == null &&
-            !nearbyLoading &&
-            nearbyErrorMessage == null
-        ) {
-            onLoadNearby()
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        if (
-            recommendation == null &&
-            !recommendationLoading &&
-            recommendationErrorMessage == null
-        ) {
-            onLoadRecommendation()
-        }
+    var wasOffline by remember { mutableStateOf(!isOnline) }
+    LaunchedEffect(locationPermissionGranted, isOnline) {
+        val forceRefresh = wasOffline
+        wasOffline = !isOnline
+        onLoadHome(locationPermissionGranted, forceRefresh)
     }
 
     val requestLocation: () -> Unit = {
@@ -192,7 +180,7 @@ fun HomeSmartSections(
         Text(if (permissionBlocked) "Enable Location in app settings to continue."
             else "Location was not allowed. The rest of the app is still available.", style = whyNotMuted(13))
     }
-    if (nearbyErrorMessage != null && locationPermissionGranted) {
+    if (nearbyErrorMessage != null && locationPermissionGranted && isOnline) {
         TextButton(onClick = { context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)) }) {
             Text("Open location settings")
         }
@@ -231,7 +219,7 @@ fun HomeSmartSections(
             if (detail == "store") {
                 NearbySection(nearbyStore, nearbyLoading, nearbyErrorMessage,
                     locationPermissionGranted, requestLocation, retryLocation)
-                nearbyStore?.takeIf { locationPermissionGranted && !nearbyLoading && nearbyErrorMessage == null }?.let {
+                nearbyStore?.takeIf { locationPermissionGranted && !nearbyLoading }?.let {
                     Text(it.name, style = whyNotSerif(23))
                     Text(it.address)
                     Text("Categories: ${it.categoryIds.joinToString()}")
@@ -269,6 +257,14 @@ private fun NearbySection(
     onRequestPermission: () -> Unit,
     onRetry: () -> Unit
 ) {
+    if (errorMessage != null && store != null && permissionGranted) {
+        Column {
+            Text("Last available store; it may be outdated. $errorMessage", style = whyNotMuted(11))
+            TextButton(onClick = onRetry) { Text("Retry nearby stores") }
+            NearbySection(store, false, null, true, onRequestPermission, onRetry)
+        }
+        return
+    }
     when {
         !permissionGranted -> MessageCard(
             icon = Icons.Outlined.LocationOn,
