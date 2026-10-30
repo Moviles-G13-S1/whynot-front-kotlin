@@ -20,11 +20,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.whynotkotlin.controller.ProductController
+import com.example.whynotkotlin.model.InputRules
+import com.example.whynotkotlin.model.PriceRules
 import com.example.whynotkotlin.model.WishlistSummary
+import com.example.whynotkotlin.view.components.FieldSupportText
 import com.example.whynotkotlin.view.components.CategoryChip
 import com.example.whynotkotlin.view.components.ProductPictureField
 import com.example.whynotkotlin.view.components.WhyNotBottomBar
@@ -54,6 +59,11 @@ import com.example.whynotkotlin.view.components.OfflineBanner
  *
  * Eventual connectivity: offline, the user can keep filling the form (it is
  * kept as a draft) but Save waits until the connection returns.
+ *
+ * Each field shows its own error underneath once the user leaves it, with the
+ * rules [ProductController] applies. Tapping Save with errors shows them all
+ * and reports the rejected attempt through [onRejectedSave] (BQ Type 2)
+ * instead of saving.
  */
 @Composable
 fun NewProductScreen(
@@ -70,6 +80,14 @@ fun NewProductScreen(
         imageUrl: String,
         productUrl: String
     ) -> Unit,
+    onRejectedSave: (
+        wishlistId: String,
+        name: String,
+        brand: String,
+        price: String,
+        imageUrl: String,
+        productUrl: String
+    ) -> Unit = { _, _, _, _, _, _ -> },
     onCreateWishlistClick: () -> Unit = {},
     initialDraft: ProductFormDraft? = null,
     isOnline: Boolean = true,
@@ -81,20 +99,31 @@ fun NewProductScreen(
     onPurchasesClick: () -> Unit = {},
     onProfileClick: () -> Unit = {}
 ) {
-    var name by remember { mutableStateOf(initialDraft?.name.orEmpty()) }
-    var brand by remember { mutableStateOf(initialDraft?.brand.orEmpty()) }
-    var price by remember { mutableStateOf(initialDraft?.price.orEmpty()) }
-    var imageUrl by remember { mutableStateOf(initialDraft?.imageUrl.orEmpty()) }
-    var productUrl by remember {
+    var name by rememberSaveable { mutableStateOf(initialDraft?.name.orEmpty()) }
+    var brand by rememberSaveable { mutableStateOf(initialDraft?.brand.orEmpty()) }
+    var price by rememberSaveable { mutableStateOf(initialDraft?.price.orEmpty()) }
+    var imageUrl by rememberSaveable { mutableStateOf(initialDraft?.imageUrl.orEmpty()) }
+    var productUrl by rememberSaveable {
         mutableStateOf(prefilledProductUrl.ifBlank { initialDraft?.productUrl.orEmpty() })
     }
-    var selectedWishlistId by remember { mutableStateOf(initialDraft?.wishlistId.orEmpty()) }
-    var showRestoredNote by remember { mutableStateOf(initialDraft != null) }
+    var selectedWishlistId by rememberSaveable { mutableStateOf(initialDraft?.wishlistId.orEmpty()) }
+    var showRestoredNote by rememberSaveable { mutableStateOf(initialDraft != null) }
+    var showAllErrors by rememberSaveable { mutableStateOf(false) }
 
     // A restored draft may point at a wishlist that no longer exists.
     val wishlistId = selectedWishlistId.takeIf { id ->
         wishlists.any { it.wishlist.id == id }
     }.orEmpty()
+
+    val nameError = InputRules.productName(name)
+    val brandError = InputRules.brand(brand)
+    val priceError = PriceRules.error(price)
+    val imageUrlError = InputRules.optionalLink(imageUrl, ProductController.PICTURE_LINK)
+    val productUrlError = InputRules.optionalLink(productUrl, ProductController.STORE_LINK)
+    val wishlistError = if (wishlistId.isBlank()) "Choose a wishlist" else null
+    val formValid = listOf(
+        nameError, brandError, priceError, imageUrlError, productUrlError, wishlistError
+    ).all { it == null }
 
     // Every change goes to the controller, which debounces the disk write.
     LaunchedEffect(name, brand, price, imageUrl, productUrl, selectedWishlistId) {
@@ -180,35 +209,43 @@ fun NewProductScreen(
                 WhyNotTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = "Name"
+                    label = "Name",
+                    error = nameError,
+                    showError = showAllErrors,
+                    maxLength = InputRules.PRODUCT_NAME_MAX_LENGTH
                 )
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    WhyNotTextField(
-                        value = brand,
-                        onValueChange = { brand = it },
-                        label = "Brand",
-                        modifier = Modifier.weight(0.6f)
-                    )
+                WhyNotTextField(
+                    value = brand,
+                    onValueChange = { brand = it },
+                    label = "Brand",
+                    error = brandError,
+                    showError = showAllErrors,
+                    maxLength = InputRules.BRAND_MAX_LENGTH
+                )
 
-                    Spacer(modifier = Modifier.size(12.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
-                    WhyNotTextField(
-                        value = price,
-                        onValueChange = { price = it },
-                        label = "Price",
-                        placeholder = "0",
-                        modifier = Modifier.weight(0.4f)
-                    )
-                }
+                WhyNotTextField(
+                    value = price,
+                    onValueChange = { price = it },
+                    label = "Price",
+                    placeholder = "1500",
+                    error = priceError,
+                    showError = showAllErrors,
+                    keyboardType = KeyboardType.Decimal,
+                    maxLength = PriceRules.MAX_LENGTH
+                )
 
                 Spacer(modifier = Modifier.height(14.dp))
 
                 ProductPictureField(
                     value = imageUrl,
-                    onValueChange = { imageUrl = it }
+                    onValueChange = { imageUrl = it },
+                    error = imageUrlError,
+                    showError = showAllErrors
                 )
 
                 Spacer(modifier = Modifier.height(14.dp))
@@ -217,7 +254,9 @@ fun NewProductScreen(
                     value = productUrl,
                     onValueChange = { productUrl = it },
                     label = "Store link",
-                    placeholder = "https://www.somestore.com/..."
+                    placeholder = "https://www.somestore.com/...",
+                    error = productUrlError,
+                    showError = showAllErrors
                 )
             }
 
@@ -272,6 +311,11 @@ fun NewProductScreen(
                         )
                     }
                 }
+
+                FieldSupportText(
+                    error = wishlistError.takeIf { showAllErrors },
+                    modifier = Modifier.padding(top = 8.dp)
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -287,15 +331,15 @@ fun NewProductScreen(
                     else -> "Save Item"
                 },
                 onClick = {
-                    onSave(wishlistId, name, brand, price, imageUrl, productUrl)
+                    if (formValid) {
+                        onSave(wishlistId, name, brand, price, imageUrl, productUrl)
+                    } else {
+                        showAllErrors = true
+                        onRejectedSave(wishlistId, name, brand, price, imageUrl, productUrl)
+                    }
                 },
                 filled = true,
-                enabled = !saving &&
-                    isOnline &&
-                    name.isNotBlank() &&
-                    brand.isNotBlank() &&
-                    price.isNotBlank() &&
-                    wishlistId.isNotBlank()
+                enabled = !saving && isOnline && wishlists.isNotEmpty()
             )
 
             Spacer(modifier = Modifier.height(24.dp))

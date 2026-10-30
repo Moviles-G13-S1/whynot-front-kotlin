@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,13 +21,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.error
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.whynotkotlin.view.theme.WhyNotBlack
+import com.example.whynotkotlin.model.InputRules
 import com.example.whynotkotlin.view.theme.WhyNotBorder
+import com.example.whynotkotlin.view.theme.WhyNotDanger
 import com.example.whynotkotlin.view.theme.WhyNotGray
 import com.example.whynotkotlin.view.theme.WhyNotWhite
 
@@ -36,6 +40,9 @@ import com.example.whynotkotlin.view.theme.WhyNotWhite
  *
  * The backend stores images as URLs and does not use Firebase Storage, so this
  * takes a pasted link rather than opening the device gallery.
+ *
+ * [error] appears under the field once the user leaves it, or when
+ * [showError] is true after a save attempt.
  */
 @Composable
 fun ProductPictureField(
@@ -43,8 +50,13 @@ fun ProductPictureField(
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
     label: String = "Picture",
-    placeholder: String = "https://..."
+    placeholder: String = "https://...",
+    error: String? = null,
+    showError: Boolean = false
 ) {
+    val visit = rememberFieldVisit()
+    val visibleError = visit.visibleError(error, showError)
+
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -58,10 +70,10 @@ fun ProductPictureField(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(50.dp)
+                .heightIn(min = 50.dp)
                 .background(WhyNotWhite, RoundedCornerShape(10.dp))
                 .border(
-                    BorderStroke(1.dp, WhyNotBorder),
+                    BorderStroke(1.dp, if (visibleError != null) WhyNotDanger else WhyNotBorder),
                     RoundedCornerShape(10.dp)
                 )
                 .padding(horizontal = 14.dp),
@@ -79,7 +91,7 @@ fun ProductPictureField(
 
                 BasicTextField(
                     value = value,
-                    onValueChange = onValueChange,
+                    onValueChange = { onValueChange(it.limitedTo(InputRules.LINK_MAX_LENGTH)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Uri,
@@ -89,7 +101,10 @@ fun ProductPictureField(
                         color = WhyNotBlack
                     ),
                     cursorBrush = SolidColor(WhyNotBlack),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .then(visit.modifier)
+                        .semantics { if (visibleError != null) error(visibleError) }
                 )
             }
 
@@ -100,5 +115,7 @@ fun ProductPictureField(
                 modifier = Modifier.size(18.dp)
             )
         }
+
+        FieldSupportText(error = visibleError)
     }
 }

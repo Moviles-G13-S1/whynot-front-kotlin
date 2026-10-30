@@ -24,17 +24,22 @@ import com.example.whynotkotlin.view.theme.whyNotMuted
 /**
  * Live checklist of the password requirements, so the user sees what is
  * missing while typing instead of only after submitting.
+ *
+ * With the user's [email] or [name] it also checks that the password does not
+ * include them.
  */
 @Composable
 fun PasswordRequirements(
     password: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    email: String = "",
+    name: String = ""
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        PasswordPolicy.rules.forEach { rule ->
+        PasswordPolicy.rulesFor(email, name).forEach { rule ->
             val met = password.isNotEmpty() && rule.isMetBy(password)
             val color = if (met) Color.Black else WhyNotGray
 

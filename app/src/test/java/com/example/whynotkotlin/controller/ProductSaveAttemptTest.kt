@@ -24,6 +24,7 @@ class ProductSaveAttemptTest {
         override suspend fun signIn(email: String, password: String) = user
         override suspend fun signUp(email: String, password: String) = user
         override suspend fun signOut() = Unit
+        override suspend fun deleteCurrentUser() = Unit
         override suspend fun refreshClaims() = user
         override suspend fun changePassword(currentPassword: String, newPassword: String) = Unit
     }
@@ -53,8 +54,12 @@ class ProductSaveAttemptTest {
         override suspend fun recordPurchase(ownerId: String, product: Product, purchasePrice: Double) = Unit
     }
 
-    private suspend fun ProductController.save(price: String = "120000", wishlistId: String = "w1") =
-        createProduct(wishlistId, "Jacket", "Example", price, "", "")
+    private suspend fun ProductController.save(
+        price: String = "120000",
+        wishlistId: String = "w1",
+        name: String = "Jacket",
+        imageUrl: String = ""
+    ) = createProduct(wishlistId, name, "Example", price, imageUrl, "")
 
     @Test fun `a saved product records a success`() = runTest(dispatcher) {
         val products = Products()
@@ -75,9 +80,65 @@ class ProductSaveAttemptTest {
         runCurrent()
 
         assertTrue(error is ValidationException)
-        assertEquals("Enter a valid price", error?.message)
+        assertEquals("Enter a valid price, such as 1500 or 1.500,50", error?.message)
         assertTrue(products.created.isEmpty())
         assertEquals(listOf("uid" to ProductSaveFailure.INVALID_PRICE), products.attempts)
+    }
+
+    @Test fun `prices are read with thousands separators and decimals`() = runTest(dispatcher) {
+        val products = Products()
+        val controller = ProductController(Auth(), products, backgroundScope)
+
+        controller.save(price = "1.000")
+        controller.save(price = "1,000.50")
+        controller.save(price = "1.500,50")
+
+        assertEquals(listOf(1000.0, 1000.5, 1500.5), products.created.map { it.price })
+    }
+
+    @Test fun `NaN, Infinity and exponents are not prices`() = runTest(dispatcher) {
+        val products = Products()
+        val controller = ProductController(Auth(), products, backgroundScope)
+
+        listOf("NaN", "Infinity", "1e9").forEach { price ->
+            runCatching { controller.save(price = price) }
+        }
+        runCurrent()
+
+        assertTrue(products.created.isEmpty())
+        assertEquals(List(3) { "uid" to ProductSaveFailure.INVALID_PRICE }, products.attempts)
+    }
+
+    @Test fun `invalid text and links record their own reasons`() = runTest(dispatcher) {
+        val products = Products()
+        val controller = ProductController(Auth(), products, backgroundScope)
+
+        runCatching { controller.save(name = "x".repeat(InputRules.PRODUCT_NAME_MAX_LENGTH + 1)) }
+        runCatching { controller.save(imageUrl = "photo.png") }
+        runCatching { controller.save(price = "-5") }
+        runCurrent()
+
+        assertTrue(products.created.isEmpty())
+        assertEquals(
+            listOf(
+                "uid" to ProductSaveFailure.INVALID_NAME,
+                "uid" to ProductSaveFailure.INVALID_LINK,
+                "uid" to ProductSaveFailure.NEGATIVE_PRICE
+            ),
+            products.attempts
+        )
+    }
+
+    @Test fun `a save the form stops itself is still recorded`() = runTest(dispatcher) {
+        val products = Products()
+        val controller = ProductController(Auth(), products, backgroundScope)
+
+        controller.recordRejectedSave("w1", "", "Example", "120000", "", "")
+        controller.recordRejectedSave("w1", "Jacket", "Example", "120000", "", "")
+        runCurrent()
+
+        assertTrue(products.created.isEmpty())
+        assertEquals(listOf("uid" to ProductSaveFailure.MISSING_NAME), products.attempts)
     }
 
     @Test fun `a missing wishlist is recorded as its own reason`() = runTest(dispatcher) {

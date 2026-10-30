@@ -31,6 +31,7 @@ class ProductDraftAndOfflineTest {
         override suspend fun signIn(email: String, password: String) = user
         override suspend fun signUp(email: String, password: String) = user
         override suspend fun signOut() = Unit
+        override suspend fun deleteCurrentUser() = Unit
         override suspend fun refreshClaims() = user
         override suspend fun changePassword(currentPassword: String, newPassword: String) = Unit
     }

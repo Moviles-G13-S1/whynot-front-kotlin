@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,9 +27,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.error
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.example.whynotkotlin.view.theme.WhyNotBlack
 import com.example.whynotkotlin.view.theme.WhyNotBorder
+import com.example.whynotkotlin.view.theme.WhyNotDanger
 import com.example.whynotkotlin.view.theme.WhyNotDisabled
 import com.example.whynotkotlin.view.theme.WhyNotGray
 import com.example.whynotkotlin.view.theme.WhyNotWhite
@@ -39,6 +42,9 @@ import com.example.whynotkotlin.view.theme.WhyNotWhite
  *
  * [options] maps a stable value to the label shown, so screens can bind ids
  * (category ids, wishlist ids) without displaying them.
+ *
+ * [error] (such as "Select a city") appears under the field when [showError]
+ * is true, which forms set after a save attempt.
  */
 @Composable
 fun WhyNotDropdownField(
@@ -48,9 +54,12 @@ fun WhyNotDropdownField(
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
     placeholder: String = "",
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    error: String? = null,
+    showError: Boolean = false
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val visibleError = error?.takeIf { showError }
 
     val selectedLabel = options.firstOrNull { it.first == selectedValue }?.second
 
@@ -68,15 +77,16 @@ fun WhyNotDropdownField(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp)
+                    .heightIn(min = 50.dp)
                     .background(WhyNotWhite, RoundedCornerShape(10.dp))
                     .border(
-                        BorderStroke(1.dp, WhyNotBorder),
+                        BorderStroke(1.dp, if (visibleError != null) WhyNotDanger else WhyNotBorder),
                         RoundedCornerShape(10.dp)
                     )
                     .clickable(enabled = enabled && options.isNotEmpty()) {
                         expanded = true
                     }
+                    .semantics { if (visibleError != null) error(visibleError) }
                     .padding(horizontal = 14.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
@@ -122,5 +132,7 @@ fun WhyNotDropdownField(
                 }
             }
         }
+
+        FieldSupportText(error = visibleError)
     }
 }

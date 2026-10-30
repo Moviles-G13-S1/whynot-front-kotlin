@@ -84,17 +84,24 @@ fun EditProfileRoute(navigator: WhyNotNavigator) {
 
 @Composable
 fun ChangePasswordRoute(navigator: WhyNotNavigator) {
-    val authController = LocalAppDependencies.current.authController
+    val dependencies = LocalAppDependencies.current
+    val authController = dependencies.authController
+    val profileResult by dependencies.profileController.profile.collectAsStateWithLifecycle()
     val submission = rememberSubmission()
+
+    // The name and email let the form reject a password that includes them.
+    val profile = profileResult?.getOrNull()
 
     ChangePasswordScreen(
         isOnline = rememberIsOnline(),
+        email = profile?.email.orEmpty(),
+        name = profile?.name.orEmpty(),
         submitting = submission.running,
         errorMessage = submission.errorMessage,
         onBackClick = navigator::back,
         onUpdatePasswordClick = { current, new, confirm ->
             submission.run(onSuccess = navigator::back) {
-                authController.changePassword(current, new, confirm)
+                authController.changePassword(current, new, confirm, profile?.name.orEmpty())
             }
         },
         onHomeClick = navigator::toHome,

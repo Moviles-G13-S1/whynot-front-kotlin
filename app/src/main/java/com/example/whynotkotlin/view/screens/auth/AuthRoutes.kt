@@ -33,12 +33,13 @@ fun RegisterRoute(navigator: WhyNotNavigator) {
         isOnline = rememberIsOnline(),
         submitting = submission.running,
         errorMessage = submission.errorMessage,
-        onSubmit = { name, email, password, gender, age, categoryId, cityId ->
+        onSubmit = { name, email, password, confirmPassword, gender, age, categoryId, cityId ->
             submission.run(onSuccess = navigator::toHomeAfterSignIn) {
                 authController.signUp(
                     name = name,
                     email = email,
                     password = password,
+                    confirmPassword = confirmPassword,
                     gender = gender,
                     age = age,
                     preferredCategoryId = categoryId,

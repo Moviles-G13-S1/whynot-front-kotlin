@@ -9,9 +9,12 @@ package com.example.whynotkotlin.model
  */
 enum class ProductSaveFailure(val code: String) {
     MISSING_NAME("missing_name"),
+    INVALID_NAME("invalid_name"),
     MISSING_BRAND("missing_brand"),
+    INVALID_BRAND("invalid_brand"),
     INVALID_PRICE("invalid_price"),
     NEGATIVE_PRICE("negative_price"),
+    INVALID_LINK("invalid_link"),
     MISSING_WISHLIST("missing_wishlist"),
     OFFLINE("offline"),
     BACKEND_ERROR("backend_error")

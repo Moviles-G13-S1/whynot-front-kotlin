@@ -20,7 +20,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.whynotkotlin.model.PasswordPolicy
 import com.example.whynotkotlin.view.components.PasswordRequirements
@@ -43,16 +42,34 @@ fun ChangePasswordScreen(
     onAddClick: () -> Unit = {},
     onPurchasesClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
-    isOnline: Boolean = true
+    isOnline: Boolean = true,
+    email: String = "",
+    name: String = ""
 ) {
+    // Passwords stay in memory only, never in the saved instance state.
     var currentPassword by remember { mutableStateOf("") }
     var newPassword by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
+    var showAllErrors by remember { mutableStateOf(false) }
 
-    val canUpdate =
-        currentPassword.isNotBlank() &&
-                PasswordPolicy.isValid(newPassword) &&
-                newPassword == confirmPassword
+    // The same checks as AuthController.changePassword, shown under each field.
+    val currentError = if (currentPassword.isBlank()) "Enter your current password" else null
+    val newError = when {
+        newPassword.isEmpty() -> "Enter a new password"
+        else -> PasswordPolicy.firstError(newPassword, email, name)
+            ?.replace("The password", "The new password")
+            ?: if (newPassword == currentPassword) {
+                "The new password must be different from the current one"
+            } else {
+                null
+            }
+    }
+    val confirmError = when {
+        confirmPassword.isEmpty() -> "Confirm your new password"
+        confirmPassword != newPassword -> "The new passwords do not match"
+        else -> null
+    }
+    val canUpdate = currentError == null && newError == null && confirmError == null
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -102,7 +119,9 @@ fun ChangePasswordScreen(
                     onValueChange = { currentPassword = it },
                     label = "Current password",
                     placeholder = "Enter current password",
-                    visualTransformation = PasswordVisualTransformation()
+                    error = currentError,
+                    showError = showAllErrors,
+                    isPassword = true
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
@@ -112,12 +131,16 @@ fun ChangePasswordScreen(
                     onValueChange = { newPassword = it },
                     label = "New password",
                     placeholder = "Enter new password",
-                    visualTransformation = PasswordVisualTransformation()
+                    error = newError,
+                    showError = showAllErrors,
+                    isPassword = true
                 )
 
                 PasswordRequirements(
                     password = newPassword,
-                    modifier = Modifier.padding(top = 10.dp)
+                    modifier = Modifier.padding(top = 10.dp),
+                    email = email,
+                    name = name
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
@@ -127,17 +150,10 @@ fun ChangePasswordScreen(
                     onValueChange = { confirmPassword = it },
                     label = "Confirm new password",
                     placeholder = "Confirm new password",
-                    visualTransformation = PasswordVisualTransformation()
+                    error = confirmError,
+                    showError = showAllErrors,
+                    isPassword = true
                 )
-
-                if (confirmPassword.isNotEmpty() && confirmPassword != newPassword) {
-                    Text(
-                        text = "The new passwords do not match.",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = WhyNotGray,
-                        modifier = Modifier.padding(top = 10.dp)
-                    )
-                }
             }
 
             Text(
@@ -153,22 +169,17 @@ fun ChangePasswordScreen(
 
             WhyNotButton(
                 text = if (submitting) "Updating…" else "Update password",
-                onClick = { onUpdatePasswordClick(currentPassword, newPassword, confirmPassword) },
-                enabled = canUpdate && !submitting
+                onClick = {
+                    if (canUpdate) {
+                        onUpdatePasswordClick(currentPassword, newPassword, confirmPassword)
+                    } else {
+                        showAllErrors = true
+                    }
+                },
+                enabled = !submitting
             )
 
             errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-
-            if (!canUpdate) {
-                Text(
-                    text = "Complete all fields to continue",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = WhyNotGray,
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .padding(top = 8.dp)
-                )
-            }
         }
 
         WhyNotBottomBar(

@@ -1,5 +1,7 @@
 package com.example.whynotkotlin.controller
 
+import com.example.whynotkotlin.model.InputRules
+import com.example.whynotkotlin.model.PriceRules
 import com.example.whynotkotlin.model.Product
 import com.example.whynotkotlin.model.ProductDraft
 import com.example.whynotkotlin.model.ProductFormDraft
@@ -131,6 +133,9 @@ class ProductController(
      * Validates and saves a product, recording the attempt for BQ Type 2: a
      * success once the product is written, or a failure with its reason when
      * validation or the backend rejects it.
+     *
+     * The fields follow [InputRules] and [PriceRules], the same rules the form
+     * uses to show errors under each field.
      */
     suspend fun createProduct(
         wishlistId: String,
@@ -143,16 +148,8 @@ class ProductController(
         val uid = authRepository.currentUser()?.uid
             ?: throw ValidationException("You are not signed in")
 
-        val parsedPrice = price.asPrice()
-
-        val validationError = when {
-            name.isBlank() -> ProductSaveFailure.MISSING_NAME to "Enter a product name"
-            brand.isBlank() -> ProductSaveFailure.MISSING_BRAND to "Enter a brand"
-            parsedPrice == null -> ProductSaveFailure.INVALID_PRICE to "Enter a valid price"
-            parsedPrice < 0 -> ProductSaveFailure.NEGATIVE_PRICE to "The price cannot be negative"
-            wishlistId.isBlank() -> ProductSaveFailure.MISSING_WISHLIST to "Choose a wishlist"
-            else -> null
-        }
+        val validationError =
+            productFormError(wishlistId, name, brand, price, imageUrl, productUrl)
 
         validationError?.let { (failure, message) ->
             recordSaveAttempt(uid, failure)
@@ -174,7 +171,7 @@ class ProductController(
                     wishlistId = wishlistId,
                     name = name,
                     brand = brand,
-                    price = parsedPrice!!,
+                    price = PriceRules.parse(price)!!,
                     imageUrl = imageUrl,
                     productUrl = productUrl
                 )
@@ -190,6 +187,25 @@ class ProductController(
 
         // The product exists in Firestore now, so the local copy is no longer needed.
         clearDraft(uid)
+    }
+
+    /**
+     * Records a save the form stopped itself because of invalid fields, which
+     * it shows under each field, so BQ Type 2 counts it with the same reason
+     * [createProduct] would have recorded.
+     */
+    fun recordRejectedSave(
+        wishlistId: String,
+        name: String,
+        brand: String,
+        price: String,
+        imageUrl: String,
+        productUrl: String
+    ) {
+        val uid = authRepository.currentUser()?.uid ?: return
+        val (failure, _) = productFormError(wishlistId, name, brand, price, imageUrl, productUrl) ?: return
+
+        recordSaveAttempt(uid, failure)
     }
 
     /**
@@ -226,9 +242,8 @@ class ProductController(
         val uid = authRepository.currentUser()?.uid
             ?: throw ValidationException("You are not signed in")
 
-        val paid = purchasePrice.asPrice()
-            ?: throw ValidationException("Enter the price you paid")
-        if (paid < 0) throw ValidationException("The price cannot be negative")
+        PriceRules.error(purchasePrice)?.let { throw ValidationException(it) }
+        val paid = PriceRules.parse(purchasePrice)!!
 
         if (connectivity?.isOnline?.value == false) {
             scope.launch { runQueuedWrite { productRepository.markPurchased(product.id) } }
@@ -261,15 +276,8 @@ class ProductController(
         imageUrl: String,
         productUrl: String
     ) {
-        val parsedPrice = price.asPrice()
-
-        when {
-            name.isBlank() -> throw ValidationException("Enter a product name")
-            brand.isBlank() -> throw ValidationException("Enter a brand")
-            parsedPrice == null -> throw ValidationException("Enter a valid price")
-            parsedPrice < 0 -> throw ValidationException("The price cannot be negative")
-            wishlistId.isBlank() -> throw ValidationException("Choose a wishlist")
-        }
+        productFormError(wishlistId, name, brand, price, imageUrl, productUrl)
+            ?.let { (_, message) -> throw ValidationException(message) }
 
         connectivity.requireOnline(EDIT_OFFLINE)
 
@@ -279,7 +287,7 @@ class ProductController(
                 wishlistId = wishlistId,
                 name = name,
                 brand = brand,
-                price = parsedPrice,
+                price = PriceRules.parse(price)!!,
                 imageUrl = imageUrl,
                 productUrl = productUrl
             )
@@ -291,10 +299,43 @@ class ProductController(
         productRepository.deleteProduct(productId)
     }
 
-    private fun String.asPrice(): Double? =
-        trim().replace(",", ".").toDoubleOrNull()
+    /**
+     * The first problem in a product form with its BQ save-failure reason, in
+     * the order the form shows its fields, or null when it can be saved.
+     */
+    private fun productFormError(
+        wishlistId: String,
+        name: String,
+        brand: String,
+        price: String,
+        imageUrl: String,
+        productUrl: String
+    ): Pair<ProductSaveFailure, String>? {
+        InputRules.productName(name)?.let { message ->
+            val reason = if (name.isBlank()) ProductSaveFailure.MISSING_NAME else ProductSaveFailure.INVALID_NAME
+            return reason to message
+        }
+        InputRules.brand(brand)?.let { message ->
+            val reason = if (brand.isBlank()) ProductSaveFailure.MISSING_BRAND else ProductSaveFailure.INVALID_BRAND
+            return reason to message
+        }
+        PriceRules.error(price)?.let { message ->
+            val reason =
+                if (PriceRules.isNegative(price)) ProductSaveFailure.NEGATIVE_PRICE else ProductSaveFailure.INVALID_PRICE
+            return reason to message
+        }
+        (InputRules.optionalLink(imageUrl, PICTURE_LINK) ?: InputRules.optionalLink(productUrl, STORE_LINK))
+            ?.let { message -> return ProductSaveFailure.INVALID_LINK to message }
+        if (wishlistId.isBlank()) return ProductSaveFailure.MISSING_WISHLIST to "Choose a wishlist"
+
+        return null
+    }
 
     companion object {
+        /** The names the product forms give the two optional links. */
+        const val PICTURE_LINK = "Picture link"
+        const val STORE_LINK = "Store link"
+
         /** How long typing must pause before the draft is written to disk. */
         const val DRAFT_SAVE_DELAY_MILLIS = 400L
 

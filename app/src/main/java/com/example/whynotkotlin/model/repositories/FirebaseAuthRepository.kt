@@ -123,6 +123,10 @@ class FirebaseAuthRepository(
         auth.signOut()
     }
 
+    override suspend fun deleteCurrentUser() {
+        auth.currentUser?.delete()?.await()
+    }
+
     override suspend fun changePassword(
         currentPassword: String,
         newPassword: String

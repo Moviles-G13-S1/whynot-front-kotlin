@@ -11,13 +11,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import com.example.whynotkotlin.controller.WishlistController
+import com.example.whynotkotlin.model.InputRules
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -46,8 +50,12 @@ fun NewWishlistScreen(
     onProfileClick: () -> Unit = {},
     isOnline: Boolean = true
 ) {
-    var categoryId by remember { mutableStateOf("") }
-    var imageUrl by remember { mutableStateOf("") }
+    var categoryId by rememberSaveable { mutableStateOf("") }
+    var imageUrl by rememberSaveable { mutableStateOf("") }
+    var showAllErrors by rememberSaveable { mutableStateOf(false) }
+
+    val categoryError = if (categoryId.isBlank()) "Choose a category" else null
+    val imageUrlError = InputRules.optionalLink(imageUrl, WishlistController.PICTURE_LINK)
 
     // Only categories without a wishlist yet, so the user cannot create a
     // duplicate. The backend does not enforce this, it is a UI convention.
@@ -60,6 +68,8 @@ fun NewWishlistScreen(
             modifier = Modifier
                 .weight(1f)
                 .statusBarsPadding()
+                // Scrolls so Save stays reachable in landscape and with large fonts.
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 22.dp)
         ) {
             Spacer(modifier = Modifier.height(20.dp))
@@ -95,14 +105,18 @@ fun NewWishlistScreen(
                         "Every category already has a wishlist"
                     } else {
                         "Choose a category"
-                    }
+                    },
+                    error = categoryError,
+                    showError = showAllErrors
                 )
 
                 Spacer(modifier = Modifier.height(18.dp))
 
                 ProductPictureField(
                     value = imageUrl,
-                    onValueChange = { imageUrl = it }
+                    onValueChange = { imageUrl = it },
+                    error = imageUrlError,
+                    showError = showAllErrors
                 )
             }
 
@@ -123,14 +137,16 @@ fun NewWishlistScreen(
                     modifier = Modifier.clickable { onCancelClick() }
                 )
 
-                val canSave = categoryId.isNotBlank() && !saving
-
                 Text(
                     text = if (saving) "Saving..." else "Save",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = if (canSave) WhyNotGray else WhyNotDisabled,
-                    modifier = Modifier.clickable(enabled = canSave) {
-                        onSave(categoryId, imageUrl)
+                    color = if (saving) WhyNotDisabled else WhyNotGray,
+                    modifier = Modifier.clickable(enabled = !saving) {
+                        if (categoryError == null && imageUrlError == null) {
+                            onSave(categoryId, imageUrl)
+                        } else {
+                            showAllErrors = true
+                        }
                     }
                 )
             }

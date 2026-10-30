@@ -4,6 +4,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -38,6 +40,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.error
+import androidx.compose.ui.semantics.semantics
+import com.example.whynotkotlin.controller.ProductController
+import com.example.whynotkotlin.model.InputRules
+import com.example.whynotkotlin.model.PriceRules
+import com.example.whynotkotlin.view.components.FieldSupportText
+import com.example.whynotkotlin.view.components.limitedTo
+import com.example.whynotkotlin.view.components.rememberFieldVisit
+import com.example.whynotkotlin.view.theme.WhyNotDanger
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -144,13 +156,16 @@ private fun EditProductForm(
     var imageUrl by rememberSaveable(product.id) { mutableStateOf(product.imageUrl) }
     var productUrl by rememberSaveable(product.id) { mutableStateOf(product.productUrl) }
     var wishlistId by rememberSaveable(product.id) { mutableStateOf(product.wishlistId) }
+    var showAllErrors by rememberSaveable(product.id) { mutableStateOf(false) }
 
-    val parsedPrice = price.trim().replace(",", ".").toDoubleOrNull()
-    val canSave = name.isNotBlank() &&
-            brand.isNotBlank() &&
-            parsedPrice != null &&
-            parsedPrice >= 0 &&
-            wishlistId.isNotBlank()
+    // The same rules as ProductController, shown under each field.
+    val nameError = InputRules.productName(name)
+    val brandError = InputRules.brand(brand)
+    val priceError = PriceRules.error(price)
+    val imageUrlError = InputRules.optionalLink(imageUrl, ProductController.PICTURE_LINK)
+    val productUrlError = InputRules.optionalLink(productUrl, ProductController.STORE_LINK)
+    val canSave = listOf(nameError, brandError, priceError, imageUrlError, productUrlError)
+        .all { it == null } && wishlistId.isNotBlank()
 
     Column(
         modifier = Modifier
@@ -168,13 +183,50 @@ private fun EditProductForm(
 
         Spacer(modifier = Modifier.height(42.dp))
 
-        LabeledField("Name", name, "Product name") { name = it }
-        LabeledField("Brand", brand, "Brand name") { brand = it }
-        LabeledField("Price", price, "Product price", KeyboardType.Decimal) { price = it }
-        LabeledField("Picture link", imageUrl, "https://...", KeyboardType.Uri) { imageUrl = it }
-        LabeledField("Product link", productUrl, "https://...", KeyboardType.Uri, last = true) {
-            productUrl = it
-        }
+        LabeledField(
+            label = "Name",
+            value = name,
+            hint = "Product name",
+            error = nameError,
+            showError = showAllErrors,
+            maxLength = InputRules.PRODUCT_NAME_MAX_LENGTH
+        ) { name = it }
+        LabeledField(
+            label = "Brand",
+            value = brand,
+            hint = "Brand name",
+            error = brandError,
+            showError = showAllErrors,
+            maxLength = InputRules.BRAND_MAX_LENGTH
+        ) { brand = it }
+        LabeledField(
+            label = "Price",
+            value = price,
+            hint = "Product price",
+            keyboardType = KeyboardType.Decimal,
+            error = priceError,
+            showError = showAllErrors,
+            maxLength = PriceRules.MAX_LENGTH
+        ) { price = it }
+        LabeledField(
+            label = ProductController.PICTURE_LINK,
+            value = imageUrl,
+            hint = "https://...",
+            keyboardType = KeyboardType.Uri,
+            error = imageUrlError,
+            showError = showAllErrors,
+            maxLength = InputRules.LINK_MAX_LENGTH
+        ) { imageUrl = it }
+        LabeledField(
+            label = ProductController.STORE_LINK,
+            value = productUrl,
+            hint = "https://...",
+            keyboardType = KeyboardType.Uri,
+            error = productUrlError,
+            showError = showAllErrors,
+            maxLength = InputRules.LINK_MAX_LENGTH,
+            last = true
+        ) { productUrl = it }
 
         Spacer(modifier = Modifier.height(36.dp))
 
@@ -192,7 +244,10 @@ private fun EditProductForm(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(18.dp))
-                        .clickable { wishlistId = summary.wishlist.id }
+                        // A radio choice, so TalkBack announces which wishlist is selected.
+                        .selectable(selected = selected, role = Role.RadioButton) {
+                            wishlistId = summary.wishlist.id
+                        }
                         .padding(horizontal = 7.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -219,8 +274,14 @@ private fun EditProductForm(
         Spacer(modifier = Modifier.height(44.dp))
 
         Button(
-            onClick = { onSave(wishlistId, name, brand, price, imageUrl, productUrl) },
-            enabled = canSave && !saving,
+            onClick = {
+                if (canSave) {
+                    onSave(wishlistId, name, brand, price, imageUrl, productUrl)
+                } else {
+                    showAllErrors = true
+                }
+            },
+            enabled = !saving,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(44.dp),
@@ -261,9 +322,15 @@ private fun LabeledField(
     value: String,
     hint: String,
     keyboardType: KeyboardType = KeyboardType.Text,
+    error: String? = null,
+    showError: Boolean = false,
+    maxLength: Int? = null,
     last: Boolean = false,
     onValueChange: (String) -> Unit
 ) {
+    val visit = rememberFieldVisit()
+    val visibleError = visit.visibleError(error, showError)
+
     Text(text = label, style = whyNotSerif(20))
 
     Spacer(modifier = Modifier.height(14.dp))
@@ -272,7 +339,10 @@ private fun LabeledField(
 
     BasicTextField(
         value = value,
-        onValueChange = onValueChange,
+        onValueChange = { onValueChange(it.limitedTo(maxLength)) },
+        modifier = Modifier
+            .then(visit.modifier)
+            .semantics { if (visibleError != null) error(visibleError) },
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         textStyle = TextStyle(
@@ -286,9 +356,9 @@ private fun LabeledField(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(42.dp)
+                    .heightIn(min = 42.dp)
                     .background(WhyNotField, shape)
-                    .border(BorderStroke(1.dp, WhyNotBorder), shape)
+                    .border(BorderStroke(1.dp, if (visibleError != null) WhyNotDanger else WhyNotBorder), shape)
                     .padding(horizontal = 14.dp),
                 contentAlignment = Alignment.CenterStart
             ) {
@@ -298,6 +368,13 @@ private fun LabeledField(
                 innerTextField()
             }
         }
+    )
+
+    FieldSupportText(
+        error = visibleError,
+        length = value.length,
+        maxLength = maxLength,
+        modifier = Modifier.padding(top = 6.dp)
     )
 
     if (!last) {

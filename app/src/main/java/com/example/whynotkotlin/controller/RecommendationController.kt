@@ -2,6 +2,7 @@ package com.example.whynotkotlin.controller
 
 import com.example.whynotkotlin.model.ProductRecommendation
 import com.example.whynotkotlin.model.RecommendationCache
+import com.example.whynotkotlin.model.UserFacingException
 import com.example.whynotkotlin.model.repositories.ConnectivityRepository
 import com.example.whynotkotlin.model.repositories.RecommendationRepository
 import kotlinx.coroutines.CancellationException
@@ -21,7 +22,7 @@ data class RecommendationLoad(
 
 /** Offline with nothing cached yet for this user. */
 class RecommendationOfflineException :
-    Exception("You are offline and there is no saved recommendation yet.")
+    UserFacingException("You are offline and there is no saved recommendation yet.")
 
 /**
  * Controls the recommendation flow presented to the user.
