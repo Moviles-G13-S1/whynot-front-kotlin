@@ -39,6 +39,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.whynotkotlin.model.Product
@@ -254,9 +255,13 @@ private fun PurchaseCard(
 
         Spacer(modifier = Modifier.height(12.dp))
 
+        // Two lines at most, so a long name cannot push the price and the
+        // "Pending sync" label out of the card.
         Text(
             text = purchase.name.ifEmpty { "Product" },
             style = whyNotSerif(20),
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(start = 4.dp)
         )
 
@@ -266,6 +271,8 @@ private fun PurchaseCard(
             Text(
                 text = purchase.brand,
                 style = whyNotMuted(11),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(start = 5.dp)
             )
         }
