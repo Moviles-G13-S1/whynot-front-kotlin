@@ -2,6 +2,8 @@ package com.example.whynotkotlin.view.screens.purchases
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -207,7 +209,8 @@ private fun SortOption(
     Row(
         modifier = modifier
             .height(55.dp)
-            .clickable { onClick() },
+            // A tab, so TalkBack announces which order is selected.
+            .selectable(selected = selected, role = Role.Tab, onClick = onClick),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {

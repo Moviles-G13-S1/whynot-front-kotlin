@@ -34,6 +34,7 @@ class OfflineFormsTest {
             return user
         }
         override suspend fun signOut() = Unit
+        override suspend fun deleteCurrentUser() = Unit
         override suspend fun refreshClaims() = user
         override suspend fun changePassword(currentPassword: String, newPassword: String) {
             calls++
@@ -81,7 +82,7 @@ class OfflineFormsTest {
         val controller = auth(repository, FakeConnectivityRepository(initiallyOnline = false))
 
         val error = runCatching {
-            controller.signUp("New User", "new@example.com", "Password1", "Female", "24", "tech", "bogota")
+            controller.signUp("New User", "new@example.com", "Password1", "Password1", "Female", "24", "tech", "bogota")
         }.exceptionOrNull()
 
         assertTrue(error is OfflineException)

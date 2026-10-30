@@ -22,12 +22,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.whynotkotlin.model.CanonicalCities
 import com.example.whynotkotlin.model.Genders
 import com.example.whynotkotlin.model.CanonicalCategories
+import com.example.whynotkotlin.model.InputRules
+import com.example.whynotkotlin.model.PasswordPolicy
 import com.example.whynotkotlin.view.components.OfflineBanner
 import com.example.whynotkotlin.view.components.PasswordRequirements
 import com.example.whynotkotlin.view.components.WhyNotButton
@@ -42,6 +44,11 @@ import com.example.whynotkotlin.view.theme.WhyNotGray
  * Rules accept only the three gender values, a `preferredCategoryId` that
  * references a seeded category and a `cityId` that references a seeded city, so
  * typed input would fail on submit.
+ *
+ * Each field shows its own error underneath ("Enter your age", "Age must be
+ * between 13 and 120") once the user leaves it, using the same rules as
+ * [com.example.whynotkotlin.controller.AuthController]. Tapping Create shows
+ * every remaining error at once instead of sending an invalid form.
  */
 @Composable
 fun RegisterScreen(
@@ -51,6 +58,7 @@ fun RegisterScreen(
         name: String,
         email: String,
         password: String,
+        confirmPassword: String,
         gender: String,
         age: String,
         preferredCategoryId: String,
@@ -66,8 +74,28 @@ fun RegisterScreen(
     var gender by rememberSaveable { mutableStateOf("") }
     var age by rememberSaveable { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
     var categoryId by rememberSaveable { mutableStateOf("") }
     var cityId by rememberSaveable { mutableStateOf("") }
+    var showAllErrors by rememberSaveable { mutableStateOf(false) }
+
+    val nameError = InputRules.name(name)
+    val emailError = InputRules.email(email)
+    val genderError = if (gender.isBlank()) "Select a gender" else null
+    val ageError = InputRules.age(age)
+    val passwordError =
+        if (password.isEmpty()) "Enter a password" else PasswordPolicy.firstError(password, email, name)
+    val confirmError = when {
+        confirmPassword.isEmpty() -> "Confirm your password"
+        confirmPassword != password -> "The passwords do not match"
+        else -> null
+    }
+    val categoryError = if (categoryId.isBlank()) "Select a preferred category" else null
+    val cityError = if (cityId.isBlank()) "Select a city" else null
+    val formValid = listOf(
+        nameError, emailError, genderError, ageError,
+        passwordError, confirmError, categoryError, cityError
+    ).all { it == null }
 
     Column(
         modifier = Modifier
@@ -110,34 +138,75 @@ fun RegisterScreen(
                 .padding(14.dp),
             verticalArrangement = Arrangement.spacedBy(13.dp)
         ) {
-            WhyNotTextField(name, { name = it }, "Name")
-            WhyNotTextField(email, { email = it }, "Email")
+            WhyNotTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = "Name",
+                error = nameError,
+                showError = showAllErrors,
+                maxLength = InputRules.NAME_MAX_LENGTH
+            )
+
+            WhyNotTextField(
+                value = email,
+                onValueChange = { email = it },
+                label = "Email",
+                placeholder = "name@example.com",
+                error = emailError,
+                showError = showAllErrors,
+                keyboardType = KeyboardType.Email,
+                maxLength = InputRules.EMAIL_MAX_LENGTH
+            )
 
             WhyNotDropdownField(
                 label = "Gender",
                 selectedValue = gender,
                 options = Genders.all.map { it to it },
                 onValueChange = { gender = it },
-                placeholder = "Select"
+                placeholder = "Select",
+                error = genderError,
+                showError = showAllErrors
             )
 
-            WhyNotTextField(age, { age = it }, "Age", placeholder = "18")
+            WhyNotTextField(
+                value = age,
+                onValueChange = { age = it },
+                label = "Age",
+                placeholder = "18",
+                error = ageError,
+                showError = showAllErrors,
+                keyboardType = KeyboardType.Number,
+                maxLength = InputRules.AGE_MAX_LENGTH
+            )
 
             WhyNotTextField(
                 value = password,
                 onValueChange = { password = it },
                 label = "Password",
-                visualTransformation = PasswordVisualTransformation()
+                error = passwordError,
+                showError = showAllErrors,
+                isPassword = true
             )
 
-            PasswordRequirements(password = password)
+            PasswordRequirements(password = password, email = email, name = name)
+
+            WhyNotTextField(
+                value = confirmPassword,
+                onValueChange = { confirmPassword = it },
+                label = "Confirm password",
+                error = confirmError,
+                showError = showAllErrors,
+                isPassword = true
+            )
 
             WhyNotDropdownField(
                 label = "Preferred Category",
                 selectedValue = categoryId,
                 options = CanonicalCategories.all.map { it.id to it.name },
                 onValueChange = { categoryId = it },
-                placeholder = "Select"
+                placeholder = "Select",
+                error = categoryError,
+                showError = showAllErrors
             )
 
             WhyNotDropdownField(
@@ -145,7 +214,9 @@ fun RegisterScreen(
                 selectedValue = cityId,
                 options = CanonicalCities.all.map { it.id to it.name },
                 onValueChange = { cityId = it },
-                placeholder = "Select"
+                placeholder = "Select",
+                error = cityError,
+                showError = showAllErrors
             )
         }
 
@@ -157,7 +228,13 @@ fun RegisterScreen(
 
         WhyNotButton(
             text = if (submitting) "Creating..." else "Create an account",
-            onClick = { onSubmit(name, email, password, gender, age, categoryId, cityId) },
+            onClick = {
+                if (formValid) {
+                    onSubmit(name, email, password, confirmPassword, gender, age, categoryId, cityId)
+                } else {
+                    showAllErrors = true
+                }
+            },
             enabled = !submitting
         )
 

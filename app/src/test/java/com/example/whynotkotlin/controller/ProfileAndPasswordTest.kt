@@ -26,6 +26,7 @@ class ProfileAndPasswordTest {
         override suspend fun signIn(email: String, password: String) = user
         override suspend fun signUp(email: String, password: String) = user
         override suspend fun signOut() = Unit
+        override suspend fun deleteCurrentUser() = Unit
         override suspend fun refreshClaims() = user
         override suspend fun changePassword(currentPassword: String, newPassword: String) {
             failure?.let { throw it }
@@ -75,7 +76,7 @@ class ProfileAndPasswordTest {
         assertEquals(23, users.update?.age)
     }
 
-    @Test fun `failed profile save reaches the form with a readable error`() = runTest(dispatcher) {
+    @Test fun `an unrecognised failure reaches the form with a generic message`() = runTest(dispatcher) {
         val users = Users()
         val controller = ProfileController(Auth(), users, Lists(), backgroundScope)
         users.failure = IllegalStateException("No connection")
@@ -84,7 +85,7 @@ class ProfileAndPasswordTest {
         }.exceptionOrNull()
         assertNotNull(error)
         assertNull(users.update)
-        assertEquals("No connection", error!!.readableMessage())
+        assertEquals("Something went wrong. Try again.", error!!.readableMessage())
     }
 
     @Test fun `invalid age is rejected before reaching the backend`() = runTest(dispatcher) {

@@ -21,6 +21,7 @@ class OnboardingAndWishlistTest {
     private class Auth : AuthRepository {
         val user = AuthUser("uid", "user@example.com")
         var signedUpWith: String? = null
+        var deleted = false
         override fun observeSession() = flowOf(user)
         override fun currentUser() = user
         override suspend fun signIn(email: String, password: String) = user
@@ -29,15 +30,20 @@ class OnboardingAndWishlistTest {
             return user
         }
         override suspend fun signOut() = Unit
+        override suspend fun deleteCurrentUser() {
+            deleted = true
+        }
         override suspend fun refreshClaims() = user
         override suspend fun changePassword(currentPassword: String, newPassword: String) = Unit
     }
 
     private class Users : UserRepository {
         var created = false
+        var failure: Exception? = null
         override fun observeProfile(uid: String) = flowOf<UserProfile?>(null)
         override suspend fun getProfile(uid: String): UserProfile? = null
         override suspend fun createProfile(uid: String, email: String, draft: UserProfileDraft) {
+            failure?.let { throw it }
             created = true
         }
         override suspend fun updateProfile(uid: String, update: UserProfileUpdate) = Unit
@@ -78,8 +84,13 @@ class OnboardingAndWishlistTest {
         override suspend fun recordPurchase(ownerId: String, product: Product, purchasePrice: Double) = Unit
     }
 
-    private suspend fun AuthController.register(email: String = "new@example.com", password: String = "Wishlist2026") =
-        signUp("New User", email, password, "Female", "24", "tech", "bogota")
+    private suspend fun AuthController.register(
+        email: String = "new@example.com",
+        password: String = "Wishlist2026",
+        confirmPassword: String = password,
+        name: String = "New User",
+        age: String = "24"
+    ) = signUp(name, email, password, confirmPassword, "Female", age, "tech", "bogota")
 
     // --- Sign-up -------------------------------------------------------------
 
@@ -116,6 +127,80 @@ class OnboardingAndWishlistTest {
 
         assertEquals("Enter a valid email, such as name@example.com", error?.message)
         assertNull(auth.signedUpWith)
+    }
+
+    @Test fun `an age outside 13 to 120 is rejected before the backend`() = runTest(dispatcher) {
+        val auth = Auth()
+        val controller = AuthController(auth, Users(), Onboarding(), backgroundScope)
+
+        val young = runCatching { controller.register(age = "12") }.exceptionOrNull()
+        val old = runCatching { controller.register(age = "121") }.exceptionOrNull()
+
+        assertEquals("Age must be between 13 and 120", young?.message)
+        assertEquals("Age must be between 13 and 120", old?.message)
+        assertNull(auth.signedUpWith)
+    }
+
+    @Test fun `a name with emojis, only numbers or symbols is rejected`() = runTest(dispatcher) {
+        val auth = Auth()
+        val controller = AuthController(auth, Users(), Onboarding(), backgroundScope)
+
+        val emoji = runCatching { controller.register(name = "Ana \uD83D\uDE00") }.exceptionOrNull()
+        val numbers = runCatching { controller.register(name = "12345") }.exceptionOrNull()
+        val script = runCatching { controller.register(name = "<script>") }.exceptionOrNull()
+
+        assertEquals("Your name cannot contain emojis", emoji?.message)
+        assertEquals("Your name needs at least one letter", numbers?.message)
+        assertEquals("Use only letters, numbers, spaces, hyphens or apostrophes", script?.message)
+        assertNull(auth.signedUpWith)
+    }
+
+    @Test fun `the confirmation must match the password`() = runTest(dispatcher) {
+        val auth = Auth()
+        val controller = AuthController(auth, Users(), Onboarding(), backgroundScope)
+
+        val error = runCatching {
+            controller.register(password = "Wishlist2026", confirmPassword = "Wishlist2025")
+        }.exceptionOrNull()
+
+        assertEquals("The passwords do not match", error?.message)
+        assertNull(auth.signedUpWith)
+    }
+
+    @Test fun `a password with the user's name is rejected`() = runTest(dispatcher) {
+        val auth = Auth()
+        val controller = AuthController(auth, Users(), Onboarding(), backgroundScope)
+
+        val error = runCatching {
+            controller.register(name = "Valentina", password = "Valentina2026")
+        }.exceptionOrNull()
+
+        assertEquals("The password cannot include your name or email", error?.message)
+        assertNull(auth.signedUpWith)
+    }
+
+    @Test fun `the email is sent in lowercase`() = runTest(dispatcher) {
+        val auth = Auth()
+        val controller = AuthController(auth, Users(), Onboarding(), backgroundScope)
+
+        controller.register(email = "  New.User@Example.COM ")
+
+        assertEquals("new.user@example.com", auth.signedUpWith)
+    }
+
+    @Test fun `a failed profile removes the new account so the email stays free`() = runTest(dispatcher) {
+        val auth = Auth()
+        val users = Users().apply { failure = IllegalStateException("PERMISSION_DENIED") }
+        val onboarding = Onboarding()
+        val controller = AuthController(auth, users, onboarding, backgroundScope)
+
+        val error = runCatching { controller.register() }.exceptionOrNull()
+        runCurrent()
+
+        assertEquals("PERMISSION_DENIED", error?.message)
+        assertTrue(auth.deleted)
+        assertFalse(users.created)
+        assertTrue(onboarding.steps.isEmpty())
     }
 
     @Test fun `failing to record the step does not fail sign-up`() = runTest(dispatcher) {
@@ -198,6 +283,9 @@ class OnboardingAndWishlistTest {
 
         val error = runCatching { controller.createWishlist("tech", "my photo") }.exceptionOrNull()
         assertEquals("The picture link must start with http:// or https://", error?.message)
+
+        val noHost = runCatching { controller.createWishlist("tech", "https://cover") }.exceptionOrNull()
+        assertEquals("The picture link is not a valid web address", noHost?.message)
 
         controller.createWishlist("tech", "  https://example.com/cover.png ")
         assertEquals("https://example.com/cover.png", lists.wishlists.single().imageUrl)

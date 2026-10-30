@@ -23,9 +23,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.whynotkotlin.model.InputRules
 import com.example.whynotkotlin.view.components.OfflineBanner
 import com.example.whynotkotlin.view.components.WhyNotButton
 import com.example.whynotkotlin.view.components.WhyNotErrorBanner
@@ -46,6 +47,12 @@ fun LoginScreen(
     // leaves memory, so it is not written to the saved instance state.
     var email by rememberSaveable { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var showAllErrors by rememberSaveable { mutableStateOf(false) }
+
+    // Signing in only checks that the fields are usable: the password rules
+    // apply when a password is created, not to existing accounts.
+    val emailError = InputRules.email(email)
+    val passwordError = if (password.isEmpty()) "Enter your password" else null
 
     Column(
         modifier = Modifier
@@ -93,14 +100,20 @@ fun LoginScreen(
             WhyNotTextField(
                 value = email,
                 onValueChange = { email = it },
-                label = "Email"
+                label = "Email",
+                error = emailError,
+                showError = showAllErrors,
+                keyboardType = KeyboardType.Email,
+                maxLength = InputRules.EMAIL_MAX_LENGTH
             )
 
             WhyNotTextField(
                 value = password,
                 onValueChange = { password = it },
                 label = "Password",
-                visualTransformation = PasswordVisualTransformation()
+                error = passwordError,
+                showError = showAllErrors,
+                isPassword = true
             )
         }
 
@@ -112,7 +125,13 @@ fun LoginScreen(
 
         WhyNotButton(
             text = if (submitting) "Signing in..." else "Log in",
-            onClick = { onSubmit(email, password) },
+            onClick = {
+                if (emailError == null && passwordError == null) {
+                    onSubmit(email, password)
+                } else {
+                    showAllErrors = true
+                }
+            },
             filled = false,
             enabled = !submitting
         )

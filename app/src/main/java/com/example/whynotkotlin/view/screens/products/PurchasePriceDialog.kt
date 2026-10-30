@@ -17,7 +17,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.text.input.KeyboardType
+import com.example.whynotkotlin.model.PriceRules
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,7 +46,9 @@ fun PurchasePriceDialog(
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit
 ) {
-    var paid by remember { mutableStateOf(savedPrice.asEditablePrice()) }
+    var paid by rememberSaveable { mutableStateOf(savedPrice.asEditablePrice()) }
+    var showError by rememberSaveable { mutableStateOf(false) }
+    val paidError = PriceRules.error(paid)
 
     BasicAlertDialog(
         onDismissRequest = onDismiss,
@@ -76,7 +80,11 @@ fun PurchasePriceDialog(
                     value = paid,
                     onValueChange = { paid = it },
                     label = "Price paid",
-                    placeholder = "0"
+                    placeholder = "1500",
+                    error = paidError,
+                    showError = showError,
+                    keyboardType = KeyboardType.Decimal,
+                    maxLength = PriceRules.MAX_LENGTH
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -94,8 +102,8 @@ fun PurchasePriceDialog(
                     Text(
                         text = "Purchased",
                         style = whyNotSerif(16),
-                        modifier = Modifier.clickable(enabled = paid.isNotBlank()) {
-                            onConfirm(paid)
+                        modifier = Modifier.clickable {
+                            if (paidError == null) onConfirm(paid) else showError = true
                         }
                     )
                 }

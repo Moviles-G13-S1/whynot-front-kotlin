@@ -1,6 +1,7 @@
 package com.example.whynotkotlin.view.components
 
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,10 +35,13 @@ fun ProductCard(
 
         Spacer(modifier = Modifier.height(10.dp))
 
+        // Two lines at most, so a long name cannot push the card out of shape.
         Text(
             text = name,
             style = MaterialTheme.typography.titleLarge,
             color = WhyNotBlack,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(start = 4.dp)
         )
 

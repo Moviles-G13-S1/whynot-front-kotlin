@@ -149,6 +149,7 @@ fun NewProductRoute(
                 )
             }
         },
+        onRejectedSave = productController::recordRejectedSave,
         onCreateWishlistClick = navigator::toNewWishlist,
         onHomeClick = navigator::toHome,
         onWishlistsClick = navigator::toWishlists,

@@ -1,5 +1,6 @@
 package com.example.whynotkotlin.model.repositories
 
+import com.example.whynotkotlin.model.UserFacingException
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -19,7 +20,7 @@ interface ConnectivityRepository {
  * An action that needs the backend was attempted offline. Nothing was sent, so
  * the form keeps what the user typed and can try again once back online.
  */
-class OfflineException(message: String) : Exception(message)
+class OfflineException(message: String) : UserFacingException(message)
 
 /** Throws [OfflineException] with [message] when the device is offline. */
 fun ConnectivityRepository?.requireOnline(message: String) {

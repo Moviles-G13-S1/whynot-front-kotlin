@@ -17,6 +17,8 @@ import androidx.compose.material3.Text
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.text.input.KeyboardType
+import com.example.whynotkotlin.model.InputRules
 import com.example.whynotkotlin.model.UserProfile
 import com.example.whynotkotlin.model.Category
 import com.example.whynotkotlin.model.Genders
@@ -68,6 +70,11 @@ fun EditProfileScreen(
     var category by rememberSaveable(profile.uid) { mutableStateOf(profile.preferredCategoryId) }
     val changed = name != profile.name || gender != profile.gender ||
         age != profile.age.toString() || category != profile.preferredCategoryId
+    var showAllErrors by rememberSaveable(profile.uid) { mutableStateOf(false) }
+
+    // The same rules as the profile controller, shown under each field.
+    val nameError = InputRules.name(name)
+    val ageError = InputRules.age(age)
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -128,7 +135,14 @@ fun EditProfileScreen(
                     )
                     .padding(14.dp)
             ) {
-                WhyNotTextField(name, { if (!saving) name = it }, "Name")
+                WhyNotTextField(
+                    value = name,
+                    onValueChange = { if (!saving) name = it },
+                    label = "Name",
+                    error = nameError,
+                    showError = showAllErrors,
+                    maxLength = InputRules.NAME_MAX_LENGTH
+                )
 
                 Spacer(modifier = Modifier.height(10.dp))
 
@@ -148,6 +162,10 @@ fun EditProfileScreen(
                         value = age,
                         onValueChange = { if (!saving) age = it },
                         label = "Age",
+                        error = ageError,
+                        showError = showAllErrors,
+                        keyboardType = KeyboardType.Number,
+                        maxLength = InputRules.AGE_MAX_LENGTH,
                         modifier = Modifier.weight(0.42f)
                     )
 
@@ -188,7 +206,13 @@ fun EditProfileScreen(
 
             WhyNotButton(
                 text = if (saving) "Saving…" else "Save changes",
-                onClick = { onSaveChangesClick(name, gender, age, category) },
+                onClick = {
+                    if (nameError == null && ageError == null) {
+                        onSaveChangesClick(name, gender, age, category)
+                    } else {
+                        showAllErrors = true
+                    }
+                },
                 enabled = changed && !saving
             )
 

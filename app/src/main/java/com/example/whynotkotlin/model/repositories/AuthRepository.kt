@@ -23,6 +23,9 @@ interface AuthRepository {
 
     suspend fun signOut()
 
+    /** Deletes the signed-in account, to undo a sign-up whose profile could not be created. */
+    suspend fun deleteCurrentUser()
+
     suspend fun changePassword(currentPassword: String, newPassword: String)
 
     /** Forces a token refresh so a newly granted `admin` claim is visible. */

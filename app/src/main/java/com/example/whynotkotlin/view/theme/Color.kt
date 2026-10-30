@@ -15,5 +15,8 @@ val WhyNotDivider = Color(0xFFE0DEDB)
 val WhyNotSearch = Color(0xFFE9E8E7)
 val WhyNotField = Color(0xFFFFFEFE)
 val WhyNotDanger = Color(0xFFFF5252)
+
+// Dark enough to read on white, cream and beige (field errors).
+val WhyNotErrorText = Color(0xFFB3261E)
 val WhyNotDisabled = Color(0xFFB9B5B0)
 val WhyNotOverlay = Color(0x80171513)

@@ -16,6 +16,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.example.whynotkotlin.view.theme.WhyNotBlack
 import com.example.whynotkotlin.view.theme.WhyNotBorder
@@ -45,6 +47,8 @@ fun CategoryChip(
                 shape
             )
             .clickable(enabled = enabled) { onClick() }
+            // The selection is shown only by colour, so it is also announced.
+            .semantics { this.selected = selected }
             .padding(horizontal = 18.dp, vertical = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(7.dp),
         verticalAlignment = Alignment.CenterVertically

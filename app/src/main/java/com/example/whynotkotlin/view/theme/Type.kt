@@ -35,13 +35,17 @@ val Poppins = FontFamily(
     )
 )
 
-/** Editorial style used by headings and field labels, as on iOS. */
+/**
+ * Editorial style used by headings and field labels, as on iOS. The line height
+ * leaves room above the font size so wrapped lines do not overlap or get cut
+ * with large system fonts.
+ */
 fun whyNotSerif(size: Int, color: Color = Color.Black): TextStyle =
     TextStyle(
         fontFamily = FrankRuhlLibre,
         fontWeight = FontWeight.Normal,
         fontSize = size.sp,
-        lineHeight = size.sp,
+        lineHeight = (size * 1.2f).sp,
         color = color
     )
 

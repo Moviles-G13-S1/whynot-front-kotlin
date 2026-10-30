@@ -1,5 +1,6 @@
 package com.example.whynotkotlin.controller
 
+import com.example.whynotkotlin.model.InputRules
 import com.example.whynotkotlin.model.OnboardingStep
 import com.example.whynotkotlin.model.ValidationException
 import com.example.whynotkotlin.model.WishlistCatalog
@@ -86,9 +87,7 @@ class WishlistController(
         connectivity.requireOnline(CREATE_OFFLINE)
 
         val pictureLink = imageUrl.trim()
-        if (pictureLink.isNotEmpty() && !pictureLink.isWebLink()) {
-            throw ValidationException("The picture link must start with http:// or https://")
-        }
+        InputRules.optionalLink(pictureLink, PICTURE_LINK)?.let { throw ValidationException(it) }
 
         val categories = wishlistRepository.observeCategories().first()
         val category = categories.firstOrNull { it.id == categoryId }
@@ -128,11 +127,9 @@ class WishlistController(
     }
 
     companion object {
+        const val PICTURE_LINK = "Picture link"
+
         const val CREATE_OFFLINE =
             "You're offline. Connect to the internet to create a wishlist."
     }
 }
-
-private fun String.isWebLink(): Boolean =
-    (startsWith("https://", ignoreCase = true) || startsWith("http://", ignoreCase = true)) &&
-        none { it.isWhitespace() }
