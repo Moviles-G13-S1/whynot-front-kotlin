@@ -2,8 +2,6 @@ package com.example.whynotkotlin.view.screens.purchases
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -26,6 +25,7 @@ import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -43,6 +44,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.whynotkotlin.model.Product
+import com.example.whynotkotlin.view.components.OfflineBanner
 import com.example.whynotkotlin.view.components.ProductImage
 import com.example.whynotkotlin.view.components.WhyNotBottomBar
 import com.example.whynotkotlin.view.components.WhyNotTab
@@ -53,7 +55,6 @@ import com.example.whynotkotlin.view.theme.WhyNotGray
 import com.example.whynotkotlin.view.theme.WhyNotSearch
 import com.example.whynotkotlin.view.theme.whyNotMuted
 import com.example.whynotkotlin.view.theme.whyNotSerif
-import com.example.whynotkotlin.view.components.OfflineBanner
 
 private enum class PurchaseSort { NONE, LOW_TO_HIGH, HIGH_TO_LOW }
 
@@ -68,7 +69,8 @@ fun PurchasesScreen(
     onAddClick: () -> Unit,
     onPurchasesClick: () -> Unit = {},
     onProfileClick: () -> Unit,
-    isOnline: Boolean = true
+    isOnline: Boolean = true,
+    onSpendingClick: () -> Unit = {}
 ) {
     var sort by rememberSaveable { mutableStateOf(PurchaseSort.NONE) }
 
@@ -116,6 +118,11 @@ fun PurchasesScreen(
                         Spacer(modifier = Modifier.height(8.dp))
 
                         Text(text = "${purchases.size} items", style = whyNotMuted(15))
+
+                        // Sprint 4: entry to the Monthly Spending Summary.
+                        TextButton(onClick = onSpendingClick) {
+                            Text(text = "Monthly spending ›", style = whyNotSerif(16))
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(28.dp))

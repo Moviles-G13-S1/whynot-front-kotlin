@@ -22,7 +22,8 @@ fun ProductDetailRoute(
     sourceTab: WhyNotTab,
     navigator: WhyNotNavigator
 ) {
-    val productController = LocalAppDependencies.current.productController
+    val dependencies = LocalAppDependencies.current
+    val productController = dependencies.productController
     val productsResult by productController.products.collectAsStateWithLifecycle()
     val submission = rememberSubmission()
 
@@ -39,6 +40,7 @@ fun ProductDetailRoute(
             product?.let {
                 submission.run {
                     productController.markPurchased(it, purchasePrice)
+                    dependencies.spendingController?.onPurchasesChanged()
                 }
             }
         },
@@ -47,6 +49,7 @@ fun ProductDetailRoute(
             product?.let {
                 submission.run(onSuccess = navigator::back) {
                     productController.deleteProduct(it.id)
+                    dependencies.spendingController?.onPurchasesChanged()
                 }
             }
         },
@@ -89,6 +92,7 @@ fun EditProductRoute(
                     imageUrl = imageUrl,
                     productUrl = productUrl
                 )
+                dependencies.spendingController?.onPurchasesChanged()
             }
         },
         onCancelClick = navigator::back,
