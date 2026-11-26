@@ -63,7 +63,8 @@ fun HomeScreen(
     onRefreshRecommendation: () -> Unit = onLoadRecommendation,
     recommendationStale: Boolean = false,
     isOnline: Boolean = true,
-    onLoadHome: suspend (Boolean, Boolean) -> Unit = { _, _ -> onLoadRecommendation() }
+    onLoadHome: suspend (Boolean, Boolean) -> Unit = { _, _ -> onLoadRecommendation() },
+    onNearbyDetailOpened: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier.fillMaxSize()
@@ -167,7 +168,8 @@ fun HomeScreen(
                     onLoadRecommendation = onLoadRecommendation,
                     onRefreshRecommendation = onRefreshRecommendation,
                     recommendationStale = recommendationStale,
-                    onSaveRecommendation = onSaveRecommendation
+                    onSaveRecommendation = onSaveRecommendation,
+                    onNearbyDetailOpened = onNearbyDetailOpened
                 )
             }
         }

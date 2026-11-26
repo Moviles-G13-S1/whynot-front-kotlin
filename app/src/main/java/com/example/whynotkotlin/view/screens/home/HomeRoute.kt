@@ -187,6 +187,11 @@ fun HomeRoute(navigator: WhyNotNavigator) {
         recommendationStale = recommendationStale || !isOnline,
         isOnline = isOnline,
         onSaveRecommendation = ::saveRecommendation,
+        onNearbyDetailOpened = {
+            uid?.let {
+                dependencies.homeUxController.track(it, NEARBY_DETAIL_OPENED, NEARBY_DETAIL_SOURCE)
+            }
+        },
         onHomeClick = {},
         onWishlistsClick = navigator::toWishlists,
         onWishlistClick = navigator::toWishlistDetail,
@@ -236,3 +241,7 @@ private val NearbyStoreSaver = Saver<NearbyStore?, ArrayList<Any>>(
         )
     }
 )
+
+/** Sprint 4 BQ (Juan Felipe): nearby store detail opened, counted per week in the backend. */
+private const val NEARBY_DETAIL_OPENED = "nearby_store_detail_opened"
+private const val NEARBY_DETAIL_SOURCE = "home_nearby_store"

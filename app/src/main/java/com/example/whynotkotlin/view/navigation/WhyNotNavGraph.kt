@@ -1,21 +1,21 @@
 package com.example.whynotkotlin.view.navigation
 
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.compose.material3.Text
-import com.example.whynotkotlin.model.readableMessage
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.whynotkotlin.app.LocalAppDependencies
+import com.example.whynotkotlin.model.readableMessage
 import com.example.whynotkotlin.view.components.WhyNotLoading
 import com.example.whynotkotlin.view.components.WhyNotTab
 import com.example.whynotkotlin.view.screens.auth.LoginRoute
@@ -28,6 +28,8 @@ import com.example.whynotkotlin.view.screens.profile.ChangePasswordRoute
 import com.example.whynotkotlin.view.screens.profile.EditProfileRoute
 import com.example.whynotkotlin.view.screens.profile.ProfileRoute
 import com.example.whynotkotlin.view.screens.purchases.PurchasesRoute
+import com.example.whynotkotlin.view.screens.spending.CategorySpendingDetailRoute
+import com.example.whynotkotlin.view.screens.spending.SpendingSummaryRoute
 import com.example.whynotkotlin.view.screens.wishlists.NewWishlistRoute
 import com.example.whynotkotlin.view.screens.wishlists.WishlistDetailRoute
 import com.example.whynotkotlin.view.screens.wishlists.WishlistsRoute
@@ -181,6 +183,24 @@ fun WhyNotNavigation() {
 
             composable(WhyNotRoutes.CHANGE_PASSWORD) {
                 ChangePasswordRoute(navigator)
+            }
+
+            composable(WhyNotRoutes.SPENDING) {
+                SpendingSummaryRoute(navigator)
+            }
+
+            composable(
+                WhyNotRoutes.SPENDING_CATEGORY,
+                arguments = listOf(
+                    navArgument(WhyNotRoutes.ARG_YEAR_MONTH) { type = NavType.IntType },
+                    navArgument(WhyNotRoutes.ARG_CATEGORY_ID) { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                CategorySpendingDetailRoute(
+                    yearMonth = backStackEntry.arguments?.getInt(WhyNotRoutes.ARG_YEAR_MONTH) ?: 0,
+                    categoryId = backStackEntry.arguments?.getString(WhyNotRoutes.ARG_CATEGORY_ID).orEmpty(),
+                    navigator = navigator
+                )
             }
         }
     }

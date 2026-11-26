@@ -81,6 +81,14 @@ class WhyNotNavigator(
         navController.navigate(WhyNotRoutes.CHANGE_PASSWORD)
     }
 
+    fun toSpending() {
+        navController.navigate(WhyNotRoutes.SPENDING)
+    }
+
+    fun toCategorySpending(yearMonth: Int, categoryId: String) {
+        navController.navigate(WhyNotRoutes.spendingCategory(yearMonth, categoryId))
+    }
+
     private fun navigateMain(route: String) {
         navController.navigate(route) {
             popUpTo(WhyNotRoutes.HOME) {

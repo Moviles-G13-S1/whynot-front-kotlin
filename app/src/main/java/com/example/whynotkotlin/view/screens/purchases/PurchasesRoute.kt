@@ -25,6 +25,7 @@ fun PurchasesRoute(navigator: WhyNotNavigator) {
         onWishlistsClick = navigator::toWishlists,
         onAddClick = navigator::toAdd,
         onPurchasesClick = {},
-        onProfileClick = navigator::toProfile
+        onProfileClick = navigator::toProfile,
+        onSpendingClick = navigator::toSpending
     )
 }

@@ -59,7 +59,13 @@ class AppDependencies(
     uxEventRepository: com.example.whynotkotlin.model.repositories.UxEventRepository,
 
     /** Shared online/offline state, read by any screen through LocalAppDependencies. */
-    val connectivity: ConnectivityRepository
+    val connectivity: ConnectivityRepository,
+
+    /** Last recommendation per user on disk; null keeps it memory-only (tests). */
+    recommendationFileStore: com.example.whynotkotlin.model.repositories.RecommendationFileStore? = null,
+
+    /** Monthly Spending Summary saved on the phone (SQLite); in-memory fake in tests. */
+    spendingStore: com.example.whynotkotlin.model.repositories.SpendingStore? = null
 ) {
 
     val homeUxController = com.example.whynotkotlin.controller.HomeUxController(uxEventRepository, scope)
@@ -67,6 +73,7 @@ class AppDependencies(
     val authController =
         AuthController(authRepository, userRepository, onboardingRepository, scope, connectivity) {
             recommendationController.onSignedOut()
+            spendingController?.onSignedOut()
         }
 
     val profileController =
@@ -101,8 +108,23 @@ class AppDependencies(
             repository = recommendationRepository,
             cache = RecommendationCache(),
             connectivity = connectivity,
-            currentUid = { authRepository.currentUser()?.uid }
+            currentUid = { authRepository.currentUser()?.uid },
+            fileStore = recommendationFileStore,
+            backgroundScope = scope
         )
+
+    /** Sprint 4: Monthly Spending Summary. Null only when no store is wired (tests). */
+    val spendingController: com.example.whynotkotlin.controller.SpendingController? =
+        spendingStore?.let { store ->
+            com.example.whynotkotlin.controller.SpendingController(
+                productRepository = productRepository,
+                wishlistRepository = wishlistRepository,
+                store = store,
+                connectivity = connectivity,
+                currentUid = { authRepository.currentUser()?.uid },
+                backgroundScope = scope
+            )
+        }
 
     companion object {
 
@@ -157,7 +179,13 @@ class AppDependencies(
                     scope,
 
                 connectivity =
-                    AndroidConnectivityRepository(context, scope)
+                    AndroidConnectivityRepository(context, scope),
+
+                recommendationFileStore =
+                    com.example.whynotkotlin.model.repositories.LocalFileRecommendationStore(context),
+
+                spendingStore =
+                    com.example.whynotkotlin.model.repositories.SqliteSpendingStore(context)
             )
         }
     }

@@ -42,6 +42,18 @@ object WhyNotRoutes {
     const val EDIT_PRODUCT =
         "edit_product/{$ARG_PRODUCT_ID}?$ARG_SOURCE_TAB={$ARG_SOURCE_TAB}"
 
+    /** Sprint 4: Monthly Spending Summary and Category Spending Detail. */
+    const val SPENDING = "spending"
+
+    const val ARG_YEAR_MONTH = "yearMonth"
+    const val ARG_CATEGORY_ID = "categoryId"
+
+    const val SPENDING_CATEGORY =
+        "spending/{$ARG_YEAR_MONTH}/{$ARG_CATEGORY_ID}"
+
+    fun spendingCategory(yearMonth: Int, categoryId: String): String =
+        "spending/$yearMonth/${Uri.encode(categoryId)}"
+
     fun wishlistDetail(wishlistId: String): String =
         "wishlist_detail/${Uri.encode(wishlistId)}"
 
