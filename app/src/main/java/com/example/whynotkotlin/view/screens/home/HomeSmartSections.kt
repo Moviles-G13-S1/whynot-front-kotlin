@@ -90,7 +90,8 @@ fun HomeSmartSections(
     onRefreshRecommendation: () -> Unit = onLoadRecommendation,
     recommendationStale: Boolean = false,
     isOnline: Boolean = true,
-    onLoadHome: suspend (Boolean, Boolean) -> Unit = { _, _ -> onLoadRecommendation() }
+    onLoadHome: suspend (Boolean, Boolean) -> Unit = { _, _ -> onLoadRecommendation() },
+    onNearbyDetailOpened: () -> Unit = {}
 ) {
     val context = LocalContext.current
 
@@ -185,7 +186,11 @@ fun HomeSmartSections(
             Text("Open location settings")
         }
     }
-    TextButton(onClick = { detail = "store" }) { Text("View store details") }
+    TextButton(onClick = {
+        detail = "store"
+        // Sprint 4 BQ: only an open that shows a store counts.
+        if (nearbyStore != null) onNearbyDetailOpened()
+    }) { Text("View store details") }
 
     Spacer(modifier = Modifier.height(54.dp))
 
