@@ -43,6 +43,11 @@ object WhyNotRoutes {
         "edit_product/{$ARG_PRODUCT_ID}?$ARG_SOURCE_TAB={$ARG_SOURCE_TAB}"
 
     /** Sprint 4: Monthly Spending Summary and Category Spending Detail. */
+    const val DIRECTORY = "store_directory"
+    const val STORE_ID = "storeId"
+    const val STORE_DETAIL = "$DIRECTORY/{$STORE_ID}"
+    fun storeDetail(id: String) = "$DIRECTORY/${Uri.encode(id)}"
+
     const val SPENDING = "spending"
 
     const val ARG_YEAR_MONTH = "yearMonth"

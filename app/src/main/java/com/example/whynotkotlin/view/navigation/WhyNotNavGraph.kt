@@ -1,5 +1,6 @@
 package com.example.whynotkotlin.view.navigation
 
+import com.example.whynotkotlin.view.screens.directory.StoreDirectoryRoute
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -183,6 +184,16 @@ fun WhyNotNavigation() {
 
             composable(WhyNotRoutes.CHANGE_PASSWORD) {
                 ChangePasswordRoute(navigator)
+            }
+
+            composable(WhyNotRoutes.DIRECTORY) {
+                StoreDirectoryRoute(navigator)
+            }
+            composable(
+                WhyNotRoutes.STORE_DETAIL,
+                arguments = listOf(navArgument(WhyNotRoutes.STORE_ID) { type = NavType.StringType })
+            ) { entry ->
+                StoreDirectoryRoute(navigator, entry.arguments?.getString(WhyNotRoutes.STORE_ID))
             }
 
             composable(WhyNotRoutes.SPENDING) {

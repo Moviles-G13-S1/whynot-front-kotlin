@@ -52,7 +52,7 @@ class AppDependencies(
     productRepository: ProductRepository,
     productDraftRepository: ProductDraftRepository,
     onboardingRepository: OnboardingRepository,
-    locationRepository: LocationRepository,
+    val locationRepository: LocationRepository,
     nearbyStoreRepository: NearbyStoreRepository,
     recommendationRepository: RecommendationRepository,
     scope: CoroutineScope,
@@ -65,7 +65,8 @@ class AppDependencies(
     recommendationFileStore: com.example.whynotkotlin.model.repositories.RecommendationFileStore? = null,
 
     /** Monthly Spending Summary saved on the phone (SQLite); in-memory fake in tests. */
-    spendingStore: com.example.whynotkotlin.model.repositories.SpendingStore? = null
+    spendingStore: com.example.whynotkotlin.model.repositories.SpendingStore? = null,
+    val storeDirectory: com.example.whynotkotlin.model.repositories.StoreDirectoryRepository? = null
 ) {
 
     val homeUxController = com.example.whynotkotlin.controller.HomeUxController(uxEventRepository, scope)
@@ -184,6 +185,7 @@ class AppDependencies(
                 recommendationFileStore =
                     com.example.whynotkotlin.model.repositories.LocalFileRecommendationStore(context),
 
+                storeDirectory = com.example.whynotkotlin.model.repositories.StoreDirectoryRepository(firestore),
                 spendingStore =
                     com.example.whynotkotlin.model.repositories.SqliteSpendingStore(context)
             )

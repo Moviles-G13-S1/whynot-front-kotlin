@@ -81,6 +81,10 @@ class WhyNotNavigator(
         navController.navigate(WhyNotRoutes.CHANGE_PASSWORD)
     }
 
+    fun toStoreDirectory() { navController.navigate(WhyNotRoutes.DIRECTORY) }
+
+    fun toDirectoryStore(id: String) { navController.navigate(WhyNotRoutes.storeDetail(id)) }
+
     fun toSpending() {
         navController.navigate(WhyNotRoutes.SPENDING)
     }

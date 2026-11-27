@@ -64,6 +64,7 @@ fun HomeScreen(
     recommendationStale: Boolean = false,
     isOnline: Boolean = true,
     onLoadHome: suspend (Boolean, Boolean) -> Unit = { _, _ -> onLoadRecommendation() },
+    onOpenDirectory: () -> Unit = {},
     onNearbyDetailOpened: () -> Unit = {}
 ) {
     Column(
@@ -151,6 +152,9 @@ fun HomeScreen(
                 )
 
                 Spacer(modifier = Modifier.height(44.dp))
+
+                WhyNotPillButton(text = "Browse store directory", onClick = onOpenDirectory)
+                Spacer(modifier = Modifier.height(16.dp))
 
                 HomeSmartSections(
                     nearbyStore = nearbyStore,
