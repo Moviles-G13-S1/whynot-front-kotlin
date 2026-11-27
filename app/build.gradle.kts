@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.services)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -65,6 +66,11 @@ dependencies {
     implementation(libs.coil.network.okhttp)
     // Local storage: unsent product drafts survive closing the app.
     implementation(libs.androidx.datastore.preferences)
+    // Local storage (Sprint 4, product search): products kept on the phone in a
+    // Room database so search keeps working offline and after a restart.
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
     implementation(libs.kotlinx.coroutines.play.services)
     testImplementation(libs.junit)
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")

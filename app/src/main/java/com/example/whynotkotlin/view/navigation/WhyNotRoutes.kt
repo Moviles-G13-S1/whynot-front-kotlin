@@ -43,6 +43,9 @@ object WhyNotRoutes {
     const val EDIT_PRODUCT =
         "edit_product/{$ARG_PRODUCT_ID}?$ARG_SOURCE_TAB={$ARG_SOURCE_TAB}"
 
+    /** Sprint 4 (Miguel): Global Product Search. */
+    const val PRODUCT_SEARCH = "product_search"
+
     /** Sprint 4: Monthly Spending Summary and Category Spending Detail. */
     const val DIRECTORY = "store_directory"
     const val STORE_ID = "storeId"

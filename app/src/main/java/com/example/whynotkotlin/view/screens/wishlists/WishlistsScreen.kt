@@ -1,6 +1,17 @@
 package com.example.whynotkotlin.view.screens.wishlists
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.Icon
+import androidx.compose.ui.draw.clip
+import com.example.whynotkotlin.view.theme.WhyNotBorder
+import com.example.whynotkotlin.view.theme.WhyNotGray
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,7 +50,8 @@ fun WishlistsScreen(
     onAddClick: () -> Unit = {},
     onPurchasesClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
-    isOnline: Boolean = true
+    isOnline: Boolean = true,
+    onSearchClick: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier.fillMaxSize()
@@ -67,6 +79,27 @@ fun WishlistsScreen(
                 text = "Every thing you want, all in one place.",
                 style = whyNotMuted(15)
             )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Sprint 4 (Miguel): Global Product Search across every wishlist.
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(20.dp))
+                    .border(1.dp, WhyNotBorder, RoundedCornerShape(20.dp))
+                    .clickable { onSearchClick() }
+                    .padding(horizontal = 14.dp, vertical = 8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Search,
+                    contentDescription = null,
+                    tint = WhyNotGray,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = "Search products", style = whyNotMuted(15))
+            }
 
             Spacer(modifier = Modifier.height(30.dp))
 

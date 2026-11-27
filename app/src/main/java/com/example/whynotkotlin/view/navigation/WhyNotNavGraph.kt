@@ -31,6 +31,7 @@ import com.example.whynotkotlin.view.screens.profile.ChangePasswordRoute
 import com.example.whynotkotlin.view.screens.profile.EditProfileRoute
 import com.example.whynotkotlin.view.screens.profile.ProfileRoute
 import com.example.whynotkotlin.view.screens.purchases.PurchasesRoute
+import com.example.whynotkotlin.view.screens.search.ProductSearchRoute
 import com.example.whynotkotlin.view.screens.spending.CategorySpendingDetailRoute
 import com.example.whynotkotlin.view.screens.spending.SpendingSummaryRoute
 import com.example.whynotkotlin.view.screens.wishlists.NewWishlistRoute
@@ -211,6 +212,10 @@ fun WhyNotNavigation() {
                 arguments = listOf(navArgument(WhyNotRoutes.STORE_ID) { type = NavType.StringType })
             ) { entry ->
                 StoreDirectoryRoute(navigator, entry.arguments?.getString(WhyNotRoutes.STORE_ID))
+            }
+
+            composable(WhyNotRoutes.PRODUCT_SEARCH) {
+                ProductSearchRoute(navigator)
             }
 
             composable(WhyNotRoutes.SPENDING) {

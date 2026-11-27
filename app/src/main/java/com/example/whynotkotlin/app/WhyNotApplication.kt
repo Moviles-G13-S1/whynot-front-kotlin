@@ -2,6 +2,7 @@ package com.example.whynotkotlin.app
 
 import android.app.Application
 import android.content.pm.ApplicationInfo
+import android.os.Trace
 import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.SingletonImageLoader
@@ -27,7 +28,14 @@ class WhyNotApplication : Application(), SingletonImageLoader.Factory {
 
     override fun onCreate() {
         super.onCreate()
-        dependencies = AppDependencies.firebase(this)
+        // System Trace section (Sprint 4 micro-optimization, Home load path):
+        // everything built here runs on the main thread before Home can draw.
+        Trace.beginSection("WhyNot#appDependencies")
+        try {
+            dependencies = AppDependencies.firebase(this)
+        } finally {
+            Trace.endSection()
+        }
     }
 
     /**

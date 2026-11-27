@@ -44,6 +44,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.whynotkotlin.model.Product
+import com.example.whynotkotlin.model.PurchaseSort
 import com.example.whynotkotlin.view.components.OfflineBanner
 import com.example.whynotkotlin.view.components.ProductImage
 import com.example.whynotkotlin.view.components.WhyNotBottomBar
@@ -56,7 +57,6 @@ import com.example.whynotkotlin.view.theme.WhyNotSearch
 import com.example.whynotkotlin.view.theme.whyNotMuted
 import com.example.whynotkotlin.view.theme.whyNotSerif
 
-private enum class PurchaseSort { NONE, LOW_TO_HIGH, HIGH_TO_LOW }
 
 @Composable
 fun PurchasesScreen(
@@ -70,15 +70,13 @@ fun PurchasesScreen(
     onPurchasesClick: () -> Unit = {},
     onProfileClick: () -> Unit,
     isOnline: Boolean = true,
-    onSpendingClick: () -> Unit = {}
+    onSpendingClick: () -> Unit = {},
+    // Sprint 3 correction (Miguel): the list arrives already in [sort] order,
+    // computed off the main thread by PurchasesController.
+    sort: PurchaseSort = PurchaseSort.NONE,
+    onSortChange: (PurchaseSort) -> Unit = {}
 ) {
-    var sort by rememberSaveable { mutableStateOf(PurchaseSort.NONE) }
-
-    val visiblePurchases = when (sort) {
-        PurchaseSort.LOW_TO_HIGH -> purchases.sortedBy { it.price }
-        PurchaseSort.HIGH_TO_LOW -> purchases.sortedByDescending { it.price }
-        PurchaseSort.NONE -> purchases
-    }
+    val visiblePurchases = purchases
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -138,8 +136,10 @@ fun PurchasesScreen(
                             label = "Low to high",
                             selected = sort == PurchaseSort.LOW_TO_HIGH,
                             onClick = {
-                                sort = if (sort == PurchaseSort.LOW_TO_HIGH) PurchaseSort.NONE
-                                else PurchaseSort.LOW_TO_HIGH
+                                onSortChange(
+                                    if (sort == PurchaseSort.LOW_TO_HIGH) PurchaseSort.NONE
+                                    else PurchaseSort.LOW_TO_HIGH
+                                )
                             },
                             modifier = Modifier.weight(1f)
                         )
@@ -149,8 +149,10 @@ fun PurchasesScreen(
                             label = "High to low",
                             selected = sort == PurchaseSort.HIGH_TO_LOW,
                             onClick = {
-                                sort = if (sort == PurchaseSort.HIGH_TO_LOW) PurchaseSort.NONE
-                                else PurchaseSort.HIGH_TO_LOW
+                                onSortChange(
+                                    if (sort == PurchaseSort.HIGH_TO_LOW) PurchaseSort.NONE
+                                    else PurchaseSort.HIGH_TO_LOW
+                                )
                             },
                             modifier = Modifier.weight(1f)
                         )
