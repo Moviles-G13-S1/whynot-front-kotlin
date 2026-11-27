@@ -172,4 +172,37 @@ class ProductSaveAttemptTest {
         assertEquals(1, products.created.size)
         assertTrue(products.attempts.isEmpty())
     }
+
+    private class Resolver(private val result: String? = null, private val failure: Exception? = null) : ImageLinkResolver {
+        val calls = mutableListOf<Pair<String, String>>()
+        override suspend fun resolve(pictureLink: String, pageLink: String): String {
+            calls += pictureLink to pageLink
+            failure?.let { throw it }
+            return result ?: pictureLink
+        }
+    }
+
+    @Test fun `the resolved picture link is the one saved`() = runTest(dispatcher) {
+        val products = Products()
+        val resolver = Resolver(result = "https://img.shop.com/shoe.jpg")
+        val controller = ProductController(Auth(), products, backgroundScope, imageLinkResolver = resolver)
+
+        controller.createProduct("w1", "Shoe", "Example", "120000", "http://shop.com/shoe", "https://shop.com/shoe")
+        runCurrent()
+
+        assertEquals(listOf("http://shop.com/shoe" to "https://shop.com/shoe"), resolver.calls)
+        assertEquals("https://img.shop.com/shoe.jpg", products.created.single().imageUrl)
+    }
+
+    @Test fun `a failing resolver never blocks the save`() = runTest(dispatcher) {
+        val products = Products()
+        val resolver = Resolver(failure = IllegalStateException("network"))
+        val controller = ProductController(Auth(), products, backgroundScope, imageLinkResolver = resolver)
+
+        controller.save(imageUrl = "https://shop.com/a.jpg")
+        runCurrent()
+
+        assertEquals("https://shop.com/a.jpg", products.created.single().imageUrl)
+        assertEquals(listOf("uid" to null), products.attempts)
+    }
 }

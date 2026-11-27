@@ -8,6 +8,7 @@ import com.example.whynotkotlin.model.WishlistDraft
 import com.example.whynotkotlin.model.WishlistSummary
 import com.example.whynotkotlin.model.repositories.AuthRepository
 import com.example.whynotkotlin.model.repositories.ConnectivityRepository
+import com.example.whynotkotlin.model.repositories.ImageLinkResolver
 import com.example.whynotkotlin.model.repositories.OnboardingRepository
 import com.example.whynotkotlin.model.repositories.ProductRepository
 import com.example.whynotkotlin.model.repositories.WishlistRepository
@@ -35,7 +36,8 @@ class WishlistController(
     private val productRepository: ProductRepository,
     private val onboardingRepository: OnboardingRepository,
     private val scope: CoroutineScope,
-    private val connectivity: ConnectivityRepository? = null
+    private val connectivity: ConnectivityRepository? = null,
+    private val imageLinkResolver: ImageLinkResolver? = null
 ) {
 
     val catalog: StateFlow<Result<WishlistCatalog>?> =
@@ -100,7 +102,7 @@ class WishlistController(
 
         val wishlistId = wishlistRepository.createWishlist(
             ownerId = uid,
-            draft = WishlistDraft(categoryId = categoryId, imageUrl = pictureLink)
+            draft = WishlistDraft(categoryId = categoryId, imageUrl = displayablePicture(pictureLink))
         )
 
         if (existing.isEmpty()) {
@@ -108,6 +110,19 @@ class WishlistController(
         }
 
         return wishlistId
+    }
+
+    /** A displayable picture link (see ImageLinkResolver); never blocks the save. */
+    private suspend fun displayablePicture(link: String): String {
+        if (link.isBlank()) return link
+        val resolver = imageLinkResolver ?: return link
+        return try {
+            resolver.resolve(link)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            link
+        }
     }
 
     /**

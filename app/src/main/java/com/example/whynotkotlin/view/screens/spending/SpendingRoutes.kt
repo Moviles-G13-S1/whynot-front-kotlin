@@ -28,6 +28,8 @@ private fun WhyNotNavigator.spendingNavigation() = SpendingNavigation(
 @Composable
 fun SpendingSummaryRoute(navigator: WhyNotNavigator) {
     val controller = LocalAppDependencies.current.spendingController ?: return
+    // One navigation object per screen, not a new one on every recomposition.
+    val navigation = remember(navigator) { navigator.spendingNavigation() }
     val scope = rememberCoroutineScope()
     val isOnline = rememberIsOnline()
 
@@ -75,13 +77,15 @@ fun SpendingSummaryRoute(navigator: WhyNotNavigator) {
         onCategoryClick = navigator::toCategorySpending,
         onRetry = { refresh(force = true) },
         onBackClick = navigator::back,
-        navigation = navigator.spendingNavigation()
+        navigation = navigation
     )
 }
 
 @Composable
 fun CategorySpendingDetailRoute(yearMonth: Int, categoryId: String, navigator: WhyNotNavigator) {
     val controller = LocalAppDependencies.current.spendingController ?: return
+    // One navigation object per screen, not a new one on every recomposition.
+    val navigation = remember(navigator) { navigator.spendingNavigation() }
     val scope = rememberCoroutineScope()
     val isOnline = rememberIsOnline()
 
@@ -114,6 +118,6 @@ fun CategorySpendingDetailRoute(yearMonth: Int, categoryId: String, navigator: W
         isOnline = isOnline,
         onRetry = ::refresh,
         onBackClick = navigator::back,
-        navigation = navigator.spendingNavigation()
+        navigation = navigation
     )
 }

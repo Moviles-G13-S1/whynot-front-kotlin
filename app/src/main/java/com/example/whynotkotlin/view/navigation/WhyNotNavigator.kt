@@ -47,7 +47,16 @@ class WhyNotNavigator(
 
     fun toLoginAfterSignOut() {
         navController.navigate(WhyNotRoutes.LOGIN) {
-            popUpTo(WhyNotRoutes.HOME) {
+            // Clears whatever was open (Home, or the biometric unlock screen).
+            popUpTo(navController.graph.id) {
+                inclusive = true
+            }
+        }
+    }
+
+    fun toHomeAfterUnlock() {
+        navController.navigate(WhyNotRoutes.HOME) {
+            popUpTo(WhyNotRoutes.BIOMETRIC_UNLOCK) {
                 inclusive = true
             }
         }
