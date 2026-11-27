@@ -158,6 +158,7 @@ fun HomeRoute(navigator: WhyNotNavigator) {
     }
 
     HomeScreen(
+        onOpenDirectory = navigator::toStoreDirectory,
         showActivation = emptyProducts && catalogReady,
         onActivate = {
             uid?.let { dependencies.homeUxController.track(it, "home_empty_state_clicked", "home_empty_state") }
