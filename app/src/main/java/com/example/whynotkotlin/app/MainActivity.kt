@@ -1,14 +1,15 @@
 package com.example.whynotkotlin.app
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.fragment.app.FragmentActivity
 import com.example.whynotkotlin.view.navigation.WhyNotNavigation
 import com.example.whynotkotlin.view.theme.WhynotkotlinTheme
 
-class MainActivity : ComponentActivity() {
+/** A FragmentActivity because Android's biometric prompt is hosted by one. */
+class MainActivity : FragmentActivity() {
 
     override fun onCreate(
         savedInstanceState: Bundle?

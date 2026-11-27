@@ -106,7 +106,8 @@ fun WhyNotConfirmDialog(
     message: String,
     confirmLabel: String,
     onDismiss: () -> Unit,
-    onConfirm: () -> Unit
+    onConfirm: () -> Unit,
+    dismissLabel: String = "Cancel"
 ) {
     val actionStyle = TextStyle(
         fontFamily = Poppins,
@@ -162,7 +163,7 @@ fun WhyNotConfirmDialog(
                             .clickable { onDismiss() }
                             .padding(horizontal = 12.dp, vertical = 10.dp)
                     ) {
-                        Text(text = "Cancel", style = actionStyle)
+                        Text(text = dismissLabel, style = actionStyle)
                     }
 
                     Box(

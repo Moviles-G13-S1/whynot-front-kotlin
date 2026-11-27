@@ -10,6 +10,7 @@ import com.example.whynotkotlin.model.ProductUpdate
 import com.example.whynotkotlin.model.ValidationException
 import com.example.whynotkotlin.model.repositories.AuthRepository
 import com.example.whynotkotlin.model.repositories.ConnectivityRepository
+import com.example.whynotkotlin.model.repositories.ImageLinkResolver
 import com.example.whynotkotlin.model.repositories.OfflineException
 import com.example.whynotkotlin.model.repositories.ProductDraftRepository
 import com.example.whynotkotlin.model.repositories.ProductRepository
@@ -44,7 +45,8 @@ class ProductController(
     private val productRepository: ProductRepository,
     private val scope: CoroutineScope,
     private val draftRepository: ProductDraftRepository? = null,
-    private val connectivity: ConnectivityRepository? = null
+    private val connectivity: ConnectivityRepository? = null,
+    private val imageLinkResolver: ImageLinkResolver? = null
 ) {
 
     /** The pending debounced draft write, replaced on every keystroke. */
@@ -172,7 +174,7 @@ class ProductController(
                     name = name,
                     brand = brand,
                     price = PriceRules.parse(price)!!,
-                    imageUrl = imageUrl,
+                    imageUrl = displayablePicture(imageUrl, productUrl),
                     productUrl = productUrl
                 )
             )
@@ -288,10 +290,26 @@ class ProductController(
                 name = name,
                 brand = brand,
                 price = PriceRules.parse(price)!!,
-                imageUrl = imageUrl,
+                imageUrl = displayablePicture(imageUrl, productUrl),
                 productUrl = productUrl
             )
         )
+    }
+
+    /**
+     * The picture link to store: a link the app can display (a product page
+     * becomes its main picture, http becomes https), or, with no picture link,
+     * the picture of the store page. Never blocks the save.
+     */
+    private suspend fun displayablePicture(imageUrl: String, productUrl: String): String {
+        val resolver = imageLinkResolver ?: return imageUrl
+        return try {
+            resolver.resolve(imageUrl, productUrl)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            imageUrl
+        }
     }
 
     suspend fun deleteProduct(productId: String) {

@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
@@ -18,6 +19,7 @@ import com.example.whynotkotlin.app.LocalAppDependencies
 import com.example.whynotkotlin.model.readableMessage
 import com.example.whynotkotlin.view.components.WhyNotLoading
 import com.example.whynotkotlin.view.components.WhyNotTab
+import com.example.whynotkotlin.view.screens.auth.BiometricUnlockRoute
 import com.example.whynotkotlin.view.screens.auth.LoginRoute
 import com.example.whynotkotlin.view.screens.auth.RegisterRoute
 import com.example.whynotkotlin.view.screens.home.HomeRoute
@@ -64,6 +66,17 @@ fun WhyNotNavigation() {
         Text(resolvedSession.exceptionOrNull()!!.readableMessage())
         return
     }
+    // Decided once per app start: a saved session with biometric unlock on
+    // opens on the unlock screen instead of Home (as Face ID in Flutter).
+    val biometricController = LocalAppDependencies.current.biometricController
+    val needsUnlock by produceState<Boolean?>(null) {
+        value = biometricController.needsUnlock()
+    }
+    if (needsUnlock == null) {
+        WhyNotLoading()
+        return
+    }
+
     val entry by navController.currentBackStackEntryAsState()
     LaunchedEffect(resolvedSession.getOrNull()?.uid, entry?.destination?.route) {
         val route = entry?.destination?.route
@@ -74,10 +87,10 @@ fun WhyNotNavigation() {
     }
 
     val startDestination =
-        if (resolvedSession.getOrNull() == null) {
-            WhyNotRoutes.LOGIN
-        } else {
-            WhyNotRoutes.HOME
+        when {
+            resolvedSession.getOrNull() == null -> WhyNotRoutes.LOGIN
+            needsUnlock == true -> WhyNotRoutes.BIOMETRIC_UNLOCK
+            else -> WhyNotRoutes.HOME
         }
 
     CompositionLocalProvider(LocalWhyNotNavigator provides navigator) {
@@ -92,6 +105,10 @@ fun WhyNotNavigation() {
 
             composable(WhyNotRoutes.REGISTER) {
                 RegisterRoute(navigator)
+            }
+
+            composable(WhyNotRoutes.BIOMETRIC_UNLOCK) {
+                BiometricUnlockRoute(navigator)
             }
 
             composable(WhyNotRoutes.HOME) {

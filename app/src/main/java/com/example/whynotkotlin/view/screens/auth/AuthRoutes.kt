@@ -10,13 +10,14 @@ import com.example.whynotkotlin.view.navigation.WhyNotNavigator
 fun LoginRoute(navigator: WhyNotNavigator) {
     val authController = LocalAppDependencies.current.authController
     val submission = rememberSubmission()
+    val afterSignIn = rememberAfterSignIn(navigator::toHomeAfterSignIn)
 
     LoginScreen(
         isOnline = rememberIsOnline(),
         submitting = submission.running,
         errorMessage = submission.errorMessage,
         onSubmit = { email, password ->
-            submission.run(onSuccess = navigator::toHomeAfterSignIn) {
+            submission.run(onSuccess = afterSignIn) {
                 authController.signIn(email, password)
             }
         },
@@ -28,13 +29,14 @@ fun LoginRoute(navigator: WhyNotNavigator) {
 fun RegisterRoute(navigator: WhyNotNavigator) {
     val authController = LocalAppDependencies.current.authController
     val submission = rememberSubmission()
+    val afterSignIn = rememberAfterSignIn(navigator::toHomeAfterSignIn)
 
     RegisterScreen(
         isOnline = rememberIsOnline(),
         submitting = submission.running,
         errorMessage = submission.errorMessage,
         onSubmit = { name, email, password, confirmPassword, gender, age, categoryId, cityId ->
-            submission.run(onSuccess = navigator::toHomeAfterSignIn) {
+            submission.run(onSuccess = afterSignIn) {
                 authController.signUp(
                     name = name,
                     email = email,

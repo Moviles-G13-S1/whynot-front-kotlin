@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import coil3.compose.SubcomposeAsyncImage
+import com.example.whynotkotlin.model.ImageLinks
 
 /**
  * Loads an image from a URL through Coil, which keeps it in the app-wide memory
@@ -27,7 +28,8 @@ fun RemoteImage(
     }
 
     SubcomposeAsyncImage(
-        model = url,
+        // Links saved before the resolver existed may still be http://.
+        model = ImageLinks.secure(url),
         contentDescription = contentDescription,
         contentScale = contentScale,
         modifier = modifier,

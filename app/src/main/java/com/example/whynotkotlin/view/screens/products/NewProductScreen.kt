@@ -1,6 +1,7 @@
 package com.example.whynotkotlin.view.screens.products
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,19 +19,25 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.whynotkotlin.controller.ProductController
 import com.example.whynotkotlin.model.InputRules
 import com.example.whynotkotlin.model.PriceRules
+import com.example.whynotkotlin.model.ProductFormDraft
 import com.example.whynotkotlin.model.WishlistSummary
-import com.example.whynotkotlin.view.components.FieldSupportText
+import com.example.whynotkotlin.model.repositories.PictureFolder
 import com.example.whynotkotlin.view.components.CategoryChip
+import com.example.whynotkotlin.view.components.FieldSupportText
+import com.example.whynotkotlin.view.components.OfflineBanner
+import com.example.whynotkotlin.view.components.PicturePreview
 import com.example.whynotkotlin.view.components.ProductPictureField
 import com.example.whynotkotlin.view.components.WhyNotBottomBar
 import com.example.whynotkotlin.view.components.WhyNotButton
@@ -38,11 +45,6 @@ import com.example.whynotkotlin.view.components.WhyNotErrorBanner
 import com.example.whynotkotlin.view.components.WhyNotTextField
 import com.example.whynotkotlin.view.theme.WhyNotCream
 import com.example.whynotkotlin.view.theme.WhyNotGray
-import androidx.compose.foundation.clickable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.Alignment
-import com.example.whynotkotlin.model.ProductFormDraft
-import com.example.whynotkotlin.view.components.OfflineBanner
 
 /**
  * The manual product form.
@@ -246,6 +248,11 @@ fun NewProductScreen(
                     onValueChange = { imageUrl = it },
                     error = imageUrlError,
                     showError = showAllErrors
+                )
+                PicturePreview(
+                    link = imageUrl,
+                    folder = PictureFolder.PRODUCT,
+                    onPicked = { imageUrl = it }
                 )
 
                 Spacer(modifier = Modifier.height(14.dp))
