@@ -94,6 +94,10 @@ class WhyNotNavigator(
 
     fun toDirectoryStore(id: String) { navController.navigate(WhyNotRoutes.storeDetail(id)) }
 
+    fun toProductSearch() {
+        navController.navigate(WhyNotRoutes.PRODUCT_SEARCH)
+    }
+
     fun toSpending() {
         navController.navigate(WhyNotRoutes.SPENDING)
     }

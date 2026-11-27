@@ -12,6 +12,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.whynotkotlin.app.LocalAppDependencies
+import com.example.whynotkotlin.controller.ScreenLoadController
 import com.example.whynotkotlin.model.NearbyStore
 import com.example.whynotkotlin.model.ProductRecommendation
 import com.example.whynotkotlin.view.components.rememberIsOnline
@@ -117,12 +118,20 @@ fun HomeRoute(navigator: WhyNotNavigator) {
     }
 
     suspend fun loadHome(includeNearby: Boolean, forceRefresh: Boolean) {
-        supervisorScope {
-            val nearby = async { if (includeNearby) fetchNearby() }
-            val recommended = async { fetchRecommendation(forceRefresh) }
-            nearby.await()
-            recommended.await()
+        // Sprint 4 BQ (Miguel, Type 1): how long Home takes to load.
+        val measurement = dependencies.screenLoadController.start(ScreenLoadController.HOME)
+        try {
+            supervisorScope {
+                val nearby = async { if (includeNearby) fetchNearby() }
+                val recommended = async { fetchRecommendation(forceRefresh) }
+                nearby.await()
+                recommended.await()
+            }
+        } catch (cancelled: CancellationException) {
+            dependencies.screenLoadController.cancel(measurement)
+            throw cancelled
         }
+        dependencies.screenLoadController.finish(measurement)
     }
 
     /** Saves to [wishlistId], or to a new wishlist in its category when null. */

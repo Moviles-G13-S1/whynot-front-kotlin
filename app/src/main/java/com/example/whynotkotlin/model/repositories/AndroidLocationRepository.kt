@@ -3,6 +3,10 @@ package com.example.whynotkotlin.model.repositories
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
+import android.os.SystemClock
+import android.os.Trace
+import android.util.Log
+import android.os.Build
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
 import com.example.whynotkotlin.model.DeviceLocation
@@ -43,9 +47,30 @@ class AndroidLocationRepository(
             .setPriority(Priority.PRIORITY_BALANCED_POWER_ACCURACY)
             .build()
 
-        val location = client.getCurrentLocation(request, null).await()
-            ?: client.lastLocation.await()
-            ?: throw LocationUnavailableException()
+        // System Trace section, to see in the profiler how long Home waits for the fix.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) Trace.beginAsyncSection(TRACE_SECTION, 0)
+        val startedAt = SystemClock.elapsedRealtime()
+        var source = "fresh"
+        val location = try {
+            // Micro-optimization (Sprint 4, Home load path): a position the
+            // phone already knows from the last few minutes is reused at once.
+            // Asking for a new fix right after the app starts took up to 7 s on
+            // the test phone, and Home waited for it before finding the nearest
+            // store; one of sixteen stores in the city does not change in a
+            // few minutes.
+            val known = client.lastLocation.await()
+            if (known != null && known.ageMillis() <= MAX_REUSE_AGE_MILLIS) {
+                source = "recent(age=${known.ageMillis() / 1000}s)"
+                known
+            } else {
+                client.getCurrentLocation(request, null).await()
+                    ?: known
+                    ?: throw LocationUnavailableException()
+            }
+        } finally {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) Trace.endAsyncSection(TRACE_SECTION, 0)
+        }
+        Log.d(LOG_TAG, "fix in ${SystemClock.elapsedRealtime() - startedAt}ms source=$source")
 
         return DeviceLocation(
             latitude = location.latitude,
@@ -65,3 +90,13 @@ class AndroidLocationRepository(
         ContextCompat.checkSelfPermission(appContext, permission) ==
             PackageManager.PERMISSION_GRANTED
 }
+
+/** System Trace section around the location fix (Sprint 4 micro-optimization). */
+private const val TRACE_SECTION = "WhyNot#locationFix"
+private const val LOG_TAG = "WhyNotLocation"
+
+/** How old a known position may be to reuse it instead of asking for a new fix. */
+private const val MAX_REUSE_AGE_MILLIS = 5 * 60 * 1000L
+
+private fun android.location.Location.ageMillis(): Long =
+    (SystemClock.elapsedRealtimeNanos() - elapsedRealtimeNanos) / 1_000_000

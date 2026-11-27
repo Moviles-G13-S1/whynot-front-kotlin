@@ -75,14 +75,30 @@ class AppDependencies(
 
     /** Per-account biometric unlock choice (DataStore); in-memory in tests. */
     biometricPreferences: com.example.whynotkotlin.model.repositories.BiometricPreferenceStore =
-        com.example.whynotkotlin.model.repositories.InMemoryBiometricPreferenceStore()
+        com.example.whynotkotlin.model.repositories.InMemoryBiometricPreferenceStore(),
+
+    /** Global Product Search (Miguel): products on the phone (Room); null keeps none (tests). */
+    searchProductStore: com.example.whynotkotlin.model.repositories.SearchProductStore? = null,
+
+    /** Global Product Search (Miguel): the search form per user (SharedPreferences). */
+    searchFilterStore: com.example.whynotkotlin.model.repositories.SearchFilterStore? = null,
+
+    /** Sprint 4 BQ (Miguel): Home load time events; null records nothing (tests). */
+    screenLoadRepository: com.example.whynotkotlin.model.repositories.ScreenLoadRepository? = null,
+
+    /** Sprint 3 correction (Miguel): Purchases order per user (DataStore); null keeps none. */
+    purchaseSortStore: com.example.whynotkotlin.model.repositories.PurchaseSortStore? = null
 ) {
 
     val biometricController =
         com.example.whynotkotlin.controller.BiometricController(authRepository, biometricPreferences)
 
-    val pictureController =
+    // Micro-optimization (Sprint 4, Miguel — Home load path): controllers that
+    // Home does not use are created `by lazy`, the first time their screen
+    // needs them, instead of on the main thread before Home can draw.
+    val pictureController by lazy {
         com.example.whynotkotlin.controller.PictureController(authRepository, pictureUploader, connectivity)
+    }
 
     val homeUxController = com.example.whynotkotlin.controller.HomeUxController(uxEventRepository, scope)
 
@@ -91,6 +107,8 @@ class AppDependencies(
             recommendationController.onSignedOut()
             biometricController.onSignedOut()
             spendingController?.onSignedOut()
+            productSearchController.onSignedOut()
+            purchasesController.onSignedOut()
         }
 
     val profileController =
@@ -98,8 +116,12 @@ class AppDependencies(
             recommendationController.onProfileUpdated(uid)
         }
 
-    /** Turns pasted page / http / redirecting links into displayable pictures. */
-    private val imageLinkResolver = HttpImageLinkResolver()
+    /**
+     * Turns pasted page / http / redirecting links into displayable pictures.
+     * Its OkHttp client is only built the first time a link is resolved.
+     */
+    private val imageLinkResolver: com.example.whynotkotlin.model.repositories.ImageLinkResolver =
+        LazyImageLinkResolver { HttpImageLinkResolver() }
 
     val wishlistController =
         WishlistController(
@@ -122,6 +144,15 @@ class AppDependencies(
             imageLinkResolver = imageLinkResolver
         )
 
+    /** Sprint 3 correction (Miguel): Purchases list off the main thread, cached and remembered. */
+    val purchasesController =
+        com.example.whynotkotlin.controller.PurchasesController(
+            products = productController.products,
+            currentUid = { authRepository.currentUser()?.uid },
+            sortStore = purchaseSortStore,
+            backgroundScope = scope
+        )
+
     val nearbyStoreController =
         NearbyStoreController(locationRepository, nearbyStoreRepository)
 
@@ -136,7 +167,7 @@ class AppDependencies(
         )
 
     /** Sprint 4: Monthly Spending Summary. Null only when no store is wired (tests). */
-    val spendingController: com.example.whynotkotlin.controller.SpendingController? =
+    val spendingController: com.example.whynotkotlin.controller.SpendingController? by lazy {
         spendingStore?.let { store ->
             com.example.whynotkotlin.controller.SpendingController(
                 productRepository = productRepository,
@@ -147,6 +178,28 @@ class AppDependencies(
                 backgroundScope = scope
             )
         }
+    }
+
+    /** Sprint 4 BQ (Miguel, Type 1): average Home load time per platform. */
+    val screenLoadController =
+        com.example.whynotkotlin.controller.ScreenLoadController(
+            repository = screenLoadRepository,
+            currentUid = { authRepository.currentUser()?.uid },
+            connectivity = connectivity,
+            backgroundScope = scope
+        )
+
+    /** Sprint 4 (Miguel): Global Product Search across every wishlist. */
+    val productSearchController by lazy {
+        com.example.whynotkotlin.controller.ProductSearchController(
+            productRepository = productRepository,
+            currentUid = { authRepository.currentUser()?.uid },
+            store = searchProductStore,
+            filterStore = searchFilterStore,
+            connectivity = connectivity,
+            backgroundScope = scope
+        )
+    }
 
     companion object {
 
@@ -210,11 +263,24 @@ class AppDependencies(
                 spendingStore =
                     com.example.whynotkotlin.model.repositories.SqliteSpendingStore(context),
 
+                // Firebase Storage starts on the first upload, not at app start.
                 pictureUploader =
-                    com.example.whynotkotlin.model.repositories.FirebasePictureUploader(context),
+                    LazyPictureUploader { com.example.whynotkotlin.model.repositories.FirebasePictureUploader(context) },
 
                 biometricPreferences =
-                    com.example.whynotkotlin.model.repositories.DataStoreBiometricPreferenceStore(context)
+                    com.example.whynotkotlin.model.repositories.DataStoreBiometricPreferenceStore(context),
+
+                searchProductStore =
+                    com.example.whynotkotlin.model.repositories.RoomSearchProductStore(context),
+
+                searchFilterStore =
+                    com.example.whynotkotlin.model.repositories.SharedPreferencesSearchFilterStore(context),
+
+                screenLoadRepository =
+                    com.example.whynotkotlin.model.repositories.FirebaseScreenLoadRepository(firestore),
+
+                purchaseSortStore =
+                    com.example.whynotkotlin.model.repositories.DataStorePurchaseSortStore(context)
             )
         }
     }
@@ -245,4 +311,30 @@ private const val FIRESTORE_CACHE_BYTES = 50L * 1024 * 1024
  */
 val LocalAppDependencies = staticCompositionLocalOf<AppDependencies> {
     error("AppDependencies were not provided")
+}
+
+/**
+ * Micro-optimization (Sprint 4, Miguel): creates the real uploader, and with it
+ * Firebase Storage, only when the first picture is uploaded.
+ */
+private class LazyPictureUploader(
+    create: () -> com.example.whynotkotlin.model.repositories.PictureUploader
+) : com.example.whynotkotlin.model.repositories.PictureUploader {
+    private val delegate by lazy(create)
+
+    override suspend fun upload(
+        ownerId: String,
+        folder: com.example.whynotkotlin.model.repositories.PictureFolder,
+        source: String
+    ): String = delegate.upload(ownerId, folder, source)
+}
+
+/** Micro-optimization (Sprint 4, Miguel): builds the OkHttp client on first use. */
+private class LazyImageLinkResolver(
+    create: () -> com.example.whynotkotlin.model.repositories.ImageLinkResolver
+) : com.example.whynotkotlin.model.repositories.ImageLinkResolver {
+    private val delegate by lazy(create)
+
+    override suspend fun resolve(pictureLink: String, pageLink: String): String =
+        delegate.resolve(pictureLink, pageLink)
 }
