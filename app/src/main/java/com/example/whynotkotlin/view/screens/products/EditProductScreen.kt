@@ -4,8 +4,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,11 +11,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -43,29 +43,31 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.error
 import androidx.compose.ui.semantics.semantics
-import com.example.whynotkotlin.controller.ProductController
-import com.example.whynotkotlin.model.InputRules
-import com.example.whynotkotlin.model.PriceRules
-import com.example.whynotkotlin.view.components.FieldSupportText
-import com.example.whynotkotlin.view.components.limitedTo
-import com.example.whynotkotlin.view.components.rememberFieldVisit
-import com.example.whynotkotlin.view.theme.WhyNotDanger
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.whynotkotlin.controller.ProductController
+import com.example.whynotkotlin.model.InputRules
+import com.example.whynotkotlin.model.PriceRules
 import com.example.whynotkotlin.model.Product
 import com.example.whynotkotlin.model.WishlistSummary
+import com.example.whynotkotlin.model.repositories.PictureFolder
+import com.example.whynotkotlin.view.components.FieldSupportText
+import com.example.whynotkotlin.view.components.OfflineBanner
+import com.example.whynotkotlin.view.components.PicturePreview
 import com.example.whynotkotlin.view.components.WhyNotBottomBar
 import com.example.whynotkotlin.view.components.WhyNotTab
+import com.example.whynotkotlin.view.components.limitedTo
+import com.example.whynotkotlin.view.components.rememberFieldVisit
 import com.example.whynotkotlin.view.theme.Poppins
 import com.example.whynotkotlin.view.theme.WhyNotBorder
+import com.example.whynotkotlin.view.theme.WhyNotDanger
 import com.example.whynotkotlin.view.theme.WhyNotField
 import com.example.whynotkotlin.view.theme.WhyNotGray
 import com.example.whynotkotlin.view.theme.whyNotMuted
 import com.example.whynotkotlin.view.theme.whyNotSerif
-import com.example.whynotkotlin.view.components.OfflineBanner
 
 /** Form for changing a saved product, matching the iOS "Edit Item" screen. */
 @Composable
@@ -217,6 +219,12 @@ private fun EditProductForm(
             showError = showAllErrors,
             maxLength = InputRules.LINK_MAX_LENGTH
         ) { imageUrl = it }
+        PicturePreview(
+            link = imageUrl,
+            folder = PictureFolder.PRODUCT,
+            onPicked = { imageUrl = it },
+            modifier = Modifier.padding(bottom = 12.dp)
+        )
         LabeledField(
             label = ProductController.STORE_LINK,
             value = productUrl,

@@ -5,6 +5,7 @@ import android.net.Uri
 object WhyNotRoutes {
     const val LOGIN = "login"
     const val REGISTER = "register"
+    const val BIOMETRIC_UNLOCK = "biometric_unlock"
 
     const val HOME = "home"
     const val WISHLISTS = "wishlists"

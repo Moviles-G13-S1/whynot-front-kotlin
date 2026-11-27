@@ -54,6 +54,12 @@ dependencies {
     // Needed by the recommendation and nearby-store features, which call the
     // shared callable Cloud Functions.
     implementation(libs.firebase.functions)
+    // Product and wishlist pictures picked from the gallery are uploaded here.
+    implementation(libs.firebase.storage)
+    // Reads the rotation of camera photos before uploading them upright.
+    implementation("androidx.exifinterface:exifinterface:1.3.7")
+    // Biometric unlock (face or fingerprint), like Face ID in the iOS app.
+    implementation("androidx.biometric:biometric:1.1.0")
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)

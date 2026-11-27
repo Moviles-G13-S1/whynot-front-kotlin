@@ -13,6 +13,7 @@ import com.example.whynotkotlin.model.repositories.AndroidConnectivityRepository
 import com.example.whynotkotlin.model.repositories.AndroidLocationRepository
 import com.example.whynotkotlin.model.repositories.AuthRepository
 import com.example.whynotkotlin.model.repositories.ConnectivityRepository
+import com.example.whynotkotlin.model.repositories.DataStoreProductDraftRepository
 import com.example.whynotkotlin.model.repositories.FirebaseAuthRepository
 import com.example.whynotkotlin.model.repositories.FirebaseNearbyStoreRepository
 import com.example.whynotkotlin.model.repositories.FirebaseOnboardingRepository
@@ -20,10 +21,10 @@ import com.example.whynotkotlin.model.repositories.FirebaseProductRepository
 import com.example.whynotkotlin.model.repositories.FirebaseRecommendationRepository
 import com.example.whynotkotlin.model.repositories.FirebaseUserRepository
 import com.example.whynotkotlin.model.repositories.FirebaseWishlistRepository
+import com.example.whynotkotlin.model.repositories.HttpImageLinkResolver
 import com.example.whynotkotlin.model.repositories.LocationRepository
 import com.example.whynotkotlin.model.repositories.NearbyStoreRepository
 import com.example.whynotkotlin.model.repositories.OnboardingRepository
-import com.example.whynotkotlin.model.repositories.DataStoreProductDraftRepository
 import com.example.whynotkotlin.model.repositories.ProductDraftRepository
 import com.example.whynotkotlin.model.repositories.ProductRepository
 import com.example.whynotkotlin.model.repositories.RecommendationRepository
@@ -65,14 +66,29 @@ class AppDependencies(
     recommendationFileStore: com.example.whynotkotlin.model.repositories.RecommendationFileStore? = null,
 
     /** Monthly Spending Summary saved on the phone (SQLite); in-memory fake in tests. */
-    spendingStore: com.example.whynotkotlin.model.repositories.SpendingStore? = null
+    spendingStore: com.example.whynotkotlin.model.repositories.SpendingStore? = null,
+
+    /** Uploads pictures picked from the gallery (Firebase Storage). */
+    pictureUploader: com.example.whynotkotlin.model.repositories.PictureUploader =
+        com.example.whynotkotlin.model.repositories.UnavailablePictureUploader,
+
+    /** Per-account biometric unlock choice (DataStore); in-memory in tests. */
+    biometricPreferences: com.example.whynotkotlin.model.repositories.BiometricPreferenceStore =
+        com.example.whynotkotlin.model.repositories.InMemoryBiometricPreferenceStore()
 ) {
+
+    val biometricController =
+        com.example.whynotkotlin.controller.BiometricController(authRepository, biometricPreferences)
+
+    val pictureController =
+        com.example.whynotkotlin.controller.PictureController(authRepository, pictureUploader, connectivity)
 
     val homeUxController = com.example.whynotkotlin.controller.HomeUxController(uxEventRepository, scope)
 
     val authController =
         AuthController(authRepository, userRepository, onboardingRepository, scope, connectivity) {
             recommendationController.onSignedOut()
+            biometricController.onSignedOut()
             spendingController?.onSignedOut()
         }
 
@@ -81,6 +97,9 @@ class AppDependencies(
             recommendationController.onProfileUpdated(uid)
         }
 
+    /** Turns pasted page / http / redirecting links into displayable pictures. */
+    private val imageLinkResolver = HttpImageLinkResolver()
+
     val wishlistController =
         WishlistController(
             authRepository,
@@ -88,7 +107,8 @@ class AppDependencies(
             productRepository,
             onboardingRepository,
             scope,
-            connectivity
+            connectivity,
+            imageLinkResolver = imageLinkResolver
         )
 
     val productController =
@@ -97,7 +117,8 @@ class AppDependencies(
             productRepository,
             scope,
             draftRepository = productDraftRepository,
-            connectivity = connectivity
+            connectivity = connectivity,
+            imageLinkResolver = imageLinkResolver
         )
 
     val nearbyStoreController =
@@ -185,7 +206,13 @@ class AppDependencies(
                     com.example.whynotkotlin.model.repositories.LocalFileRecommendationStore(context),
 
                 spendingStore =
-                    com.example.whynotkotlin.model.repositories.SqliteSpendingStore(context)
+                    com.example.whynotkotlin.model.repositories.SqliteSpendingStore(context),
+
+                pictureUploader =
+                    com.example.whynotkotlin.model.repositories.FirebasePictureUploader(context),
+
+                biometricPreferences =
+                    com.example.whynotkotlin.model.repositories.DataStoreBiometricPreferenceStore(context)
             )
         }
     }

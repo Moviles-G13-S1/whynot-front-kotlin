@@ -63,6 +63,9 @@ class WhyNotApplication : Application(), SingletonImageLoader.Factory {
                 chain.proceed(
                     chain.request().newBuilder()
                         .header("User-Agent", IMAGE_USER_AGENT)
+                        // With a browser agent some CDNs would pick AVIF,
+                        // which Android before 12 cannot decode.
+                        .header("Accept", IMAGE_ACCEPT)
                         .build()
                 )
             }
@@ -75,6 +78,11 @@ class WhyNotApplication : Application(), SingletonImageLoader.Factory {
         const val MEMORY_CACHE_PERCENT = 0.25
         const val IMAGE_CACHE_DIR = "image_cache"
         const val DISK_CACHE_BYTES = 50L * 1024 * 1024
-        const val IMAGE_USER_AGENT = "WhyNot/1.0 (Android)"
+        // Browser-like, still identifying the app: some store CDNs refuse
+        // anything that does not look like a browser.
+        const val IMAGE_USER_AGENT =
+            "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) " +
+                "Chrome/124.0 Mobile Safari/537.36 WhyNot/1.0"
+        const val IMAGE_ACCEPT = "image/webp,image/png,image/jpeg,image/gif,image/*;q=0.8"
     }
 }
