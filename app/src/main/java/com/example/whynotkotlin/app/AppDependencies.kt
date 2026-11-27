@@ -67,9 +67,7 @@ class AppDependencies(
 
     /** Monthly Spending Summary saved on the phone (SQLite); in-memory fake in tests. */
     spendingStore: com.example.whynotkotlin.model.repositories.SpendingStore? = null,
-<<<<<<< HEAD
     val storeDirectory: com.example.whynotkotlin.model.repositories.StoreDirectoryRepository? = null,
-=======
 
     /** Uploads pictures picked from the gallery (Firebase Storage). */
     pictureUploader: com.example.whynotkotlin.model.repositories.PictureUploader =
@@ -78,7 +76,6 @@ class AppDependencies(
     /** Per-account biometric unlock choice (DataStore); in-memory in tests. */
     biometricPreferences: com.example.whynotkotlin.model.repositories.BiometricPreferenceStore =
         com.example.whynotkotlin.model.repositories.InMemoryBiometricPreferenceStore()
->>>>>>> origin/main
 ) {
 
     val biometricController =
