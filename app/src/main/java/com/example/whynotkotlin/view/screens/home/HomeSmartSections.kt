@@ -229,6 +229,7 @@ fun HomeSmartSections(
                     Text(it.address)
                     Text("Categories: ${it.categoryIds.joinToString()}")
                     ExternalWebsiteButton(it.websiteUrl, "Store website")
+                    SaveNearbyStoreCard(it)
                 }
                 TextButton(onClick = retryLocation) { Text("Refresh nearby store") }
                 TextButton(onClick = { context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)) }) {
