@@ -66,7 +66,9 @@ class ProductSearchControllerTest {
     private class Store : SearchProductStore {
         val saved = mutableMapOf<String, LocalSearchSnapshot>()
         override suspend fun load(ownerId: String) = saved[ownerId]
+        var writes = 0
         override suspend fun replace(ownerId: String, products: List<Product>, syncedAtMillis: Long) {
+            writes++
             saved[ownerId] = LocalSearchSnapshot(products, syncedAtMillis)
         }
         override suspend fun clear(ownerId: String) {
@@ -211,6 +213,24 @@ class ProductSearchControllerTest {
         assertEquals(SearchSource.SERVER, harness.last.source)
         assertEquals(listOf(speaker, headphones), harness.last.results)
         assertEquals(listOf(headphones, speaker), harness.store.saved["uid"]?.products)
+    }
+
+    @Test
+    fun `an identical list from Firestore is not searched or saved again`() = runTest {
+        val harness = Harness()
+        harness.products.products.value = listOf(headphones, speaker)
+        val controller = harness.controller(this)
+        harness.collect(this, controller)
+        settle()
+        val statesBefore = harness.states.size
+
+        // Same products in a new list instance, as Firestore sends on a metadata-only change.
+        harness.products.products.value = listOf(headphones.copy(), speaker.copy())
+        settle()
+
+        assertEquals(1, harness.store.writes)
+        assertEquals(statesBefore, harness.states.size)
+        assertFalse(harness.logs.any { it.startsWith("INVALIDATE") })
     }
 
     @Test

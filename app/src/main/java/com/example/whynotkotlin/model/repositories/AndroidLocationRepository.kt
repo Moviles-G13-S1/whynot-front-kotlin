@@ -6,7 +6,6 @@ import android.content.Context
 import android.os.SystemClock
 import android.os.Trace
 import android.util.Log
-import android.os.Build
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
 import com.example.whynotkotlin.model.DeviceLocation
@@ -16,7 +15,8 @@ import com.example.whynotkotlin.model.LocationUnavailableException
 import com.google.android.gms.location.CurrentLocationRequest
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
-import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.asCoroutineDispatcher
 
 /**
  * Reads the device position with Google Play Services.
@@ -35,6 +35,11 @@ class AndroidLocationRepository(
     private val client =
         LocationServices.getFusedLocationProviderClient(appContext)
 
+    /** One named thread for the blocking wait on Play Services. */
+    private val locationThread =
+        java.util.concurrent.Executors.newSingleThreadExecutor { task -> Thread(task, "WhyNotLocation") }
+            .asCoroutineDispatcher()
+
     @SuppressLint("MissingPermission")
     override suspend fun getCurrentLocation(): DeviceLocation {
         if (!hasLocationPermission()) {
@@ -47,28 +52,32 @@ class AndroidLocationRepository(
             .setPriority(Priority.PRIORITY_BALANCED_POWER_ACCURACY)
             .build()
 
-        // System Trace section, to see in the profiler how long Home waits for the fix.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) Trace.beginAsyncSection(TRACE_SECTION, 0)
+        // The wait runs on this repository's own thread ("WhyNotLocation") inside
+        // a normal System Trace section, so Android Studio's Profiler draws it on
+        // one easy-to-find thread, and a blocked wait never holds a shared IO thread.
         val startedAt = SystemClock.elapsedRealtime()
         var source = "fresh"
-        val location = try {
-            // Micro-optimization (Sprint 4, Home load path): a position the
-            // phone already knows from the last few minutes is reused at once.
-            // Asking for a new fix right after the app starts took up to 7 s on
-            // the test phone, and Home waited for it before finding the nearest
-            // store; one of sixteen stores in the city does not change in a
-            // few minutes.
-            val known = client.lastLocation.await()
-            if (known != null && known.ageMillis() <= MAX_REUSE_AGE_MILLIS) {
-                source = "recent(age=${known.ageMillis() / 1000}s)"
-                known
-            } else {
-                client.getCurrentLocation(request, null).await()
-                    ?: known
-                    ?: throw LocationUnavailableException()
+        val location = withContext(locationThread) {
+            Trace.beginSection(TRACE_SECTION)
+            try {
+                // Micro-optimization (Sprint 4, Home load path): a position the
+                // phone already knows from the last few minutes is reused at once.
+                // Asking for a new fix right after the app starts took up to 16 s on
+                // the test phone, and Home waited for it before finding the nearest
+                // store; one of sixteen stores in the city does not change in a
+                // few minutes.
+                val known = awaitTask(client.lastLocation)
+                if (known != null && known.ageMillis() <= MAX_REUSE_AGE_MILLIS) {
+                    source = "recent(age=${known.ageMillis() / 1000}s)"
+                    known
+                } else {
+                    awaitTask(client.getCurrentLocation(request, null))
+                        ?: known
+                        ?: throw LocationUnavailableException()
+                }
+            } finally {
+                Trace.endSection()
             }
-        } finally {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) Trace.endAsyncSection(TRACE_SECTION, 0)
         }
         Log.d(LOG_TAG, "fix in ${SystemClock.elapsedRealtime() - startedAt}ms source=$source")
 
@@ -100,3 +109,11 @@ private const val MAX_REUSE_AGE_MILLIS = 5 * 60 * 1000L
 
 private fun android.location.Location.ageMillis(): Long =
     (SystemClock.elapsedRealtimeNanos() - elapsedRealtimeNanos) / 1_000_000
+
+/** Waits for a Play Services task on the calling (IO) thread, rethrowing its own error. */
+private fun <T> awaitTask(task: com.google.android.gms.tasks.Task<T>): T? =
+    try {
+        com.google.android.gms.tasks.Tasks.await(task)
+    } catch (error: java.util.concurrent.ExecutionException) {
+        throw error.cause ?: error
+    }
