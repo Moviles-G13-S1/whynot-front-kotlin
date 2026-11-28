@@ -71,7 +71,7 @@ fun HomeRoute(navigator: WhyNotNavigator) {
 
     val isOnline = rememberIsOnline()
 
-    suspend fun fetchNearby() {
+    suspend fun fetchNearby(forceRefresh: Boolean) {
         if (nearbyLoading) return
         if (!dependencies.connectivity.isOnline.value) {
             nearbyErrorMessage = "Nearby stores need internet. Reconnect and retry."
@@ -81,7 +81,11 @@ fun HomeRoute(navigator: WhyNotNavigator) {
         nearbyLoading = true
         try {
             nearbyStore = withContext(Dispatchers.IO) {
-                nearbyStoreController.loadNearestStore()
+                nearbyStoreController.loadNearestStore(
+                    uid = uid,
+                    category = profileResult?.getOrNull()?.takeIf { it.uid == uid }?.preferredCategoryId,
+                    forceRefresh = forceRefresh
+                )
             }
         } catch (cancelled: CancellationException) {
             throw cancelled
@@ -112,7 +116,7 @@ fun HomeRoute(navigator: WhyNotNavigator) {
         }
     }
 
-    fun loadNearby() { scope.launch { fetchNearby() } }
+    fun loadNearby() { scope.launch { fetchNearby(forceRefresh = true) } }
     fun loadRecommendation(forceRefresh: Boolean = false) {
         scope.launch { fetchRecommendation(forceRefresh) }
     }
@@ -122,7 +126,7 @@ fun HomeRoute(navigator: WhyNotNavigator) {
         val measurement = dependencies.screenLoadController.start(ScreenLoadController.HOME)
         try {
             supervisorScope {
-                val nearby = async { if (includeNearby) fetchNearby() }
+                val nearby = async { if (includeNearby) fetchNearby(forceRefresh) }
                 val recommended = async { fetchRecommendation(forceRefresh) }
                 nearby.await()
                 recommended.await()

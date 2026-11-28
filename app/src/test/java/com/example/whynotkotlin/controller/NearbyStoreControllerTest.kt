@@ -14,6 +14,20 @@ import org.junit.Test
 class NearbyStoreControllerTest {
 
     @Test
+    fun `same fix reuses result and manual refresh calls the backend again`() = runTest {
+        val backend = FakeNearbyStoreRepository()
+        val location = FakeLocationRepository()
+        val controller = NearbyStoreController(location, backend) { 0L }
+        val first = controller.loadNearestStore("martin", "fashion")
+        backend.store = first!!.copy(name = "Updated shop")
+        assertEquals(first, controller.loadNearestStore("martin", "fashion"))
+        assertEquals("Updated shop", controller.loadNearestStore("martin", "fashion", forceRefresh = true)?.name)
+        location.location = DeviceLocation(4.8, -74.1)
+        backend.store = null
+        assertNull(controller.loadNearestStore("martin", "fashion"))
+    }
+
+    @Test
     fun `loadNearestStore uses device location and loads nearest store`() =
         runTest {
 
