@@ -1,6 +1,7 @@
 package com.example.whynotkotlin.model.repositories
 
 import android.content.Context
+import androidx.core.content.edit
 import com.example.whynotkotlin.model.SearchFilters
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -38,12 +39,13 @@ class SharedPreferencesSearchFilterStore(
     }
 
     override suspend fun save(ownerId: String, filters: SearchFilters) = withContext(ioDispatcher) {
-        preferences.edit()
-            .putString(key(ownerId, QUERY), filters.query)
-            .putString(key(ownerId, CATEGORY), filters.categoryId)
-            .putString(key(ownerId, MIN_PRICE), filters.minPrice)
-            .putString(key(ownerId, MAX_PRICE), filters.maxPrice)
-            .apply()
+        // KTX edit { }: applies asynchronously (apply), like before.
+        preferences.edit {
+            putString(key(ownerId, QUERY), filters.query)
+            putString(key(ownerId, CATEGORY), filters.categoryId)
+            putString(key(ownerId, MIN_PRICE), filters.minPrice)
+            putString(key(ownerId, MAX_PRICE), filters.maxPrice)
+        }
     }
 
     private fun key(ownerId: String, field: String) = "$ownerId.$field"

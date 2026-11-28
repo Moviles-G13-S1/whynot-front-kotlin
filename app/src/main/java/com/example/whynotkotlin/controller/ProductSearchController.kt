@@ -32,7 +32,10 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 /**
@@ -80,6 +83,15 @@ class ProductSearchController(
     /** Incremented by [refresh] to restart the product listener. */
     private val refreshRequests = MutableStateFlow(0)
 
+    /**
+     * Writes to Room one at a time, in order: two lists arriving close together
+     * can never be saved out of order (an older list overwriting a newer one).
+     */
+    private val storeWrites = Mutex()
+
+    /** The last list saved in Room per user, so an identical list is not written again. */
+    private var lastStored: Pair<String, List<com.example.whynotkotlin.model.Product>>? = null
+
     fun updateFilters(filters: SearchFilters) {
         mutableFilters.value = filters
     }
@@ -90,7 +102,7 @@ class ProductSearchController(
 
     /** Restarts loading products, for the "Refresh products" button. */
     fun refresh() {
-        refreshRequests.value++
+        refreshRequests.update { it + 1 }
     }
 
     /** Called on sign-out: nothing of the previous user stays in memory. */
@@ -172,6 +184,7 @@ class ProductSearchController(
 
         // 2. The live listener. Online, each list is the server's and replaces
         //    the copy in Room. Offline it comes from Firestore's own cache.
+        var lastSent: SearchSnapshot? = null
         try {
             productRepository.observeProducts(uid).collect { products ->
                 val isOnline = connectivity?.isOnline?.value ?: true
@@ -180,13 +193,20 @@ class ProductSearchController(
                 // instead of showing "no products".
                 if (!isOnline && products.isEmpty() && !local?.products.isNullOrEmpty()) return@collect
 
-                if (isOnline) {
-                    val now = clock()
-                    send(SearchSnapshot(products, SearchSource.SERVER, now))
-                    backgroundScope.launch { runCatchingStorage { store?.replace(uid, products, now) } }
+                val source = if (isOnline) SearchSource.SERVER else SearchSource.PHONE
+                // Firestore also emits when only metadata changes (cache -> server)
+                // with the same products: nothing to search again or to save.
+                val previous = lastSent
+                if (previous != null && previous.source == source && previous.products == products) return@collect
+
+                val snapshot = if (isOnline) {
+                    SearchSnapshot(products, SearchSource.SERVER, clock())
                 } else {
-                    send(SearchSnapshot(products, SearchSource.PHONE, local?.syncedAtMillis))
+                    SearchSnapshot(products, SearchSource.PHONE, local?.syncedAtMillis)
                 }
+                lastSent = snapshot
+                send(snapshot)
+                if (isOnline) saveProducts(uid, products, snapshot.syncedAtMillis ?: clock())
             }
         } catch (cancelled: CancellationException) {
             throw cancelled
@@ -201,6 +221,16 @@ class ProductSearchController(
             )
         }
         awaitClose()
+    }
+
+    private fun saveProducts(uid: String, products: List<com.example.whynotkotlin.model.Product>, syncedAt: Long) {
+        backgroundScope.launch {
+            storeWrites.withLock {
+                if (lastStored == uid to products) return@withLock
+                runCatchingStorage { store?.replace(uid, products, syncedAt) }
+                lastStored = uid to products
+            }
+        }
     }
 
     private suspend fun loadSavedFilters(uid: String) {
