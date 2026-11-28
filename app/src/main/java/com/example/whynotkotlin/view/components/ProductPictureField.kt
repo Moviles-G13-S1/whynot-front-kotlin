@@ -2,6 +2,8 @@ package com.example.whynotkotlin.view.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -108,6 +110,31 @@ fun ProductPictureField(
                 )
             }
 
+            // One tap pastes the copied link: long-pressing a small field to
+            // find "Paste" is easy to miss on a phone.
+            val clipboard = LocalClipboardManager.current
+            val context = androidx.compose.ui.platform.LocalContext.current
+            Text(
+                text = "Paste",
+                style = MaterialTheme.typography.labelLarge,
+                color = WhyNotBlack,
+                modifier = Modifier
+                    .clickable {
+                        val pasted = clipboard.getText()?.text?.trim().orEmpty()
+                        if (pasted.isNotEmpty()) {
+                            onValueChange(pasted.limitedTo(InputRules.LINK_MAX_LENGTH))
+                        } else {
+                            // "Copy image" on Android copies the picture itself,
+                            // not a link, so there is no text to paste.
+                            android.widget.Toast.makeText(
+                                context,
+                                "Copy the product page link (Share → Copy link) instead of the image.",
+                                android.widget.Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+                    .padding(vertical = 8.dp)
+            )
             Icon(
                 imageVector = Icons.Outlined.Link,
                 contentDescription = null,

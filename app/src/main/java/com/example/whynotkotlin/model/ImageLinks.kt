@@ -55,6 +55,21 @@ object ImageLinks {
             ?.let(::unescape)
     }
 
+    private val amazonProduct = Regex(
+        "^https?://(?:[\\w-]+\\.)*amazon\\.[a-z.]+/(?:.*/)?(?:dp|gp/product|gp/aw/d)/([A-Z0-9]{10})(?:[/?#].*)?$",
+        RegexOption.IGNORE_CASE
+    )
+
+    /**
+     * Amazon product pages declare no og:image and often answer automated
+     * requests with a robot check, so their picture is taken from the product
+     * id (ASIN) in the link, through Amazon's own image server.
+     */
+    fun amazonPicture(link: String): String? =
+        amazonProduct.find(link.trim())?.groupValues?.get(1)?.uppercase()?.let { asin ->
+            "https://m.media-amazon.com/images/P/$asin.01.L.jpg"
+        }
+
     private fun unescape(value: String): String =
         value.trim()
             .replace("&amp;", "&")

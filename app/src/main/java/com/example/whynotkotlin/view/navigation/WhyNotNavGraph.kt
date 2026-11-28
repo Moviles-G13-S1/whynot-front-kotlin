@@ -20,6 +20,7 @@ import com.example.whynotkotlin.app.LocalAppDependencies
 import com.example.whynotkotlin.model.readableMessage
 import com.example.whynotkotlin.view.components.WhyNotLoading
 import com.example.whynotkotlin.view.components.WhyNotTab
+import com.example.whynotkotlin.view.screens.auth.BiometricOfferHost
 import com.example.whynotkotlin.view.screens.auth.BiometricUnlockRoute
 import com.example.whynotkotlin.view.screens.auth.LoginRoute
 import com.example.whynotkotlin.view.screens.auth.RegisterRoute
@@ -96,6 +97,9 @@ fun WhyNotNavigation() {
         }
 
     CompositionLocalProvider(LocalWhyNotNavigator provides navigator) {
+        // Outside the NavHost so the offer is not closed by Login → Home.
+        BiometricOfferHost()
+
         NavHost(
             navController = navController,
             startDestination =

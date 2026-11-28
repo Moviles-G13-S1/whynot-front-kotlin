@@ -32,6 +32,16 @@ class ImageLinksTest {
         assertEquals("https://x.co/i.png", ImageLinks.pagePicture("""<link rel="image_src" href="https://x.co/i.png">"""))
     }
 
+    @Test fun `amazon product links give the picture of their product id`() {
+        val expected = "https://m.media-amazon.com/images/P/B09B8V1LZ3.01.L.jpg"
+        assertEquals(expected, ImageLinks.amazonPicture("https://www.amazon.com/dp/B09B8V1LZ3"))
+        assertEquals(expected, ImageLinks.amazonPicture("https://www.amazon.com/Echo-Dot/dp/B09B8V1LZ3/ref=sr_1_1?keywords=echo"))
+        assertEquals(expected, ImageLinks.amazonPicture("https://www.amazon.com.mx/gp/product/b09b8v1lz3"))
+        assertEquals(expected, ImageLinks.amazonPicture("https://amazon.es/gp/aw/d/B09B8V1LZ3?th=1"))
+        assertNull(ImageLinks.amazonPicture("https://www.falabella.com.co/falabella-co/product/123"))
+        assertNull(ImageLinks.amazonPicture("https://www.amazon.com/s?k=shoes"))
+    }
+
     @Test fun `a page without a declared picture gives null`() {
         assertNull(ImageLinks.pagePicture("<html><head><meta name=\"description\" content=\"x\"></head></html>"))
     }

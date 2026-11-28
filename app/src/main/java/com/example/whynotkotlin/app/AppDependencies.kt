@@ -87,7 +87,11 @@ class AppDependencies(
     screenLoadRepository: com.example.whynotkotlin.model.repositories.ScreenLoadRepository? = null,
 
     /** Sprint 3 correction (Miguel): Purchases order per user (DataStore); null keeps none. */
-    purchaseSortStore: com.example.whynotkotlin.model.repositories.PurchaseSortStore? = null
+    purchaseSortStore: com.example.whynotkotlin.model.repositories.PurchaseSortStore? = null,
+
+    /** Turns pasted page / http / redirecting links into displayable pictures. */
+    private val imageLinkResolver: com.example.whynotkotlin.model.repositories.ImageLinkResolver =
+        LazyImageLinkResolver { HttpImageLinkResolver() }
 ) {
 
     val biometricController =
@@ -116,12 +120,6 @@ class AppDependencies(
             recommendationController.onProfileUpdated(uid)
         }
 
-    /**
-     * Turns pasted page / http / redirecting links into displayable pictures.
-     * Its OkHttp client is only built the first time a link is resolved.
-     */
-    private val imageLinkResolver: com.example.whynotkotlin.model.repositories.ImageLinkResolver =
-        LazyImageLinkResolver { HttpImageLinkResolver() }
 
     val wishlistController =
         WishlistController(
@@ -280,7 +278,16 @@ class AppDependencies(
                     com.example.whynotkotlin.model.repositories.FirebaseScreenLoadRepository(firestore),
 
                 purchaseSortStore =
-                    com.example.whynotkotlin.model.repositories.DataStorePurchaseSortStore(context)
+                    com.example.whynotkotlin.model.repositories.DataStorePurchaseSortStore(context),
+
+                // Opens hard store pages like a browser to find their picture;
+                // nothing is built until the first link is resolved.
+                imageLinkResolver =
+                    LazyImageLinkResolver {
+                        HttpImageLinkResolver(
+                            pageRenderer = com.example.whynotkotlin.model.repositories.WebViewPagePictureFinder(context)
+                        )
+                    }
             )
         }
     }
