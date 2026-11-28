@@ -68,8 +68,10 @@ fun PicturePreview(
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: UserFacingException) {
+                android.util.Log.e("WhyNotPicture", "Gallery upload refused", error)
                 uploadError = error.message
-            } catch (_: Exception) {
+            } catch (error: Exception) {
+                android.util.Log.e("WhyNotPicture", "Gallery upload failed", error)
                 uploadError = PictureController.UPLOAD_FAILED
             } finally {
                 uploading = false
@@ -78,7 +80,9 @@ fun PicturePreview(
     }
 
     Column(modifier = modifier.fillMaxWidth().padding(top = 8.dp)) {
-        Row(
+        // Off to mirror the Flutter app, where product and wishlist pictures
+        // are pasted links (its gallery picker is only for the profile photo).
+        if (GALLERY_ENABLED) Row(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -100,13 +104,15 @@ fun PicturePreview(
     }
 }
 
+private const val GALLERY_ENABLED = true
+
 /** Thumbnail of what the picture field holds, with whether it loaded. */
 @Composable
 private fun LinkPreview(link: String) {
     val trimmed = link.trim()
     if (trimmed.isEmpty() || InputRules.optionalLink(trimmed, "picture link") != null) return
 
-    val url = ImageLinks.secure(trimmed)
+    val url = ImageLinks.amazonPicture(trimmed) ?: ImageLinks.secure(trimmed)
     var loaded by remember(url) { mutableStateOf<Boolean?>(null) }
 
     Row(

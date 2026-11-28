@@ -19,6 +19,22 @@ class BiometricController(
     private val preferences: BiometricPreferenceStore
 ) {
 
+    /**
+     * True right after a password sign-in, until the offer dialog is answered.
+     * Kept here (not in the login screen) because the login screen leaves
+     * the back stack as soon as the session starts.
+     */
+    private val _offerPending = kotlinx.coroutines.flow.MutableStateFlow(false)
+    val offerPending: kotlinx.coroutines.flow.StateFlow<Boolean> = _offerPending
+
+    fun requestOffer() {
+        _offerPending.value = true
+    }
+
+    fun offerAnswered() {
+        _offerPending.value = false
+    }
+
     /** Unlocked for this app process: reopening a screen does not ask again. */
     @Volatile
     private var unlockedUid: String? = null
